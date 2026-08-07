@@ -28,8 +28,8 @@ class MenuController extends Controller
 
         $items = $query->get();
 
-        // Dynamically get all categories currently stored in database for the filter tabs
-        $categories = MenuItem::select('category')->distinct()->pluck('category')->toArray();
+        // Retrieve all active categories from the categories table
+        $categories = \App\Models\MenuCategory::where('active', true)->pluck('name')->toArray();
 
         return view('menu', compact('items', 'categories'));
     }

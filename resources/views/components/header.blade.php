@@ -1,4 +1,4 @@
-<header class="flex h-20 items-center justify-between border-b border-border bg-card px-6 shadow-sm shrink-0">
+<header class="flex h-20 items-center justify-between border-b border-border bg-card px-4 md:px-6 shadow-sm shrink-0">
     <!-- Left Section: Mobile Menu & Branch Location Selector -->
     <div class="flex items-center gap-4">
         <!-- Toggle Sidebar (Mobile) -->
@@ -10,15 +10,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
         </button>
-
+ 
         <!-- Location Dropdown switcher -->
         <div x-data="{ open: false }" class="relative">
             <button 
                 @click="open = !open" 
-                class="flex items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-card-tint transition-all focus:outline-none cursor-pointer"
+                class="flex items-center gap-2.5 rounded-xl border border-transparent px-2 py-1.5 text-xs font-semibold text-ink hover:bg-card-tint transition-all focus:outline-none cursor-pointer"
             >
                 <span class="text-orange text-sm">📍</span>
-                <span class="font-bold text-ink" x-text="activeBranch">KFC Connaught Place</span>
+                <span class="font-bold text-ink truncate max-w-[110px] sm:max-w-none" x-text="activeBranch">KFC Connaught Place</span>
                 <svg class="h-3 w-3 text-muted transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>

@@ -342,10 +342,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                        </div>
-
-                        <!-- Dynamic Grid of Searched Presets -->
-                        <div class="grid grid-cols-5 gap-3 p-3 rounded-2xl bg-card-tint border border-border/60 min-h-20">
+                                             <!-- Dynamic Grid of Searched Presets -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-3 rounded-2xl bg-card-tint border border-border/60 min-h-20">
                             <!-- Preset Image Cards -->
                             <template x-for="p in presetImages" :key="p.id">
                                 <button 
@@ -366,7 +364,7 @@
 
                             <!-- Placeholder when search is empty -->
                             <template x-if="presetSearchQuery.trim() === ''">
-                                <div class="col-span-5 py-6 text-center text-xs text-muted flex flex-col items-center justify-center gap-1">
+                                <div class="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-5 py-6 text-center text-xs text-muted flex flex-col items-center justify-center gap-1">
                                     <span class="text-lg">🔍</span>
                                     <span class="font-bold">Please search for images...</span>
                                     <span class="text-[10px] text-slate-400">Type in the item name or enter a term above.</span>
@@ -375,7 +373,7 @@
 
                             <!-- Placeholder when search query yields nothing -->
                             <template x-if="presetSearchQuery.trim() !== '' && presetImages.length === 0">
-                                <div class="col-span-5 py-6 text-center text-xs text-muted flex flex-col items-center justify-center gap-1.5">
+                                <div class="col-span-2 sm:col-span-3 md:col-span-4 lg:col-span-5 py-6 text-center text-xs text-muted flex flex-col items-center justify-center gap-1.5">
                                     <span class="text-lg">😕</span>
                                     <span class="font-bold">No preset images found.</span>
                                     <span class="text-[10px] text-slate-400">Please upload a custom image under the "Upload Custom" tab.</span>
@@ -534,10 +532,7 @@ function menuManager(config) {
         newType: 'veg',
         newCookingTime: '',
         newVariants: [{ label: 'Regular', price: '' }],
-        commonCategories: [
-            'Breads', 'Rice', 'Veg Main Course', 'Non-Veg Main Course', 
-            'Tandoori Special', 'Rolls', 'Starters', 'Momos', 'Pakode', 'Beverages'
-        ],
+        commonCategories: config.categories,
 
         // Image Selection states
         imageSource: 'preset',
@@ -564,7 +559,7 @@ function menuManager(config) {
             this.isEditing = false;
             this.editingId = null;
             this.newName = '';
-            this.newCategory = 'Veg Main Course';
+            this.newCategory = this.commonCategories.length > 0 ? this.commonCategories[0] : '';
             this.newType = 'veg';
             this.newCookingTime = '';
             this.newVariants = [{ label: 'Regular', price: '' }];

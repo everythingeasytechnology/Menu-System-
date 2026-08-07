@@ -14,9 +14,11 @@
         orders: [
             {
                 id: '#43291',
-                channel: '🍽️ Dine-in',
+                channel: '🍽️ Dining',
+                customer: 'Rahul Sharma',
+                phone: '9876543210',
+                email: 'rahul@example.com',
                 location: 'Table 12 (Ground Floor)',
-                server: 'Marcus V.',
                 amount: '₹ 1,145.50',
                 payment: 'Paid via Stripe',
                 status: 'preparing',
@@ -28,11 +30,13 @@
             },
             {
                 id: '#43290',
-                channel: '🛏️ Room Service',
-                location: 'Room 405 (Hotel Wing B)',
-                server: 'Clarissa G.',
+                channel: '🥡 Packed',
+                customer: 'Arjun Kumar',
+                phone: '9876543211',
+                email: 'arjun@example.com',
+                location: 'Counter 2',
                 amount: '₹ 420.80',
-                payment: 'Charged to Room',
+                payment: 'Paid',
                 status: 'preparing',
                 items: [
                     { name: 'Turkey Club Sandwich', qty: 1, status: 'preparing' },
@@ -41,9 +45,11 @@
             },
             {
                 id: '#43289',
-                channel: '🥡 Takeaway',
+                channel: '🥡 Packed',
+                customer: 'Walk-in Customer',
+                phone: 'N/A',
+                email: '',
                 location: 'Counter 1',
-                server: 'Self Service',
                 amount: '₹ 152.20',
                 payment: 'Paid (Cash)',
                 status: 'ready',
@@ -54,9 +60,11 @@
             },
             {
                 id: '#43288',
-                channel: '🍽️ Dine-in',
+                channel: '🍽️ Dining',
+                customer: 'Priya Verma',
+                phone: '9876543290',
+                email: 'priya@example.com',
                 location: 'Table 4 (Cafe Floor)',
-                server: 'Marcus V.',
                 amount: '₹ 884.40',
                 payment: 'Unpaid',
                 status: 'new',
@@ -135,21 +143,14 @@
                     :class="activeTab === 'dine-in' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
                     class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
                 >
-                    Dine-in
-                </button>
-                <button 
-                    @click="activeTab = 'room-service'; triggerSearch()"
-                    :class="activeTab === 'room-service' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
-                >
-                    Room Service
+                    Dining
                 </button>
                 <button 
                     @click="activeTab = 'takeaway'; triggerSearch()"
                     :class="activeTab === 'takeaway' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
                     class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
                 >
-                    Takeaway
+                    Packed
                 </button>
             </div>
 
@@ -193,10 +194,10 @@
                         <thead>
                             <tr class="border-b border-border text-[10px] font-bold text-muted uppercase tracking-wider">
                                 <th class="pb-3.5 pl-2">Order ID</th>
-                                <th class="pb-3.5">Channel</th>
+                                <th class="pb-3.5 hidden sm:table-cell">Channel</th>
                                 <th class="pb-3.5">Location</th>
-                                <th class="pb-3.5">Server</th>
-                                <th class="pb-3.5 text-center">Items</th>
+                                <th class="pb-3.5 hidden md:table-cell">Customer</th>
+                                <th class="pb-3.5 text-center hidden sm:table-cell">Items</th>
                                 <th class="pb-3.5">Total</th>
                                 <th class="pb-3.5">Status</th>
                             </tr>
@@ -206,21 +207,26 @@
                                 <tr 
                                     x-show="
                                         (activeTab === 'all' || 
-                                         (activeTab === 'dine-in' && o.channel.includes('Dine-in')) || 
-                                         (activeTab === 'room-service' && o.channel.includes('Room')) || 
-                                         (activeTab === 'takeaway' && o.channel.includes('Takeaway'))) &&
+                                         (activeTab === 'dine-in' && o.channel.includes('Dining')) || 
+                                         (activeTab === 'takeaway' && o.channel.includes('Packed'))) &&
                                         (statusFilter === 'all' || o.status === statusFilter) &&
-                                        (searchQuery === '' || o.id.toLowerCase().includes(searchQuery.toLowerCase()) || o.location.toLowerCase().includes(searchQuery.toLowerCase()))
+                                        (searchQuery === '' || o.id.toLowerCase().includes(searchQuery.toLowerCase()) || o.location.toLowerCase().includes(searchQuery.toLowerCase()) || o.customer.toLowerCase().includes(searchQuery.toLowerCase()))
                                     "
                                     @click="selectedOrderId = o.id"
                                     :class="selectedOrderId === o.id ? 'bg-orange/5 font-semibold' : 'hover:bg-card-tint/30'"
                                     class="cursor-pointer transition-all"
                                 >
                                     <td class="py-4 pl-2 font-bold text-orange text-xs" x-text="o.id"></td>
-                                    <td class="py-4 text-xs font-semibold text-muted" x-text="o.channel"></td>
+                                    <td class="py-4 text-xs font-semibold text-muted hidden sm:table-cell" x-text="o.channel"></td>
                                     <td class="py-4 text-xs text-ink" x-text="o.location"></td>
-                                    <td class="py-4 text-xs text-muted" x-text="o.server"></td>
-                                    <td class="py-4 text-xs text-muted text-center" x-text="o.items.length"></td>
+                                    <td class="py-4 text-xs text-muted hidden md:table-cell">
+                                        <div class="font-extrabold text-ink" x-text="o.customer"></div>
+                                        <div class="text-[10px] text-muted mt-0.5" x-text="o.phone"></div>
+                                        <template x-if="o.email">
+                                            <div class="text-[9px] text-orange font-bold mt-0.5" x-text="o.email"></div>
+                                        </template>
+                                    </td>
+                                    <td class="py-4 text-xs text-muted text-center hidden sm:table-cell" x-text="o.items.length"></td>
                                     <td class="py-4 font-bold text-ink text-xs" x-text="o.amount"></td>
                                     <td class="py-4">
                                         <span 
@@ -243,16 +249,38 @@
         </div>
 
         <!-- Right: Particular Item status Control Panel (Col-span 1) -->
-        <div class="lg:col-span-1">
+        <div 
+            class="lg:col-span-1"
+            :class="selectedOrderId ? 'fixed inset-0 z-50 flex items-end justify-center lg:static lg:z-auto lg:flex lg:items-start lg:justify-start bg-navy-deep/60 backdrop-blur-xs lg:bg-transparent lg:backdrop-blur-none p-4' : 'hidden lg:block'"
+            @click.self="selectedOrderId = null"
+        >
             <template x-if="selectedOrder">
-                <x-card class="p-5 space-y-5" variant="default">
+                <x-card class="p-5 space-y-5 w-full max-w-md lg:max-w-none shadow-2xl lg:shadow-none border border-border lg:border-none" variant="default">
                     <!-- Heading info -->
                     <div class="pb-3.5 border-b border-border flex justify-between items-start">
                         <div>
                             <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Active Ticket Detail</span>
                             <h3 class="text-sm font-extrabold text-ink block mt-0.5" x-text="selectedOrder.location"></h3>
+                            <!-- Customer Details inside details drawer -->
+                            <div class="mt-2.5 p-3 rounded-xl bg-card-tint border border-border/60 text-left">
+                                <span class="block text-[8px] font-bold text-muted uppercase tracking-wider">Customer Details</span>
+                                <h4 class="text-xs font-black text-ink mt-0.5" x-text="selectedOrder.customer"></h4>
+                                <span class="block text-[10px] text-muted mt-0.5" x-text="selectedOrder.phone"></span>
+                                <template x-if="selectedOrder.email">
+                                    <span class="block text-[9px] text-orange font-bold mt-0.5" x-text="selectedOrder.email"></span>
+                                </template>
+                            </div>
                         </div>
-                        <span class="text-xs font-black text-orange" x-text="selectedOrder.id"></span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-orange" x-text="selectedOrder.id"></span>
+                            <button 
+                                type="button"
+                                @click="selectedOrderId = null" 
+                                class="lg:hidden text-muted hover:text-ink font-bold text-sm cursor-pointer p-1"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Items list progress tracker -->

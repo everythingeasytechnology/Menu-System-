@@ -26,7 +26,12 @@ class SettingsController extends Controller
             'state' => 'Delhi',
             'district' => 'New Delhi',
             'pincode' => '110001',
+            'latitude' => '28.6304',
+            'longitude' => '77.2177',
             'gst_no' => '07AAAAA1111A1Z1',
+            'gst_enabled' => false,
+            'cgst' => 2.50,
+            'sgst' => 2.50,
         ]);
 
         $razorpay = RazorpaySetting::firstOrCreate([], [
@@ -57,6 +62,8 @@ class SettingsController extends Controller
             'state' => 'required|string|max:255',
             'district' => 'required|string|max:255',
             'pincode' => 'required|string|max:10',
+            'latitude' => 'nullable|string|max:100',
+            'longitude' => 'nullable|string|max:100',
             'gst_no' => 'nullable|string|max:50',
         ]);
 
@@ -157,5 +164,30 @@ class SettingsController extends Controller
         return redirect()->back()
             ->with('success', 'Password updated successfully!')
             ->with('active_tab', 'security');
+    }
+
+    /**
+     * Update GST settings.
+     */
+    public function updateGst(Request $request)
+    {
+        $validated = $request->validate([
+            'gst_no' => 'nullable|string|max:50',
+            'gst_enabled' => 'sometimes|boolean',
+            'cgst' => 'required|numeric|min:0|max:100',
+            'sgst' => 'required|numeric|min:0|max:100',
+        ]);
+
+        $business = BusinessSetting::firstOrCreate([]);
+        $business->update([
+            'gst_no' => $request->input('gst_no'),
+            'gst_enabled' => $request->has('gst_enabled') && $request->filled('gst_no'),
+            'cgst' => floatval($request->input('cgst')),
+            'sgst' => floatval($request->input('sgst')),
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'GST settings updated successfully!')
+            ->with('active_tab', 'gst');
     }
 }

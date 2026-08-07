@@ -67,6 +67,14 @@
             <span>Payment Gateways</span>
         </button>
         <button 
+            @click="activeTab = 'gst'"
+            :class="activeTab === 'gst' ? 'bg-white text-ink shadow-sm font-bold border border-border/30' : 'text-muted hover:text-ink font-semibold'"
+            class="rounded-lg px-5 py-2.5 text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-2"
+        >
+            <span>📜</span>
+            <span>GST Settings</span>
+        </button>
+        <button 
             @click="activeTab = 'security'"
             :class="activeTab === 'security' ? 'bg-white text-ink shadow-sm font-bold border border-border/30' : 'text-muted hover:text-ink font-semibold'"
             class="rounded-lg px-5 py-2.5 text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-2"
@@ -329,6 +337,33 @@
                         </div>
                     </div>
 
+                    <!-- Latitude & Longitude Coordinates -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/40">
+                        <!-- Latitude -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">Latitude</label>
+                            <input 
+                                type="text" 
+                                name="latitude" 
+                                value="{{ old('latitude', $business->latitude) }}"
+                                placeholder="28.6304"
+                                class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                            >
+                        </div>
+
+                        <!-- Longitude -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">Longitude</label>
+                            <input 
+                                type="text" 
+                                name="longitude" 
+                                value="{{ old('longitude', $business->longitude) }}"
+                                placeholder="77.2177"
+                                class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                            >
+                        </div>
+                    </div>
+
                     <!-- Submit Button -->
                     <div class="flex justify-end pt-4 border-t border-border">
                         <button 
@@ -551,6 +586,150 @@
                             class="rounded-xl bg-orange hover:bg-orange/95 px-5 py-3 text-xs font-bold text-white shadow-md shadow-orange/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                         >
                             Change Password
+                        </button>
+                    </div>
+                </form>
+            </x-card>
+        </div>
+
+        <!-- 4. GST BILLING TAB -->
+        <div x-show="activeTab === 'gst'" x-transition:enter="transition ease-out duration-200" class="space-y-6" style="display: none;">
+            <x-card>
+                <div class="pb-5 border-b border-border mb-6">
+                    <h2 class="text-base font-bold text-ink flex items-center gap-2">
+                        <span>📜</span> GST & Tax Configuration
+                    </h2>
+                    <p class="text-xs text-muted mt-1">Configure your GST identification number and enable tax breakdowns for customer billing.</p>
+                </div>
+
+                @if ($errors->any() && session('active_tab') === 'gst')
+                    <div class="mb-6 p-4 bg-danger/10 border border-danger/25 rounded-xl text-danger text-xs font-semibold space-y-1">
+                        <p class="font-bold">Please correct the following errors:</p>
+                        <ul class="list-disc pl-5 space-y-0.5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('settings.gst') }}" method="POST" class="space-y-6" x-data="{ gstNo: '{{ old('gst_no', $business->gst_no) }}', gstEnabled: {{ old('gst_enabled', $business->gst_enabled) ? 'true' : 'false' }}, cgstInput: {{ old('cgst', $business->cgst ?? 2.50) }}, sgstInput: {{ old('sgst', $business->sgst ?? 2.50) }} }">
+                    @csrf
+                    
+                    <!-- Warning message if GST is blank -->
+                    <div 
+                        x-show="gstNo.trim() === ''" 
+                        x-transition:enter="transition ease-out duration-200"
+                        class="p-4 rounded-xl bg-orange/5 border border-orange/15 text-orange flex items-start gap-3"
+                    >
+                        <span class="text-base shrink-0">⚠️</span>
+                        <div class="space-y-1">
+                            <p class="text-xs font-bold">Please enter your GST number</p>
+                            <p class="text-[10px] text-orange/90">A valid GST Identification Number (GSTIN) is required to enable automated tax calculations and activate tax billing on order invoices.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- GST Number Input -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">GST Identification Number (GSTIN)</label>
+                            <input 
+                                type="text" 
+                                name="gst_no" 
+                                x-model="gstNo"
+                                placeholder="e.g. 07AAAAA1111A1Z1"
+                                class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                            >
+                            <p class="text-[10px] text-muted">A valid 15-digit GSTIN is required to enable automated tax calculations.</p>
+                        </div>
+
+                        <!-- Enable GST Toggle Switch -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">GST Billing Status</label>
+                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-card-tint border border-border/60">
+                                <div class="space-y-0.5">
+                                    <span class="block text-xs font-bold text-ink">Enable GST Billing</span>
+                                    <span class="block text-[10px] text-muted">Apply tax rate to all order invoices</span>
+                                </div>
+                                <button 
+                                    type="button"
+                                    @click="if (gstNo.trim() !== '') { gstEnabled = !gstEnabled } else { alert('Please enter a GSTIN first to enable tax billing.') }"
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                    :class="gstEnabled && gstNo.trim() !== '' ? 'bg-orange' : 'bg-slate-300'"
+                                >
+                                    <input type="hidden" name="gst_enabled" :value="gstEnabled && gstNo.trim() !== '' ? '1' : '0'">
+                                    <span 
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+                                        :class="gstEnabled && gstNo.trim() !== '' ? 'translate-x-5' : 'translate-x-0'"
+                                    ></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CGST & SGST Input Box Fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/40">
+                        <!-- CGST Input -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">Central GST (CGST %)</label>
+                            <input 
+                                type="number" 
+                                name="cgst" 
+                                step="0.01"
+                                x-model="cgstInput"
+                                required
+                                placeholder="2.50"
+                                class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                            >
+                            <p class="text-[10px] text-muted">Enter CGST rate (usually 2.5% for general F&B tax structures).</p>
+                        </div>
+
+                        <!-- SGST Input -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-ink uppercase tracking-wider">State GST (SGST %)</label>
+                            <input 
+                                type="number" 
+                                name="sgst" 
+                                step="0.01"
+                                x-model="sgstInput"
+                                required
+                                placeholder="2.50"
+                                class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                            >
+                            <p class="text-[10px] text-muted">Enter SGST rate (usually 2.5% for general F&B tax structures).</p>
+                        </div>
+                    </div>
+
+                    <!-- GST Rates Breakup Box (Shows when enabled) -->
+                    <div 
+                        x-show="gstEnabled && gstNo.trim() !== ''" 
+                        x-transition:enter="transition ease-out duration-200" 
+                        class="p-4 rounded-xl bg-orange/5 border border-orange/10 space-y-3"
+                    >
+                        <span class="block text-[10px] font-extrabold text-orange uppercase tracking-wider">📊 Active GST Rate Breakdown</span>
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div class="bg-card border border-border/60 p-3 rounded-lg shadow-xs">
+                                <span class="block text-[8px] font-bold text-muted uppercase">Central GST (CGST)</span>
+                                <span class="block text-base font-black text-ink mt-0.5" x-text="parseFloat(cgstInput || 0).toFixed(2) + '%'"></span>
+                            </div>
+                            <div class="bg-card border border-border/60 p-3 rounded-lg shadow-xs">
+                                <span class="block text-[8px] font-bold text-muted uppercase">State GST (SGST)</span>
+                                <span class="block text-base font-black text-ink mt-0.5" x-text="parseFloat(sgstInput || 0).toFixed(2) + '%'"></span>
+                            </div>
+                            <div class="bg-card border border-orange/20 p-3 rounded-lg shadow-xs">
+                                <span class="block text-[8px] font-bold text-orange uppercase">Total GST Rate</span>
+                                <span class="block text-base font-black text-orange mt-0.5" x-text="(parseFloat(cgstInput || 0) + parseFloat(sgstInput || 0)).toFixed(2) + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end pt-4 border-t border-border">
+                        <button 
+                            type="submit"
+                            class="rounded-xl bg-orange hover:bg-orange/95 px-5 py-3 text-xs font-bold text-white shadow-md shadow-orange/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                        >
+                            Save Tax Configurations
                         </button>
                     </div>
                 </form>

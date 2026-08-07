@@ -48,6 +48,8 @@ class SettingsTest extends TestCase
             'state' => 'Delhi',
             'district' => 'Central City',
             'pincode' => '999999',
+            'latitude' => '28.6304',
+            'longitude' => '77.2177',
             'gst_no' => '22AAAAA1111A1Z1',
         ];
 
@@ -59,6 +61,8 @@ class SettingsTest extends TestCase
         $this->assertDatabaseHas('business_settings', [
             'brand_name' => 'New Brand Name',
             'business_email' => 'newbrand@example.com',
+            'latitude' => '28.6304',
+            'longitude' => '77.2177',
         ]);
 
         $business = BusinessSetting::first();
@@ -132,5 +136,30 @@ class SettingsTest extends TestCase
 
         $user->refresh();
         $this->assertTrue(Hash::check('new_secure_password_123', $user->password));
+    }
+
+    /**
+     * Test updating GST billing configurations.
+     */
+    public function test_can_update_gst_settings(): void
+    {
+        $data = [
+            'gst_no' => '07BBBBB2222B2Z2',
+            'gst_enabled' => '1',
+            'cgst' => '1.50',
+            'sgst' => '3.50',
+        ];
+
+        $response = $this->post('/settings/gst', $data);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'GST settings updated successfully!');
+
+        $this->assertDatabaseHas('business_settings', [
+            'gst_no' => '07BBBBB2222B2Z2',
+            'gst_enabled' => true,
+            'cgst' => 1.50,
+            'sgst' => 3.50,
+        ]);
     }
 }

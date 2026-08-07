@@ -19,6 +19,17 @@ class BusinessSetting extends Model
         'state',
         'district',
         'pincode',
+        'latitude',
+        'longitude',
         'gst_no',
+        'gst_enabled',
+        'cgst',
+        'sgst',
+    ];
+
+    protected $casts = [
+        'gst_enabled' => 'boolean',
+        'cgst' => 'float',
+        'sgst' => 'float',
     ];
 }

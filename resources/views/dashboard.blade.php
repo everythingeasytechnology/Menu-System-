@@ -7,11 +7,11 @@
     x-data="{
         activeTab: 'all',
         orders: [
-            { id: 'KFC1256', customer: 'Rahul Sharma', phone: '9876543210', address: '12, Block H, Connaught Place, New Delhi - 110001', type: 'delivery', items: ['1 x 8 Pc Hot & Crispy', '1 x Pepsi (1.25 L)'], extra: 2, amount: '₹ 485', paymentStatus: 'Online Paid', status: 'preparing', time: '11:42 AM', elapsed: '2 mins ago' },
-            { id: 'KFC1255', customer: 'Table 4', phone: '2 People', address: '', type: 'dine-in', items: ['1 x Zinger Burger', '1 x Chicken Popcorn (Large)'], extra: 1, amount: '₹ 395', paymentStatus: 'Paid', method: 'Cash', status: 'preparing', time: '11:39 AM', elapsed: '3 mins ago' },
-            { id: 'KFC1254', customer: 'Walk-in Customer', phone: 'N/A', address: '', type: 'takeaway', items: ['1 x 6 Pc Hot Wings', '1 x Pepsi (600ml)'], extra: 0, amount: '₹ 325', paymentStatus: 'Paid', method: 'UPI', status: 'ready', time: '11:37 AM', elapsed: '5 mins ago' },
-            { id: 'KFC1253', customer: 'Priya Verma', phone: '9876543290', address: 'B-23, Defence Colony, New Delhi - 110024', type: 'delivery', items: ['1 x 5 in 1 Rice Bowl', '1 x Pepsi (1.25 L)'], extra: 1, amount: '₹ 450', paymentStatus: 'Online Paid', status: 'delivery', time: '11:33 AM', elapsed: '8 mins ago' },
-            { id: 'KFC1252', customer: 'Table 7', phone: '4 People', address: '', type: 'dine-in', items: ['1 x Smoky Red Bucket', '2 x Garlic Bread'], extra: 0, amount: '₹ 760', paymentStatus: 'Paid', method: 'Card', status: 'ready', time: '11:30 AM', elapsed: '10 mins ago' }
+            { id: 'KFC1256', customer: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com', type: 'packed', items: ['1 x 8 Pc Hot & Crispy', '1 x Pepsi (1.25 L)'], extra: 2, amount: '₹ 485', paymentStatus: 'Online Paid', status: 'preparing', time: '11:42 AM', elapsed: '2 mins ago' },
+            { id: 'KFC1255', customer: 'Table 4', phone: '2 People', email: '', type: 'dine-in', items: ['1 x Zinger Burger', '1 x Chicken Popcorn (Large)'], extra: 1, amount: '₹ 395', paymentStatus: 'Paid', method: 'Cash', status: 'preparing', time: '11:39 AM', elapsed: '3 mins ago' },
+            { id: 'KFC1254', customer: 'Walk-in Customer', phone: 'N/A', email: '', type: 'packed', items: ['1 x 6 Pc Hot Wings', '1 x Pepsi (600ml)'], extra: 0, amount: '₹ 325', paymentStatus: 'Paid', method: 'UPI', status: 'ready', time: '11:37 AM', elapsed: '5 mins ago' },
+            { id: 'KFC1253', customer: 'Priya Verma', phone: '9876543290', email: 'priya@example.com', type: 'packed', items: ['1 x 5 in 1 Rice Bowl', '1 x Pepsi (1.25 L)'], extra: 1, amount: '₹ 450', paymentStatus: 'Online Paid', status: 'ready', time: '11:33 AM', elapsed: '8 mins ago' },
+            { id: 'KFC1252', customer: 'Table 7', phone: '4 People', email: '', type: 'dine-in', items: ['1 x Smoky Red Bucket', '2 x Garlic Bread'], extra: 0, amount: '₹ 760', paymentStatus: 'Paid', method: 'Card', status: 'ready', time: '11:30 AM', elapsed: '10 mins ago' }
         ],
         changeStatus(id, nextStatus) {
             let o = this.orders.find(x => x.id === id);
@@ -35,68 +35,68 @@
         </button>
     </div>
 
-    <!-- Business KPI Metric Cards (No SVGs, No Growth Badges) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <!-- Business KPI Metric Cards (Responsive, Auto-expanding Grid) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <!-- KPI 1: Today's Orders -->
-        <x-card variant="default" class="p-4 flex flex-col justify-between h-20">
+        <x-card variant="default" class="p-4 flex flex-col justify-between min-h-[88px]">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange/10 text-orange">🛍️</span>
                     <div>
                         <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Today's Orders</span>
-                        <h3 class="text-2xl font-black text-ink mt-0.5">124</h3>
+                        <h3 class="text-2xl font-black text-ink mt-0.5 whitespace-nowrap">124</h3>
                     </div>
                 </div>
             </div>
         </x-card>
 
         <!-- KPI 2: Today's Sales -->
-        <x-card variant="default" class="p-4 flex flex-col justify-between h-20">
+        <x-card variant="default" class="p-4 flex flex-col justify-between min-h-[88px]">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange/10 text-orange">₹</span>
                     <div>
                         <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Today's Sales</span>
-                        <h3 class="text-2xl font-black text-ink mt-0.5">₹ 45,680</h3>
+                        <h3 class="text-2xl font-black text-ink mt-0.5 whitespace-nowrap">₹ 45,680</h3>
                     </div>
                 </div>
             </div>
         </x-card>
 
         <!-- KPI 3: Average Order Value -->
-        <x-card variant="default" class="p-4 flex flex-col justify-between h-20">
+        <x-card variant="default" class="p-4 flex flex-col justify-between min-h-[88px]">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange/10 text-orange">🛒</span>
                     <div>
-                        <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Average Order Value</span>
-                        <h3 class="text-2xl font-black text-ink mt-0.5">₹ 368</h3>
+                        <span class="text-[10px] font-bold text-muted uppercase tracking-wider block font-semibold leading-tight">Average Order Value</span>
+                        <h3 class="text-2xl font-black text-ink mt-0.5 whitespace-nowrap">₹ 368</h3>
                     </div>
                 </div>
             </div>
         </x-card>
 
         <!-- KPI 4: Completed Orders -->
-        <x-card variant="default" class="p-4 flex flex-col justify-between h-20">
+        <x-card variant="default" class="p-4 flex flex-col justify-between min-h-[88px]">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange/10 text-orange">📈</span>
                     <div>
                         <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Completed Orders</span>
-                        <h3 class="text-2xl font-black text-ink mt-0.5">102</h3>
+                        <h3 class="text-2xl font-black text-ink mt-0.5 whitespace-nowrap">102</h3>
                     </div>
                 </div>
             </div>
         </x-card>
 
         <!-- KPI 5: Pending Orders -->
-        <x-card variant="default" class="p-4 flex flex-col justify-between h-20">
+        <x-card variant="default" class="p-4 flex flex-col justify-between min-h-[88px]">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange/10 text-orange">⏳</span>
                     <div>
                         <span class="text-[10px] font-bold text-muted uppercase tracking-wider block">Pending Orders</span>
-                        <h3 class="text-2xl font-black text-ink mt-0.5">12</h3>
+                        <h3 class="text-2xl font-black text-ink mt-0.5 whitespace-nowrap">12</h3>
                     </div>
                 </div>
             </div>
@@ -130,22 +130,21 @@
                     <template x-for="o in orders" :key="o.id">
                         <div 
                             x-show="activeTab === 'all' || o.status === activeTab"
-                            class="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3.5 gap-4 hover:bg-card-tint/40 transition-all rounded-lg px-2"
+                            class="flex flex-col xl:flex-row items-start xl:items-center justify-between py-3.5 gap-4 hover:bg-card-tint/40 transition-all rounded-lg px-2"
                         >
                             <!-- Col 1: Order ID & Channel -->
-                            <div class="w-24 shrink-0 space-y-1">
+                            <div class="w-full xl:w-24 shrink-0 space-y-1">
                                 <span class="text-xs font-black text-orange block" x-text="`#${o.id}`"></span>
                                 <span class="text-[9px] text-muted block" x-text="o.time"></span>
                                 
                                 <span 
                                     class="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded"
                                     :class="{
-                                        'bg-orange/10 text-orange': o.type === 'delivery',
                                         'bg-teal/10 text-teal': o.type === 'dine-in',
-                                        'bg-success/10 text-success': o.type === 'takeaway'
+                                        'bg-orange/10 text-orange': o.type === 'packed'
                                     }"
                                 >
-                                    <span x-text="o.type === 'delivery' ? '🛵 Delivery' : (o.type === 'dine-in' ? '🍽️ Dine In' : '🥡 Takeaway')"></span>
+                                    <span x-text="o.type === 'dine-in' ? '🍽️ Dining' : '🥡 Packed'"></span>
                                 </span>
                             </div>
 
@@ -153,11 +152,13 @@
                             <div class="flex-1 min-w-0 space-y-0.5">
                                 <h4 class="text-xs font-black text-ink truncate" x-text="o.customer"></h4>
                                 <span class="text-[10px] text-muted block" x-text="o.phone"></span>
-                                <p class="text-[10px] text-muted truncate leading-relaxed max-w-[200px]" x-text="o.address"></p>
+                                <template x-if="o.email">
+                                    <span class="text-[9px] text-orange/95 font-bold block truncate" x-text="o.email"></span>
+                                </template>
                             </div>
 
                             <!-- Col 3: Items list previews -->
-                            <div class="w-40 shrink-0 space-y-1 text-left">
+                            <div class="w-full xl:w-40 shrink-0 space-y-1 text-left">
                                 <div class="space-y-0.5">
                                     <template x-for="item in o.items">
                                         <span class="block text-[10px] text-slate-700 font-semibold truncate" x-text="`• ${item}`"></span>
@@ -169,7 +170,7 @@
                             </div>
 
                             <!-- Col 4: Amount & Payments -->
-                            <div class="w-20 shrink-0 text-left space-y-0.5">
+                            <div class="w-full xl:w-20 shrink-0 text-left space-y-0.5">
                                 <span class="text-xs font-black text-ink block" x-text="o.amount"></span>
                                 <span class="text-[8px] font-bold text-teal block" x-text="o.paymentStatus"></span>
                                 <template x-if="o.method">
@@ -178,7 +179,7 @@
                             </div>
 
                             <!-- Col 5: Status pill & elapsed time -->
-                            <div class="w-32 shrink-0 flex items-center justify-between gap-2.5">
+                            <div class="w-full xl:w-32 shrink-0 flex items-center justify-between gap-2.5">
                                 <div>
                                     <span 
                                         class="inline-flex items-center rounded-lg px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider"

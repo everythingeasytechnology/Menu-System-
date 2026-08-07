@@ -4,169 +4,71 @@
 
 @section('content')
 <div 
-    x-data="{
-        activeFloor: 'dining-hall',
-        drawerOpen: false,
-        selectedTableId: 'T01',
-        createModalOpen: false,
-        statusFilter: 'all',
-
-        // Create Service Point Form Model
-        newId: '',
-        newName: '',
-        newFloor: 'dining-hall',
-        newSeats: 4,
-        newShape: 'rect',
-        newWaiter: 'Marcus V.',
-        
-        tables: [
-            // Dining Hall
-            { id: 'T01', name: 'Table 1', floor: 'dining-hall', seats: 2, occupiedSeats: 0, shape: 'round', status: 'available', waiter: 'Marcus V.', order: null, amount: '₹ 0', items: [] },
-            { id: 'T02', name: 'Table 2', floor: 'dining-hall', seats: 4, occupiedSeats: 3, shape: 'rect', status: 'occupied', waiter: 'Marcus V.', order: '#KFC1255', amount: '₹ 395', items: ['1x Zinger Burger', '1x Popcorn (L)'] },
-            { id: 'T03', name: 'Table 3', floor: 'dining-hall', seats: 4, occupiedSeats: 4, shape: 'rect', status: 'occupied', waiter: 'Clarissa G.', order: '#KFC1252', amount: '₹ 760', items: ['1x Smoky Red Bucket', '2x Garlic Bread'] },
-            { id: 'T04', name: 'Table 4', floor: 'dining-hall', seats: 6, occupiedSeats: 5, shape: 'rect', status: 'bill-pending', waiter: 'Marcus V.', order: '#KFC1250', amount: '₹ 1,230', items: ['2x Hot & Crispy Bucket', '3x Pepsi'] },
-            { id: 'T05', name: 'Table 5', floor: 'dining-hall', seats: 2, occupiedSeats: 0, shape: 'round', status: 'available', waiter: 'Hostess Kelly', order: null, amount: '₹ 0', items: [] },
-            { id: 'T06', name: 'Table 6', floor: 'dining-hall', seats: 8, occupiedSeats: 0, shape: 'rect', status: 'available', waiter: 'Clarissa G.', order: null, amount: '₹ 0', items: [] },
-
-            // Terrace Cafe
-            { id: 'TC1', name: 'Terrace 1', floor: 'cafe-terrace', seats: 2, occupiedSeats: 2, shape: 'round', status: 'occupied', waiter: 'Elena R.', order: null, amount: '₹ 410', items: ['2x Frappuccino', '1x Butter Croissant'] },
-            { id: 'TC2', name: 'Terrace 2', floor: 'cafe-terrace', seats: 2, occupiedSeats: 0, shape: 'round', status: 'available', waiter: 'Elena R.', order: null, amount: '₹ 0', items: [] },
-            { id: 'TC3', name: 'Terrace 3', floor: 'cafe-terrace', seats: 4, occupiedSeats: 0, shape: 'rect', status: 'available', waiter: 'Hostess Kelly', order: null, amount: '₹ 0', items: [] },
-            
-            // Lounge Cabanas
-            { id: 'C01', name: 'Cabana 1', floor: 'lounge-cabanas', seats: 6, occupiedSeats: 6, shape: 'rect', status: 'occupied', waiter: 'Vikram S.', order: null, amount: '₹ 2,450', items: ['3x Pitcher Mojito', '2x Platter Wings'] },
-            { id: 'C02', name: 'Cabana 2', floor: 'lounge-cabanas', seats: 6, occupiedSeats: 0, shape: 'rect', status: 'available', waiter: 'Vikram S.', order: null, amount: '₹ 0', items: [] },
-
-            // Hotel Wing A Rooms
-            { id: 'R301', name: 'Room 301', floor: 'hotel-wing-a', seats: 2, occupiedSeats: 0, shape: 'bed', status: 'available', waiter: 'Housekeeping', order: null, amount: '₹ 0', items: [] },
-            { id: 'R302', name: 'Room 302', floor: 'hotel-wing-a', seats: 4, occupiedSeats: 4, shape: 'bed', status: 'occupied', waiter: 'Room Service', order: '#KFC1238', amount: '₹ 740', items: ['2x Seafood Fettuccine', '1x Garlic Bread'] },
-            { id: 'R303', name: 'Room 303', floor: 'hotel-wing-a', seats: 2, occupiedSeats: 0, shape: 'bed', status: 'available', waiter: 'Front Desk', order: null, amount: '₹ 0', items: [] }
-        ],
-
-        get selectedTable() {
-            return this.tables.find(t => t.id === this.selectedTableId);
-        },
-
-        get stats() {
-            let activeList = this.tables.filter(t => t.floor === this.activeFloor);
-            return {
-                total: activeList.length,
-                available: activeList.filter(t => t.status === 'available').length,
-                occupied: activeList.filter(t => t.status === 'occupied' || t.status === 'bill-pending').length,
-                seatingCapacity: activeList.reduce((acc, t) => acc + t.seats, 0)
-            };
-        },
-
-        selectTable(id) {
-            this.selectedTableId = id;
-            this.drawerOpen = true;
-        },
-
-        addMockItem(itemName, price) {
-            let t = this.selectedTable;
-            if (t) {
-                if (t.status === 'available') {
-                    t.status = 'occupied';
-                    t.order = '#KFC' + Math.floor(Math.random() * 8000 + 1000);
-                }
-                t.items.push('1x ' + itemName);
-                let currentNum = parseInt(t.amount.replace(/[^0-9]/g, '')) || 0;
-                t.amount = '₹ ' + (currentNum + price);
-            }
-        },
-
-        createServicePoint() {
-            if (!this.newId) {
-                alert('Please enter a unique Room / Service Point ID.');
-                return;
-            }
-            // Check uniqueness
-            if (this.tables.find(t => t.id === this.newId)) {
-                alert('ID already exists. Please use a unique Code.');
-                return;
-            }
-
-            // Auto-detect shape/type if hotel zone is chosen
-            let shape = this.newShape;
-            if (this.newFloor === 'hotel-wing-a') {
-                shape = 'bed';
-            }
-
-            this.tables.push({
-                id: this.newId,
-                name: this.newName || ((this.newFloor === 'hotel-wing-a' ? 'Room ' : 'Table ') + this.newId),
-                floor: this.newFloor,
-                seats: parseInt(this.newSeats),
-                occupiedSeats: 0,
-                shape: shape,
-                status: 'available',
-                waiter: this.newFloor === 'hotel-wing-a' ? 'Room Service' : this.newWaiter,
-                order: null,
-                amount: '₹ 0',
-                items: []
-            });
-            
-            // Switch view automatically to show the created zone
-            this.activeFloor = this.newFloor;
-
-            // Reset form
-            this.newId = '';
-            this.newName = '';
-            this.createModalOpen = false;
-        }
-    }"
+    x-data="servicePointManager({
+        initialPoints: {{ $points->toJson() }},
+        initialCategories: {{ json_encode($categories) }}
+    })"
     class="space-y-6"
 >
-    <!-- Page Header & Floor Tabs Switcher -->
+    <!-- Floating Success Toast -->
+    @if(session('success'))
+    <div 
+        x-data="{ show: true }"
+        x-show="show"
+        x-init="setTimeout(() => show = false, 4000)"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        class="fixed bottom-5 right-5 z-50 flex items-center gap-3 bg-navy-deep border border-orange/20 text-white px-5 py-4 rounded-xl shadow-xl max-w-sm"
+    >
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange/20 text-orange">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <div class="flex-1">
+            <p class="text-xs font-bold text-white">Service Points Notification</p>
+            <p class="text-[11px] text-slate-300 mt-0.5">{{ session('success') }}</p>
+        </div>
+        <button @click="show = false" class="text-muted hover:text-white transition-colors cursor-pointer">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    @endif
+
+    <!-- Page Header & Zone switcher -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <h1 class="text-xl font-bold tracking-tight text-ink">Service Points Map</h1>
-            <p class="text-xs text-muted mt-0.5">Live status, geometric table & room layouts, and direct order links.</p>
+            <p class="text-xs text-muted mt-0.5">Live status, room layouts, and direct order links.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
-            <!-- Section / Floor Switcher -->
-            <div class="flex items-center gap-1 bg-card-tint border border-border p-1 rounded-xl">
-                <button 
-                    @click="activeFloor = 'dining-hall'"
-                    :class="activeFloor === 'dining-hall' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="rounded px-3 py-1.5 text-[10px] cursor-pointer transition-all"
-                >
-                    Main Dining Hall
-                </button>
-                <button 
-                    @click="activeFloor = 'cafe-terrace'"
-                    :class="activeFloor === 'cafe-terrace' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="rounded px-3 py-1.5 text-[10px] cursor-pointer transition-all"
-                >
-                    Terrace Cafe
-                </button>
-                <button 
-                    @click="activeFloor = 'lounge-cabanas'"
-                    :class="activeFloor === 'lounge-cabanas' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="rounded px-3 py-1.5 text-[10px] cursor-pointer transition-all"
-                >
-                    Lounge Cabanas
-                </button>
-                <button 
-                    @click="activeFloor = 'hotel-wing-a'"
-                    :class="activeFloor === 'hotel-wing-a' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="rounded px-3 py-1.5 text-[10px] cursor-pointer transition-all"
-                >
-                    🏨 Hotel Wing A
-                </button>
-            </div>
+            <!-- Zone Switcher (Dynamic Categories) -->
+            <template x-if="categories.length > 0">
+                <div class="flex items-center gap-1 bg-card-tint border border-border p-1 rounded-xl">
+                    <template x-for="cat in categories" :key="cat">
+                        <button 
+                            @click="activeFloor = cat"
+                            :class="activeFloor === cat ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
+                            class="rounded-lg px-3.5 py-1.5 text-[10px] cursor-pointer transition-all"
+                            x-text="cat"
+                        ></button>
+                    </template>
+                </div>
+            </template>
 
-            <!-- Status Filter Dropdown -->
+            <!-- Status Filter -->
             <select x-model="statusFilter" class="rounded-xl border border-border bg-card px-3 py-1.5 text-[10px] font-bold text-ink outline-none cursor-pointer">
                 <option value="all">All Statuses</option>
                 <option value="available">Only Vacant</option>
                 <option value="occupied">Only Occupied</option>
             </select>
 
-            <!-- Create Service Point Trigger Button -->
+            <!-- Trigger Button -->
             <button 
-                @click="createModalOpen = true"
+                @click="openCreateModal()"
                 class="rounded-xl bg-orange hover:bg-orange/95 px-4.5 py-2 text-xs font-bold text-white shadow-md shadow-orange/20 cursor-pointer active:scale-95 transition-all"
             >
                 + Add Point / Room
@@ -174,43 +76,43 @@
         </div>
     </div>
 
-    <!-- Active Zone Statistics Header Roster -->
+    <!-- Stats roster -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between shadow-xs">
             <div>
-                <span class="text-[9px] font-bold text-muted uppercase" x-text="activeFloor === 'hotel-wing-a' ? 'Total Rooms' : 'Total Tables'">Total Service Points</span>
+                <span class="text-[9px] font-bold text-muted uppercase">Total Points</span>
                 <h4 class="text-base font-black text-ink mt-0.5" x-text="stats.total">0</h4>
             </div>
             <span class="text-xs">🗺️</span>
         </div>
         <div class="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between shadow-xs">
             <div>
-                <span class="text-[9px] font-bold text-muted uppercase" x-text="activeFloor === 'hotel-wing-a' ? 'Vacant' : 'Available'">Available</span>
+                <span class="text-[9px] font-bold text-muted uppercase">Available</span>
                 <h4 class="text-base font-black text-teal mt-0.5" x-text="stats.available">0</h4>
             </div>
             <span class="text-xs">🟢</span>
         </div>
         <div class="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between shadow-xs">
             <div>
-                <span class="text-[9px] font-bold text-muted uppercase" x-text="activeFloor === 'hotel-wing-a' ? 'Checked In' : 'Occupied'">Occupied</span>
+                <span class="text-[9px] font-bold text-muted uppercase">Occupied</span>
                 <h4 class="text-base font-black text-orange mt-0.5" x-text="stats.occupied">0</h4>
             </div>
             <span class="text-xs">🟠</span>
         </div>
         <div class="bg-card border border-border rounded-xl p-3.5 flex items-center justify-between shadow-xs col-span-2 lg:col-span-1">
             <div>
-                <span class="text-[9px] font-bold text-muted uppercase" x-text="activeFloor === 'hotel-wing-a' ? 'Room Capacity' : 'Seating Capacity'">Seating Capacity</span>
-                <h4 class="text-base font-black text-ink mt-0.5" x-text="`${stats.seatingCapacity} Pax`">0 Pax</h4>
+                <span class="text-[9px] font-bold text-muted uppercase">Total Capacity</span>
+                <h4 class="text-base font-black text-ink mt-0.5" x-text="`${stats.capacity} Pax`">0 Pax</h4>
             </div>
             <span class="text-xs">🪑</span>
         </div>
     </div>
 
-    <!-- Status Legend -->
+    <!-- Legend -->
     <div class="flex flex-wrap gap-3.5 text-[9px] font-bold text-ink uppercase tracking-wider">
         <div class="flex items-center gap-1.5 rounded-lg bg-card border border-border px-2.5 py-1.5 shadow-xs">
             <span class="w-2.5 h-2.5 rounded-full bg-border border border-slate-300"></span>
-            <span x-text="activeFloor === 'hotel-wing-a' ? 'Vacant / Available' : 'Available'">Available</span>
+            <span>Available</span>
         </div>
         <div class="flex items-center gap-1.5 rounded-lg bg-card border border-border px-2.5 py-1.5 shadow-xs">
             <span class="w-2.5 h-2.5 rounded-full bg-orange animate-pulse"></span>
@@ -218,81 +120,77 @@
         </div>
         <div class="flex items-center gap-1.5 rounded-lg bg-card border border-border px-2.5 py-1.5 shadow-xs">
             <span class="w-2.5 h-2.5 rounded-full bg-warning"></span>
-            <span x-text="activeFloor === 'hotel-wing-a' ? 'Service Pending' : 'Bill Pending'">Bill Pending</span>
+            <span>Bill Pending</span>
         </div>
     </div>
 
-    <!-- Visual Interactive Roster floor layout of Tables & Rooms -->
+    <!-- Empty Categories Placeholder -->
+    <template x-if="categories.length === 0">
+        <div class="bg-card border border-border rounded-card p-12 text-center text-xs text-muted flex flex-col items-center justify-center gap-3">
+            <span class="text-3xl">🗺️</span>
+            <span class="font-bold text-sm text-ink">No Service Points Found</span>
+            <span>Please create your first service point / room to populate custom zones.</span>
+            <button @click="openCreateModal()" class="rounded-xl bg-orange text-white px-4 py-2 font-bold mt-2">Create Point</button>
+        </div>
+    </template>
+
+    <!-- Grid of Tables/Rooms -->
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
         <template x-for="t in tables" :key="t.id">
             <div 
                 x-show="
-                    t.floor === activeFloor && 
+                    t.category === activeFloor && 
                     (statusFilter === 'all' || 
                      (statusFilter === 'available' && t.status === 'available') || 
                      (statusFilter === 'occupied' && (t.status === 'occupied' || t.status === 'bill-pending')))
                 "
-                @click="selectTable(t.id)"
-                class="rounded-xl border bg-card p-4.5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all flex flex-col justify-between h-48 select-none relative overflow-hidden"
+                class="rounded-xl border bg-card p-4.5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all flex flex-col justify-between h-48 select-none relative overflow-hidden group"
                 :class="{
                     'border-border hover:border-slate-400': t.status === 'available',
                     'border-orange/20 bg-orange/[0.01] hover:border-orange/40': t.status === 'occupied',
                     'border-warning/30 bg-warning/[0.01] hover:border-warning/50': t.status === 'bill-pending'
                 }"
+                @click="selectTable(t.id)"
             >
                 <!-- Card Header -->
                 <div class="flex justify-between items-start">
-                    <div>
-                        <span class="text-xs font-black text-ink" x-text="t.name"></span>
-                        <span class="block text-[8px] text-muted mt-0.5" x-text="`Staff: ${t.waiter}`"></span>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-xs font-black text-ink block truncate" x-text="t.name"></span>
+                        <span class="block text-[8px] text-slate-400 font-bold uppercase mt-0.5" x-text="t.code"></span>
                     </div>
-                    <span class="text-[8px] font-bold text-muted bg-card-tint border border-border px-1.5 py-0.5 rounded-md" x-text="`${t.seats} Pax`"></span>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <span class="text-[8px] font-bold text-muted bg-card-tint border border-border px-1.5 py-0.5 rounded-md" x-text="`${t.seats} Pax`"></span>
+                        <!-- Delete Button -->
+                        <button 
+                            @click.stop="deletePoint(t)"
+                            class="p-1 rounded text-slate-300 hover:text-danger hover:bg-danger/5 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                            title="Delete Service Point"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Geometric Seating or Bed layout -->
+                <!-- Generic Visual Center Indicator (Hides table shape / bed layout) -->
                 <div class="my-3 flex items-center justify-center h-16">
-                    <div class="relative flex items-center justify-center">
+                    <div 
+                        :class="t.status === 'available' ? 'bg-card-tint border-border text-slate-400' : 'bg-orange/10 border-orange text-orange'"
+                        class="h-12 w-12 rounded-xl border-2 flex items-center justify-center text-xl font-bold shadow-xs relative"
+                    >
+                        <!-- Conditional icon representation -->
+                        <span x-text="t.category.toLowerCase().includes('room') ? '🏨' : '🪑'"></span>
                         
-                        <!-- OPTION A: Round/Rect Table layout -->
-                        <template x-if="t.shape !== 'bed'">
-                            <div class="relative flex items-center justify-center">
-                                <!-- Seating Chairs -->
-                                <div class="absolute -top-3.5 w-2.5 h-2.5 rounded-full border border-border" :class="t.status === 'available' ? 'bg-slate-200' : 'bg-orange'"></div>
-                                <div class="absolute -bottom-3.5 w-2.5 h-2.5 rounded-full border border-border" :class="t.status === 'available' ? 'bg-slate-200' : 'bg-orange'"></div>
-                                <div class="absolute -left-3.5 w-2.5 h-2.5 rounded-full border border-border" :class="t.status === 'available' ? 'bg-slate-200' : 'bg-orange'"></div>
-                                <div class="absolute -right-3.5 w-2.5 h-2.5 rounded-full border border-border" :class="t.status === 'available' ? 'bg-slate-200' : 'bg-orange'"></div>
-                                
-                                <div 
-                                    :class="[
-                                        t.shape === 'round' ? 'rounded-full' : 'rounded-md',
-                                        t.status === 'available' ? 'bg-card border-2 border-border' : 'bg-orange/10 border-2 border-orange'
-                                    ]"
-                                    class="w-10 h-10 flex items-center justify-center text-[10px] font-black text-ink shadow-xs"
-                                    x-text="t.id"
-                                ></div>
-                            </div>
-                        </template>
-
-                        <!-- OPTION B: Room Bed Layout -->
-                        <template x-if="t.shape === 'bed'">
-                            <div class="relative w-12 h-14 border-2 rounded-lg flex flex-col items-center justify-between p-1 bg-card shadow-xs"
-                                 :class="t.status === 'available' ? 'border-border' : 'border-orange bg-orange/[0.03]'"
-                            >
-                                <div class="w-8 h-3.5 rounded border border-border bg-slate-100 flex justify-center items-center text-[7px] text-muted font-bold"
-                                     :class="t.status === 'available' ? 'bg-slate-100' : 'bg-orange/15 text-orange'">
-                                    PILLOW
-                                </div>
-                                <div class="w-10 h-6 border-t border-dashed border-border/80 text-[8px] font-black text-ink flex items-center justify-center"
-                                     :class="t.status === 'available' ? 'text-slate-400' : 'text-orange'"
-                                     x-text="t.id"
-                                ></div>
-                            </div>
+                        <!-- Mini occupied count badge -->
+                        <template x-if="t.status !== 'available'">
+                            <span class="absolute -bottom-1 -right-1 h-4 w-4 bg-orange text-[8px] text-white font-extrabold rounded-full flex items-center justify-center border border-white">✓</span>
                         </template>
                     </div>
                 </div>
 
-                <!-- Card Footer Status Pill -->
-                <div class="pt-2 border-t border-border/40 flex justify-between items-center">
+                <!-- Card Footer status indicator -->
+                <div class="pt-2 border-t border-border/40 flex justify-between items-center shrink-0">
                     <span 
                         class="text-[8px] font-extrabold uppercase tracking-wider"
                         :class="{
@@ -300,16 +198,16 @@
                             'text-orange': t.status === 'occupied',
                             'text-warning animate-pulse': t.status === 'bill-pending'
                         }"
-                        x-text="t.status === 'available' && t.floor === 'hotel-wing-a' ? 'vacant' : t.status.replace('-', ' ')"
+                        x-text="t.status.replace('-', ' ')"
                     ></span>
                     
-                    <span class="text-[9px] font-bold text-ink" x-text="t.amount !== '₹ 0' ? t.amount : ''"></span>
+                    <span class="text-[9px] font-bold text-ink" x-text="t.amount > 0 ? `₹ ${parseInt(t.amount)}` : ''"></span>
                 </div>
             </div>
         </template>
     </div>
 
-    <!-- Sliding Sidebar Checkout Drawer (Alpine control) -->
+    <!-- Sliding Sidebar Checkout Drawer -->
     <div 
         x-show="drawerOpen" 
         class="fixed inset-y-0 right-0 w-96 bg-card border-l border-border shadow-2xl z-50 flex flex-col justify-between"
@@ -326,8 +224,8 @@
                 <!-- Drawer Header -->
                 <div class="p-6 border-b border-border bg-card-tint flex justify-between items-center">
                     <div>
-                        <h3 class="text-sm font-bold text-ink" x-text="`${selectedTable.floor === 'hotel-wing-a' ? 'Hotel Room' : 'Table'} ${selectedTable.id} (${selectedTable.name})`"></h3>
-                        <span class="text-xs text-muted" x-text="`Assigned Roster: ${selectedTable.waiter}`"></span>
+                        <h3 class="text-sm font-bold text-ink" x-text="`${selectedTable.name} (${selectedTable.code})`"></h3>
+                        <span class="text-xs text-muted" x-text="`Category: ${selectedTable.category}`"></span>
                     </div>
                     <button 
                         @click="drawerOpen = false" 
@@ -339,12 +237,11 @@
 
                 <!-- Drawer Content -->
                 <div class="p-6 flex-1 overflow-y-auto space-y-6">
-                    
-                    <!-- Table-Specific QR Order Scanner Card -->
+                    <!-- Scan-to-Order Link Card -->
                     <div class="bg-card border border-border/80 rounded-xl p-4 space-y-3 shadow-xs">
                         <div class="flex justify-between items-center pb-2 border-b border-border/60">
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">📱 QR Order Scanner</span>
-                            <span class="text-[8px] font-bold text-teal bg-teal/5 px-2 py-0.5 rounded-lg border border-teal/10">Active Scan</span>
+                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">📱 Scan to Order</span>
+                            <span class="text-[8px] font-bold text-teal bg-teal/5 px-2 py-0.5 rounded-lg border border-teal/10">Active Link</span>
                         </div>
                         
                         <div class="flex items-center gap-4">
@@ -359,17 +256,17 @@
                             </div>
 
                             <div class="flex-1 min-w-0 space-y-1">
-                                <span class="block text-[8px] font-bold text-muted uppercase tracking-wider">Scan-to-Order Link</span>
+                                <span class="block text-[8px] font-bold text-muted uppercase tracking-wider">Scan Link</span>
                                 <input 
                                     type="text" 
                                     readonly
-                                    :value="`http://127.0.0.1:8004/menu?${selectedTable.floor === 'hotel-wing-a' ? 'room' : 'table'}=${selectedTable.id}`"
+                                    :value="`http://127.0.0.1:8004/menu?point=${selectedTable.code}`"
                                     class="w-full bg-card-tint border border-border/65 rounded-lg px-2 py-1 text-[8px] font-mono text-ink outline-none select-all"
                                 >
                             </div>
                         </div>
 
-                        <!-- Printing and sharing triggers -->
+                        <!-- sharing triggers -->
                         <div class="grid grid-cols-2 gap-2 pt-1 border-t border-border/40">
                             <button 
                                 @click="alert('Printing QR code sticker card for ' + selectedTable.name)"
@@ -379,7 +276,7 @@
                             </button>
                             <button 
                                 @click="
-                                    navigator.clipboard.writeText(`http://127.0.0.1:8004/menu?${selectedTable.floor === 'hotel-wing-a' ? 'room' : 'table'}=${selectedTable.id}`);
+                                    navigator.clipboard.writeText(`http://127.0.0.1:8004/menu?point=${selectedTable.code}`);
                                     alert('Link copied to clipboard!');
                                 "
                                 class="rounded-lg border border-orange/10 bg-orange/5 text-orange py-1.5 text-[9px] font-bold hover:bg-orange/10 cursor-pointer active:scale-95 transition-all"
@@ -392,8 +289,8 @@
                     <!-- Active Bill Log and Food items adding -->
                     <div class="space-y-3.5" x-show="selectedTable.status !== 'available'">
                         <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider" x-text="selectedTable.floor === 'hotel-wing-a' ? 'Room Service Food Orders' : 'Items on Table'">Orders Detail</span>
-                            <span class="text-[9px] font-extrabold text-orange" x-text="selectedTable.order"></span>
+                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Items on Bill</span>
+                            <span class="text-[9px] font-extrabold text-orange" x-text="selectedTable.order_number"></span>
                         </div>
 
                         <div class="rounded-xl border border-border p-3.5 bg-card-tint space-y-2.5">
@@ -404,24 +301,22 @@
                                         <span class="text-[9px] text-teal">✓</span>
                                     </div>
                                 </template>
-                                <template x-if="selectedTable.items.length === 0">
+                                <template x-if="!selectedTable.items || selectedTable.items.length === 0">
                                     <span class="text-xs text-slate-400 block text-center py-2">No active orders added.</span>
                                 </template>
                             </div>
                             <div class="h-px bg-border my-2"></div>
                             <div class="flex justify-between text-xs font-bold text-ink">
                                 <span>Running Balance</span>
-                                <span x-text="selectedTable.amount"></span>
+                                <span x-text="`₹ ${parseInt(selectedTable.amount)}`"></span>
                             </div>
                         </div>
 
                         <!-- Menu Quick Adds Roster -->
                         <div class="space-y-2">
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider block" x-text="selectedTable.floor === 'hotel-wing-a' ? 'Order Room Service' : 'Quick Add Items'">Quick Add Items</span>
+                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider block">Quick Add Items</span>
                             <div class="grid grid-cols-2 gap-2">
-                                <button @click="addMockItem('Zinger Burger', 199)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍔 Zinger Burger (₹199)</button>
-                                <button @click="addMockItem('8 Pc Bucket', 768)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍗 Fried Bucket (₹768)</button>
-                                <button @click="addMockItem('Seafood Fettuccine', 620)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍝 Fettuccine (₹620)</button>
+                                <button @click="addMockItem('Zinger Burger', 199)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍔 Burger (₹199)</button>
                                 <button @click="addMockItem('Garlic Bread', 120)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍞 Garlic Bread (₹120)</button>
                             </div>
                         </div>
@@ -429,39 +324,39 @@
                         <!-- Table Status Advancer -->
                         <div class="pt-4.5 border-t border-border">
                             <button 
-                                @click="selectedTable.status = 'bill-pending'"
+                                @click="advanceStatus('bill-pending')"
                                 class="w-full rounded-lg border border-warning/30 bg-warning/5 text-warning py-2 text-[10px] font-bold hover:bg-warning/10 cursor-pointer active:scale-95 transition-all"
-                                x-text="selectedTable.floor === 'hotel-wing-a' ? 'Request Room Bill' : 'Request Table Bill'"
                             >
+                                Request Bill
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Drawer Footer Actions -->
-                <div class="p-6 border-t border-border bg-card-tint space-y-2.5">
+                <div class="p-6 border-t border-border bg-card-tint space-y-2.5 shrink-0">
                     <!-- Quick Activation Trigger Button (If vacant) -->
                     <button 
                         x-show="selectedTable.status === 'available'"
-                        @click="selectedTable.status = 'occupied'; selectedTable.order = '#KFC' + Math.floor(Math.random() * 8000 + 1000); selectedTable.items = ['1x Zinger Burger']; selectedTable.amount = '₹ 199'; drawerOpen = false"
+                        @click="advanceStatus('occupied')"
                         class="w-full rounded-xl bg-orange hover:bg-orange/95 py-3 text-xs font-bold text-white shadow-md shadow-orange/15 cursor-pointer"
-                        x-text="selectedTable.floor === 'hotel-wing-a' ? '⚡ Activate Room (Check In)' : '⚡ Activate Table (Occupy)'"
                     >
+                        ⚡ Occupy & Activate
                     </button>
 
                     <!-- Checkout Trigger Button (If active) -->
                     <button 
                         x-show="selectedTable.status !== 'available'"
-                        @click="alert('Settling checkout payment...'); selectedTable.status = 'available'; selectedTable.items = []; selectedTable.amount = '₹ 0'; selectedTable.order = null; drawerOpen = false"
+                        @click="advanceStatus('available')"
                         class="w-full rounded-xl bg-teal hover:bg-teal/95 py-3 text-xs font-bold text-white shadow-md shadow-teal/15 cursor-pointer"
-                        x-text="selectedTable.floor === 'hotel-wing-a' ? `Check Out Room & Settle Bill (${selectedTable.amount})` : `Checkout Table & Settle Bill (${selectedTable.amount})`"
+                        x-text="`Checkout & Settle (₹ ${parseInt(selectedTable.amount)})`"
                     >
                     </button>
                     <button 
                         @click="drawerOpen = false"
                         class="w-full rounded-xl border border-border bg-card py-3 text-xs font-bold text-ink hover:bg-card-tint cursor-pointer"
-                        x-text="selectedTable.floor === 'hotel-wing-a' ? 'Dismiss Room' : 'Dismiss Table'"
                     >
+                        Close Panel
                     </button>
                 </div>
             </div>
@@ -475,95 +370,230 @@
         style="display: none;"
     >
         <!-- Backdrop background click triggers close -->
-        <div class="fixed inset-0 bg-ink/40 transition-opacity" @click="createModalOpen = false"></div>
+        <div class="fixed inset-0 bg-navy-deep/60 backdrop-blur-xs transition-opacity animate-fade-in" @click="createModalOpen = false"></div>
 
         <!-- Form Box -->
-        <div class="bg-card border border-border rounded-xl p-6 shadow-2xl max-w-sm w-full relative z-10 space-y-4">
+        <div class="bg-card border border-border rounded-card p-6 shadow-2xl max-w-sm w-full relative z-10 space-y-4">
             <div class="flex justify-between items-center pb-2.5 border-b border-border">
-                <h3 class="text-xs font-black text-ink uppercase tracking-wider">➕ Create Service Point / Room</h3>
+                <h3 class="text-xs font-black text-ink uppercase tracking-wider">➕ Add Point / Room</h3>
                 <button @click="createModalOpen = false" class="text-muted hover:text-ink cursor-pointer font-bold">✕</button>
             </div>
 
             <!-- Form Fields -->
-            <div class="space-y-3">
-                <!-- ID/Code -->
-                <div>
-                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unique Code (e.g. T07, R304)</label>
-                    <input type="text" x-model="newId" placeholder="e.g. T07, R304" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none">
-                </div>
-
+            <form action="/service-points" method="POST" class="space-y-4">
+                @csrf
                 <!-- Display Name -->
-                <div>
-                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Display Name (e.g. Table 7, Room 304)</label>
-                    <input type="text" x-model="newName" placeholder="e.g. Table 7, Room 304" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none">
+                <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Display Name</label>
+                    <input 
+                        type="text" 
+                        name="name" 
+                        required
+                        placeholder="e.g. Table Room 5, Hall Chair 2" 
+                        class="w-full rounded-xl border border-border bg-card-tint px-3 py-2.5 text-xs text-ink outline-none focus:border-orange focus:ring-1 focus:ring-orange/20"
+                    >
                 </div>
 
-                <!-- Zone Selection -->
-                <div>
-                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Zone / Floor Section</label>
-                    <select x-model="newFloor" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none cursor-pointer">
-                        <option value="dining-hall">Main Dining Hall</option>
-                        <option value="cafe-terrace">Terrace Cafe</option>
-                        <option value="lounge-cabanas">Lounge Cabanas</option>
-                        <option value="hotel-wing-a">Hotel Wing A (Rooms)</option>
+                <!-- Seating Size -->
+                <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Capacity / Seating Size</label>
+                    <select 
+                        name="seats" 
+                        required
+                        class="w-full rounded-xl border border-border bg-card-tint px-3 py-2.5 text-xs text-ink outline-none cursor-pointer focus:border-orange"
+                    >
+                        <option value="2">2 Pax</option>
+                        <option value="4">4 Pax</option>
+                        <option value="6">6 Pax</option>
+                        <option value="8">8 Pax</option>
+                        <option value="12">12 Pax</option>
                     </select>
                 </div>
 
-                <!-- Seating Capacity & Shape -->
-                <div class="grid grid-cols-2 gap-3" x-show="newFloor !== 'hotel-wing-a'">
-                    <div>
-                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pax Size</label>
-                        <select x-model="newSeats" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none cursor-pointer">
-                            <option value="2">2 Pax</option>
-                            <option value="4">4 Pax</option>
-                            <option value="6">6 Pax</option>
-                            <option value="8">8 Pax</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Table Shape</label>
-                        <select x-model="newShape" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none cursor-pointer">
-                            <option value="round">Round</option>
-                            <option value="rect">Rectangle</option>
-                        </select>
-                    </div>
+                <!-- Custom Category Input / Selection -->
+                <div class="space-y-2">
+                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Category / Zone</label>
+                    <input 
+                        type="text" 
+                        name="category" 
+                        x-model="categoryInput"
+                        required
+                        list="zone-suggestions"
+                        placeholder="e.g. Dining Hall, 1st Floor Rooms" 
+                        class="w-full rounded-xl border border-border bg-card-tint px-3 py-2.5 text-xs text-ink outline-none focus:border-orange focus:ring-1 focus:ring-orange/20"
+                    >
+                    <datalist id="zone-suggestions">
+                        <template x-for="cat in categories" :key="cat">
+                            <option :value="cat"></option>
+                        </template>
+                    </datalist>
+
+                    <!-- Pre-created Categories Badges underneath the input -->
+                    <template x-if="categories.length > 0">
+                        <div class="space-y-1.5 pt-1">
+                            <span class="block text-[8px] font-bold text-slate-400 uppercase tracking-wider">Or select existing:</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="cat in categories" :key="cat">
+                                    <button 
+                                        type="button"
+                                        @click="categoryInput = cat"
+                                        class="rounded-lg bg-card-tint border border-border px-2 py-1 text-[9px] font-semibold text-ink hover:border-orange hover:text-orange transition-colors cursor-pointer"
+                                        x-text="cat"
+                                    ></button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
-                <!-- Room Occupancy (Only visible if Hotel selected) -->
-                <div class="grid grid-cols-1 gap-3" x-show="newFloor === 'hotel-wing-a'">
-                    <div>
-                        <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Room Occupancy / Bed Size</label>
-                        <select x-model="newSeats" class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none cursor-pointer">
-                            <option value="2">Single Bed (2 Guests)</option>
-                            <option value="4">Double Bed (4 Guests)</option>
-                            <option value="6">Family Suite (6 Guests)</option>
-                        </select>
-                    </div>
+                <!-- Modal footer actions -->
+                <div class="flex gap-2 pt-2.5 border-t border-border mt-4">
+                    <button 
+                        type="submit" 
+                        class="flex-1 rounded-xl bg-orange hover:bg-orange/95 py-2.5 text-xs font-bold text-white shadow-md shadow-orange/20 cursor-pointer active:scale-95 transition-all"
+                    >
+                        Create Point
+                    </button>
+                    <button 
+                        type="button"
+                        @click="createModalOpen = false" 
+                        class="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-ink hover:bg-card-tint cursor-pointer active:scale-95 transition-all"
+                    >
+                        Cancel
+                    </button>
                 </div>
-
-                <!-- Server Waiter -->
-                <div x-show="newFloor !== 'hotel-wing-a'">
-                    <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Assigned Waiter</label>
-                    <input type="text" x-model="newWaiter" placeholder="e.g. Marcus V." class="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-xs text-ink outline-none">
-                </div>
-            </div>
-
-            <!-- Modal footer actions -->
-            <div class="flex gap-2 pt-2">
-                <button 
-                    @click="createServicePoint()" 
-                    class="flex-1 rounded-xl bg-orange hover:bg-orange/95 py-2.5 text-xs font-bold text-white shadow-md shadow-orange/20 cursor-pointer active:scale-95 transition-all"
-                >
-                    Create Point
-                </button>
-                <button 
-                    @click="createModalOpen = false" 
-                    class="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-ink hover:bg-card-tint cursor-pointer active:scale-95 transition-all"
-                >
-                    Cancel
-                </button>
-            </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+function servicePointManager(config) {
+    return {
+        tables: config.initialPoints,
+        categories: config.initialCategories,
+        activeFloor: config.initialCategories.length > 0 ? config.initialCategories[0] : '',
+        drawerOpen: false,
+        selectedTableId: null,
+        createModalOpen: false,
+        statusFilter: 'all',
+
+        // Form Fields
+        categoryInput: '',
+
+        get selectedTable() {
+            return this.tables.find(t => t.id === this.selectedTableId);
+        },
+
+        get stats() {
+            let activeList = this.tables.filter(t => t.category === this.activeFloor);
+            return {
+                total: activeList.length,
+                available: activeList.filter(t => t.status === 'available').length,
+                occupied: activeList.filter(t => t.status === 'occupied' || t.status === 'bill-pending').length,
+                capacity: activeList.reduce((acc, t) => acc + t.seats, 0)
+            };
+        },
+
+        selectTable(id) {
+            this.selectedTableId = id;
+            this.drawerOpen = true;
+        },
+
+        openCreateModal() {
+            this.categoryInput = '';
+            this.createModalOpen = true;
+        },
+
+        // Trigger PUT updates to backend
+        async syncPoint(point) {
+            try {
+                let response = await fetch(`/service-points/${point.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        status: point.status,
+                        amount: point.amount,
+                        items: point.items
+                    })
+                });
+                let data = await response.json();
+                if (data.success) {
+                    // Update state with synced record from server
+                    point.status = data.point.status;
+                    point.amount = data.point.amount;
+                    point.items = data.point.items;
+                    point.order_number = data.point.order_number;
+                }
+            } catch (e) {
+                console.error('Failed to sync service point data', e);
+            }
+        },
+
+        // Mock Order Action
+        addMockItem(itemName, price) {
+            let t = this.selectedTable;
+            if (t) {
+                if (t.status === 'available') {
+                    t.status = 'occupied';
+                }
+                t.items = t.items || [];
+                t.items.push('1x ' + itemName);
+                t.amount = parseFloat(t.amount || 0) + price;
+                this.syncPoint(t);
+            }
+        },
+
+        // Advance Point State
+        advanceStatus(status) {
+            let t = this.selectedTable;
+            if (t) {
+                t.status = status;
+                this.syncPoint(t);
+                this.drawerOpen = false;
+            }
+        },
+
+        // Delete Point Action
+        async deletePoint(point) {
+            if (!confirm(`Are you sure you want to delete service point "${point.name}" (${point.code})?`)) {
+                return;
+            }
+
+            let backupTables = [...this.tables];
+            this.tables = this.tables.filter(t => t.id !== point.id);
+
+            try {
+                let response = await fetch(`/service-points/${point.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                let data = await response.json();
+                if (!data.success) {
+                    this.tables = backupTables;
+                    alert('Could not delete service point.');
+                } else {
+                    // Re-calculate categories list if it was the last point in that category
+                    let stillHasCategory = this.tables.some(t => t.category === point.category);
+                    if (!stillHasCategory) {
+                        this.categories = this.categories.filter(c => c !== point.category);
+                        if (this.activeFloor === point.category) {
+                            this.activeFloor = this.categories.length > 0 ? this.categories[0] : '';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to delete service point', e);
+                this.tables = backupTables;
+                alert('Could not delete service point.');
+            }
+        }
+    }
+}
+</script>
 @endsection

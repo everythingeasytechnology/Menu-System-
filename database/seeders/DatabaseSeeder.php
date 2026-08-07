@@ -24,7 +24,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             PresetFoodImageSeeder::class,
+            MenuCategorySeeder::class,
             MenuSeeder::class,
+            ServicePointSeeder::class,
         ]);
     }
 }
