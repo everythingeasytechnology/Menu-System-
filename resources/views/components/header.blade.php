@@ -149,6 +149,7 @@
                 class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-card border border-border p-1.5 shadow-xl z-30" 
                 style="display: none;"
             >
+                <a href="/settings" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-ink hover:bg-card-tint transition-all">Settings</a>
                 <button class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger hover:bg-danger/5">Logout</button>
             </div>
         </div>
