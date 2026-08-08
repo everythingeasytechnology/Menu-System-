@@ -13,7 +13,13 @@ Route::get('/', function () {
 
 // Operations
 Route::get('/orders', function () {
-    return view('orders');
+    $settings = \App\Models\BusinessSetting::first() ?? new \App\Models\BusinessSetting([
+        'brand_name' => 'KFC Connaught Place',
+        'gst_enabled' => false,
+        'cgst' => 2.5,
+        'sgst' => 2.5,
+    ]);
+    return view('orders', compact('settings'));
 });
 
 Route::get('/service-points', [ServicePointController::class, 'index'])->name('service-points.index');

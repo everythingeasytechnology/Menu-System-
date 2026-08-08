@@ -10,6 +10,15 @@
         statusFilter: 'all',
         selectedOrderId: '#43291',
         isLoading: false,
+        gstSettings: {
+            enabled: {{ $settings->gst_enabled ? 'true' : 'false' }},
+            cgstRate: {{ $settings->cgst ?? 2.5 }},
+            sgstRate: {{ $settings->sgst ?? 2.5 }},
+            brandName: '{{ addslashes($settings->brand_name ?? 'KFC') }}',
+            gstNo: '{{ addslashes($settings->gst_no ?? '') }}',
+            address: '{{ addslashes($settings->address ?? 'Connaught Place') }}',
+            pincode: '{{ addslashes($settings->pincode ?? '110001') }}'
+        },
 
         orders: [
             {
@@ -21,7 +30,9 @@
                 location: 'Table 12 (Ground Floor)',
                 amount: '₹ 1,145.50',
                 payment: 'Paid via Stripe',
+                paymentStatus: 'paid',
                 status: 'preparing',
+                note: 'Please make the chicken extra crispy, and pack dips separately.',
                 items: [
                     { name: '8 Pc Hot & Crispy Chicken', qty: 1, status: 'preparing' },
                     { name: 'Pepsi (1.25 L)', qty: 2, status: 'ready' },
@@ -37,10 +48,12 @@
                 location: 'Counter 2',
                 amount: '₹ 420.80',
                 payment: 'Paid',
-                status: 'preparing',
+                paymentStatus: 'paid',
+                status: 'kitchen',
+                note: 'No onions in the sandwich, please.',
                 items: [
-                    { name: 'Turkey Club Sandwich', qty: 1, status: 'preparing' },
-                    { name: 'Fresh Orange Juice', qty: 1, status: 'new' }
+                    { name: 'Turkey Club Sandwich', qty: 1, status: 'kitchen' },
+                    { name: 'Fresh Orange Juice', qty: 1, status: 'pending' }
                 ]
             },
             {
@@ -52,7 +65,9 @@
                 location: 'Counter 1',
                 amount: '₹ 152.20',
                 payment: 'Paid (Cash)',
+                paymentStatus: 'paid',
                 status: 'ready',
+                note: '',
                 items: [
                     { name: 'Zinger Burger', qty: 1, status: 'ready' },
                     { name: 'Pepsi (600ml)', qty: 1, status: 'served' }
@@ -67,11 +82,13 @@
                 location: 'Table 4 (Cafe Floor)',
                 amount: '₹ 884.40',
                 payment: 'Unpaid',
-                status: 'new',
+                paymentStatus: 'unpaid',
+                status: 'pending',
+                note: 'Need 4 extra ketchup packets and plastic straws.',
                 items: [
-                    { name: 'Smoky Red Bucket', qty: 1, status: 'new' },
-                    { name: 'Garlic Bread (2 Pc)', qty: 2, status: 'new' },
-                    { name: 'Lava Cake', qty: 1, status: 'new' }
+                    { name: 'Smoky Red Bucket', qty: 1, status: 'pending' },
+                    { name: 'Garlic Bread (2 Pc)', qty: 2, status: 'pending' },
+                    { name: 'Lava Cake', qty: 1, status: 'pending' }
                 ]
             }
         ],
@@ -96,15 +113,37 @@
                 
                 // Recalculate global order status based on item states
                 let statuses = order.items.map(i => i.status);
-                if (statuses.every(s => s === 'served')) {
-                    order.status = 'served';
-                } else if (statuses.every(s => s === 'ready' || s === 'served')) {
+                if (statuses.every(s => s === 'served' || s === 'cancelled')) {
+                    if (statuses.every(s => s === 'cancelled')) {
+                        order.status = 'cancelled';
+                    } else {
+                        order.status = 'served';
+                    }
+                } else if (statuses.every(s => s === 'ready' || s === 'served' || s === 'cancelled')) {
                     order.status = 'ready';
-                } else if (statuses.includes('preparing') || statuses.includes('ready')) {
+                } else if (statuses.includes('preparing')) {
                     order.status = 'preparing';
+                } else if (statuses.includes('kitchen')) {
+                    order.status = 'kitchen';
                 } else {
-                    order.status = 'new';
+                    order.status = 'pending';
                 }
+            }
+        },
+
+        // Cancel the entire order ticket
+        cancelOrder(orderId) {
+            let order = this.orders.find(o => o.id === orderId);
+            if (order) {
+                order.status = 'cancelled';
+                order.items.forEach(i => i.status = 'cancelled');
+            }
+        },
+
+        // Print POS style bill receipt
+        printReceipt(order) {
+            if (window.printOrderReceipt) {
+                window.printOrderReceipt(order, this.gstSettings);
             }
         }
     }"
@@ -188,18 +227,19 @@
 
         <!-- Left: Orders Table list (Col-span 2) -->
         <div class="lg:col-span-2 space-y-4">
-            <x-card class="p-4" variant="default">
-                <div class="overflow-x-auto">
+            <x-card class="p-3" variant="default">
+                <div class="max-h-[580px] overflow-y-auto overflow-x-auto pr-1">
                     <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-border text-[10px] font-bold text-muted uppercase tracking-wider">
-                                <th class="pb-3.5 pl-2">Order ID</th>
-                                <th class="pb-3.5 hidden sm:table-cell">Channel</th>
-                                <th class="pb-3.5">Location</th>
-                                <th class="pb-3.5 hidden md:table-cell">Customer</th>
-                                <th class="pb-3.5 text-center hidden sm:table-cell">Items</th>
-                                <th class="pb-3.5">Total</th>
-                                <th class="pb-3.5">Status</th>
+                        <thead class="sticky top-0 bg-card z-10">
+                            <tr class="border-b border-border text-[9px] font-bold text-muted uppercase tracking-wider bg-card">
+                                <th class="pb-2.5 pl-2">Order ID</th>
+                                <th class="pb-2.5 hidden sm:table-cell">Channel</th>
+                                <th class="pb-2.5">Location</th>
+                                <th class="pb-2.5 hidden md:table-cell">Customer</th>
+                                <th class="pb-2.5 text-center hidden sm:table-cell">Items</th>
+                                <th class="pb-2.5">Total</th>
+                                <th class="pb-2.5 hidden sm:table-cell">Payment</th>
+                                <th class="pb-2.5">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/60">
@@ -214,28 +254,44 @@
                                     "
                                     @click="selectedOrderId = o.id"
                                     :class="selectedOrderId === o.id ? 'bg-orange/5 font-semibold' : 'hover:bg-card-tint/30'"
-                                    class="cursor-pointer transition-all"
+                                    class="cursor-pointer transition-all border-b border-border/40"
                                 >
-                                    <td class="py-4 pl-2 font-bold text-orange text-xs" x-text="o.id"></td>
-                                    <td class="py-4 text-xs font-semibold text-muted hidden sm:table-cell" x-text="o.channel"></td>
-                                    <td class="py-4 text-xs text-ink" x-text="o.location"></td>
-                                    <td class="py-4 text-xs text-muted hidden md:table-cell">
-                                        <div class="font-extrabold text-ink" x-text="o.customer"></div>
-                                        <div class="text-[10px] text-muted mt-0.5" x-text="o.phone"></div>
+                                    <td class="py-2.5 pl-2 font-bold text-orange text-xs" x-text="o.id"></td>
+                                    <td class="py-2.5 text-xs font-semibold text-muted hidden sm:table-cell" x-text="o.channel"></td>
+                                    <td class="py-2.5 text-xs text-ink" x-text="o.location"></td>
+                                    <td class="py-2.5 text-xs text-muted hidden md:table-cell">
+                                        <div class="flex items-center gap-1 font-bold text-ink">
+                                            <span x-text="o.customer"></span>
+                                            <span class="text-[9px] font-normal text-muted" x-text="`(${o.phone})`"></span>
+                                        </div>
                                         <template x-if="o.email">
-                                            <div class="text-[9px] text-orange font-bold mt-0.5" x-text="o.email"></div>
+                                            <div class="text-[9px] text-orange font-medium mt-0.5" x-text="o.email"></div>
                                         </template>
                                     </td>
-                                    <td class="py-4 text-xs text-muted text-center hidden sm:table-cell" x-text="o.items.length"></td>
-                                    <td class="py-4 font-bold text-ink text-xs" x-text="o.amount"></td>
-                                    <td class="py-4">
+                                    <td class="py-2.5 text-xs text-muted text-center hidden sm:table-cell" x-text="o.items.length"></td>
+                                    <td class="py-2.5 font-bold text-ink text-xs" x-text="o.amount"></td>
+                                    <!-- Payment status column -->
+                                    <td class="py-2.5 text-xs hidden sm:table-cell">
                                         <span 
-                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider"
+                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider"
                                             :class="{
-                                                'bg-blue-50 text-blue-500 border border-blue-100': o.status === 'new',
+                                                'bg-success/5 text-success border border-success/10': o.paymentStatus === 'paid',
+                                                'bg-danger/5 text-danger border border-danger/10': o.paymentStatus === 'unpaid',
+                                                'bg-orange/5 text-orange border border-orange/10': o.paymentStatus === 'pending'
+                                            }"
+                                            x-text="o.paymentStatus"
+                                        ></span>
+                                    </td>
+                                    <td class="py-2.5">
+                                        <span 
+                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider"
+                                            :class="{
+                                                'bg-slate-100 text-slate-600 border border-slate-200': o.status === 'pending',
+                                                'bg-blue-50 text-blue-500 border border-blue-100': o.status === 'kitchen',
                                                 'bg-orange/5 text-orange border border-orange/10': o.status === 'preparing',
                                                 'bg-teal/5 text-teal border border-teal/10': o.status === 'ready',
-                                                'bg-success/5 text-success border border-success/10': o.status === 'served'
+                                                'bg-success/5 text-success border border-success/10': o.status === 'served',
+                                                'bg-danger/5 text-danger border border-danger/10': o.status === 'cancelled'
                                             }"
                                             x-text="o.status"
                                         ></span>
@@ -262,12 +318,11 @@
                             <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Active Ticket Detail</span>
                             <h3 class="text-sm font-extrabold text-ink block mt-0.5" x-text="selectedOrder.location"></h3>
                             <!-- Customer Details inside details drawer -->
-                            <div class="mt-2.5 p-3 rounded-xl bg-card-tint border border-border/60 text-left">
-                                <span class="block text-[8px] font-bold text-muted uppercase tracking-wider">Customer Details</span>
-                                <h4 class="text-xs font-black text-ink mt-0.5" x-text="selectedOrder.customer"></h4>
-                                <span class="block text-[10px] text-muted mt-0.5" x-text="selectedOrder.phone"></span>
+                            <div class="mt-1.5 text-[10px] text-slate-500 font-semibold text-left">
+                                <span class="text-ink font-extrabold" x-text="selectedOrder.customer"></span>
+                                <span x-show="selectedOrder.phone && selectedOrder.phone !== 'N/A'" x-text="` (${selectedOrder.phone})`"></span>
                                 <template x-if="selectedOrder.email">
-                                    <span class="block text-[9px] text-orange font-bold mt-0.5" x-text="selectedOrder.email"></span>
+                                    <span x-text="` • ${selectedOrder.email}`" class="text-orange font-bold"></span>
                                 </template>
                             </div>
                         </div>
@@ -282,77 +337,66 @@
                             </button>
                         </div>
                     </div>
-
+ 
                     <!-- Items list progress tracker -->
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         <span class="block text-[10px] font-bold text-muted uppercase tracking-wider">Item Progress Control</span>
                         
-                        <div class="space-y-3">
+                        <div class="divide-y divide-border/60">
                             <template x-for="item in selectedOrder.items" :key="item.name">
-                                <div class="bg-card-tint border border-border/80 rounded-xl p-3.5 flex flex-col justify-between gap-3 shadow-xs">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <span class="text-xs font-extrabold text-ink" x-text="item.name"></span>
-                                            <span class="block text-[9px] text-muted mt-0.5" x-text="`Qty: ${item.qty}`"></span>
-                                        </div>
-                                        
-                                        <!-- Item Status Badge -->
-                                        <span 
-                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider"
-                                            :class="{
-                                                'bg-blue-50 text-blue-500 border border-blue-100': item.status === 'new',
-                                                'bg-orange/5 text-orange border border-orange/10': item.status === 'preparing',
-                                                'bg-teal/5 text-teal border border-teal/10': item.status === 'ready',
-                                                'bg-success/5 text-success border border-success/10': item.status === 'served'
-                                            }"
-                                            x-text="item.status"
-                                        ></span>
+                                <div class="py-2 flex items-center justify-between gap-3 text-xs">
+                                    <div class="min-w-0">
+                                        <span class="font-extrabold text-ink truncate block max-w-[200px]" :title="item.name" x-text="item.name"></span>
+                                        <span class="block text-[9px] text-muted mt-0.5" x-text="`Qty: ${item.qty}`"></span>
                                     </div>
-
-                                    <!-- Quick actions for this specific item -->
-                                    <div class="flex gap-1.5 border-t border-border/40 pt-2.5 justify-end">
-                                        <template x-if="item.status === 'new'">
-                                            <button 
-                                                @click="advanceItem(selectedOrder.id, item.name, 'preparing')"
-                                                class="rounded-lg bg-orange/10 hover:bg-orange/15 text-orange px-2.5 py-1 text-[9px] font-bold transition-all cursor-pointer"
-                                            >
-                                                🍳 Cook
-                                            </button>
-                                        </template>
-
-                                        <template x-if="item.status === 'preparing'">
-                                            <button 
-                                                @click="advanceItem(selectedOrder.id, item.name, 'ready')"
-                                                class="rounded-lg bg-teal/10 hover:bg-teal/15 text-teal px-2.5 py-1 text-[9px] font-bold transition-all cursor-pointer"
-                                            >
-                                                🔔 Ready
-                                            </button>
-                                        </template>
-
-                                        <template x-if="item.status === 'ready'">
-                                            <button 
-                                                @click="advanceItem(selectedOrder.id, item.name, 'served')"
-                                                class="rounded-lg bg-success/10 hover:bg-success/15 text-success px-2.5 py-1 text-[9px] font-bold transition-all cursor-pointer"
-                                            >
-                                                🍽️ Serve
-                                            </button>
-                                        </template>
-
-                                        <template x-if="item.status === 'served'">
-                                            <span class="text-[9px] font-bold text-success flex items-center gap-1">
-                                                ✓ Completed
-                                            </span>
-                                        </template>
+                                    <div class="flex items-center shrink-0">
+                                        <select 
+                                            @change="advanceItem(selectedOrder.id, item.name, $event.target.value)"
+                                            class="rounded-lg border border-border/85 bg-card-tint py-1 px-1.5 text-[9px] font-extrabold text-ink outline-none cursor-pointer focus:border-orange focus:ring-1 focus:ring-orange/20 transition-all"
+                                        >
+                                            <option value="pending" :selected="item.status === 'pending'">📋 Pending</option>
+                                            <option value="kitchen" :selected="item.status === 'kitchen'">🍳 Kitchen</option>
+                                            <option value="preparing" :selected="item.status === 'preparing'">🔥 Preparing</option>
+                                            <option value="ready" :selected="item.status === 'ready'">🔔 Ready</option>
+                                            <option value="served" :selected="item.status === 'served'">🍽️ Served</option>
+                                            <option value="cancelled" :selected="item.status === 'cancelled'">🚫 Cancelled</option>
+                                        </select>
                                     </div>
                                 </div>
                             </template>
                         </div>
                     </div>
 
+                    <!-- Customer Note / Kitchen instructions -->
+                    <template x-if="selectedOrder.note">
+                        <div class="bg-orange/5 border border-orange/10 p-2.5 rounded-xl text-left">
+                            <span class="block text-[8px] font-bold text-orange uppercase tracking-wider">Kitchen Note / Instructions</span>
+                            <p class="text-[10px] italic text-slate-700 leading-normal mt-0.5" x-text="selectedOrder.note"></p>
+                        </div>
+                    </template>
+
                     <!-- Footer Action details -->
-                    <div class="border-t border-border pt-4 flex justify-between items-center text-[10px] text-muted font-bold">
-                        <span x-text="`Server: ${selectedOrder.server}`"></span>
-                        <span x-text="`Total: ${selectedOrder.amount}`" class="text-ink"></span>
+                    <div class="border-t border-border pt-4 flex flex-col gap-3">
+                        <div class="flex justify-between items-center text-[10px] text-muted font-bold">
+                            <span x-text="`Payment: ${selectedOrder.payment}`"></span>
+                            <span x-text="`Total: ${selectedOrder.amount}`" class="text-ink"></span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button 
+                                @click="printReceipt(selectedOrder)"
+                                class="flex-1 rounded-xl bg-orange hover:bg-orange/95 text-white py-2.5 text-xs font-bold shadow-md shadow-orange/20 cursor-pointer transition-all text-center flex items-center justify-center gap-1.5"
+                            >
+                                🖨️ Print Bill
+                            </button>
+                            <template x-if="selectedOrder.status !== 'served' && selectedOrder.status !== 'cancelled'">
+                                <button 
+                                    @click="cancelOrder(selectedOrder.id)"
+                                    class="flex-1 rounded-xl bg-danger/10 hover:bg-danger/20 text-danger py-2.5 text-xs font-bold transition-all cursor-pointer text-center"
+                                >
+                                    🚫 Cancel Ticket
+                                </button>
+                            </template>
+                        </div>
                     </div>
                 </x-card>
             </template>
@@ -367,4 +411,150 @@
         </div>
     </div>
 </div>
+
+<script>
+    window.printOrderReceipt = function(order, gstSettings) {
+        if (!order) return;
+        
+        let subtotal = order.amount ? parseFloat(order.amount.replace(/[^\d\.]/g, '')) : 0;
+        let total = subtotal;
+        let cgstAmount = 0;
+        let sgstAmount = 0;
+        let taxDetailsHtml = '';
+        
+        if (gstSettings && gstSettings.enabled) {
+            let totalTaxRate = gstSettings.cgstRate + gstSettings.sgstRate;
+            subtotal = total / (1 + totalTaxRate / 100);
+            cgstAmount = subtotal * (gstSettings.cgstRate / 100);
+            sgstAmount = subtotal * (gstSettings.sgstRate / 100);
+            
+            taxDetailsHtml = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>CGST (${gstSettings.cgstRate}%):</span>
+                    <span>₹ ${cgstAmount.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px; border-bottom: 1px dashed #000; padding-bottom: 4px;">
+                    <span>SGST (${gstSettings.sgstRate}%):</span>
+                    <span>₹ ${sgstAmount.toFixed(2)}</span>
+                </div>
+            `;
+        }
+        
+        let itemsHtml = order.items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div style="max-width: 75%; text-align: left;">
+                    <span style="font-weight: bold;">${item.name}</span>
+                    <span style="display: block; font-size: 8px; color: #555;">Status: ${item.status}</span>
+                </div>
+                <span>x${item.qty}</span>
+            </div>
+        `).join('');
+        
+        let brandName = gstSettings ? gstSettings.brandName : 'KFC';
+        let address = gstSettings ? gstSettings.address : 'Connaught Place';
+        let pincode = gstSettings ? gstSettings.pincode : '110001';
+        let gstNo = gstSettings ? gstSettings.gstNo : '';
+        
+        let printWindow = window.open('', '_blank', 'width=380,height=600');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Bill Receipt - ${order.id}</title>
+                <style>
+                    @media print {
+                        body {
+                            width: 74mm;
+                            margin: 0;
+                            padding: 5px;
+                        }
+                    }
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        width: 74mm;
+                        margin: 0 auto;
+                        padding: 10px 5px;
+                        font-size: 10px;
+                        line-height: 1.4;
+                        color: #000;
+                    }
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    .bold { font-weight: bold; }
+                    .divider { border-top: 1px dashed #000; margin: 6px 0; }
+                    .brand-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+                    .receipt-header { margin-bottom: 8px; }
+                    .receipt-footer { margin-top: 12px; font-size: 8px; text-align: center; }
+                </style>
+            </head>
+            <body>
+                <div class="text-center receipt-header">
+                    <div class="brand-title">${brandName}</div>
+                    <div>${address}</div>
+                    <div>PIN: ${pincode}</div>
+                    ${gstNo ? `<div>GSTIN: ${gstNo}</div>` : ''}
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 9px;">
+                    <span>Order ID: <b>${order.id}</b></span>
+                    <span>Date: ${new Date().toLocaleDateString()}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 9px; margin-top: 2px;">
+                    <span>Channel: ${order.channel}</span>
+                    <span>Loc: ${order.location}</span>
+                </div>
+                <div style="font-size: 9px; margin-top: 2px; text-align: left;">
+                    <span>Cust: ${order.customer} ${order.phone !== 'N/A' ? '(' + order.phone + ')' : ''}</span>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div style="font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Item Description</span>
+                    <span>Qty</span>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div>${itemsHtml}</div>
+                
+                <div class="divider"></div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                    <span>Subtotal:</span>
+                    <span>₹ ${subtotal.toFixed(2)}</span>
+                </div>
+                
+                ${taxDetailsHtml}
+                
+                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-top: 4px; border-bottom: 1px dashed #000; padding-bottom: 4px;">
+                    <span>TOTAL BILL:</span>
+                    <span>${order.amount}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 8px; margin-top: 4px; color: #333;">
+                    <span>Payment Status:</span>
+                    <span style="text-transform: uppercase; font-weight: bold;">${order.paymentStatus} (${order.payment})</span>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="receipt-footer">
+                    <p class="bold" style="margin: 2px 0;">Thank you for dining with us!</p>
+                    <p style="margin: 2px 0;">Powered by EverythingEasy ServiceOS</p>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 500);
+                    }
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+</script>
 @endsection

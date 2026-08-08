@@ -6,12 +6,15 @@
 <div 
     x-data="{
         activeTab: 'all',
+        selectedOrder: null,
+        openOrderDetails(order) { this.selectedOrder = order; },
+        closeOrderDetails() { this.selectedOrder = null; },
         orders: [
-            { id: 'KFC1256', customer: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com', type: 'packed', items: ['1 x 8 Pc Hot & Crispy', '1 x Pepsi (1.25 L)'], extra: 2, amount: '₹ 485', paymentStatus: 'Online Paid', status: 'preparing', time: '11:42 AM', elapsed: '2 mins ago' },
-            { id: 'KFC1255', customer: 'Table 4', phone: '2 People', email: '', type: 'dine-in', items: ['1 x Zinger Burger', '1 x Chicken Popcorn (Large)'], extra: 1, amount: '₹ 395', paymentStatus: 'Paid', method: 'Cash', status: 'preparing', time: '11:39 AM', elapsed: '3 mins ago' },
-            { id: 'KFC1254', customer: 'Walk-in Customer', phone: 'N/A', email: '', type: 'packed', items: ['1 x 6 Pc Hot Wings', '1 x Pepsi (600ml)'], extra: 0, amount: '₹ 325', paymentStatus: 'Paid', method: 'UPI', status: 'ready', time: '11:37 AM', elapsed: '5 mins ago' },
-            { id: 'KFC1253', customer: 'Priya Verma', phone: '9876543290', email: 'priya@example.com', type: 'packed', items: ['1 x 5 in 1 Rice Bowl', '1 x Pepsi (1.25 L)'], extra: 1, amount: '₹ 450', paymentStatus: 'Online Paid', status: 'ready', time: '11:33 AM', elapsed: '8 mins ago' },
-            { id: 'KFC1252', customer: 'Table 7', phone: '4 People', email: '', type: 'dine-in', items: ['1 x Smoky Red Bucket', '2 x Garlic Bread'], extra: 0, amount: '₹ 760', paymentStatus: 'Paid', method: 'Card', status: 'ready', time: '11:30 AM', elapsed: '10 mins ago' }
+            { id: 'KFC1256', customer: 'Rahul Sharma', phone: '9876543210', email: 'rahul@example.com', type: 'packed', items: ['1 x 8 Pc Hot & Crispy', '1 x Pepsi (1.25 L)'], extra: 2, amount: '₹ 485', paymentStatus: 'Online Paid', status: 'preparing', time: '11:42 AM', elapsed: '2 mins ago', note: 'Please make the chicken extra crispy, and pack dips separately.' },
+            { id: 'KFC1255', customer: 'Table 4', phone: '2 People', email: '', type: 'dine-in', items: ['1 x Zinger Burger', '1 x Chicken Popcorn (Large)'], extra: 1, amount: '₹ 395', paymentStatus: 'Paid', method: 'Cash', status: 'preparing', time: '11:39 AM', elapsed: '3 mins ago', note: 'No onions and extra mayo in the burger, please.' },
+            { id: 'KFC1254', customer: 'Walk-in Customer', phone: 'N/A', email: '', type: 'packed', items: ['1 x 6 Pc Hot Wings', '1 x Pepsi (600ml)'], extra: 0, amount: '₹ 325', paymentStatus: 'Paid', method: 'UPI', status: 'ready', time: '11:37 AM', elapsed: '5 mins ago', note: '' },
+            { id: 'KFC1253', customer: 'Priya Verma', phone: '9876543290', email: 'priya@example.com', type: 'packed', items: ['1 x 5 in 1 Rice Bowl', '1 x Pepsi (1.25 L)'], extra: 1, amount: '₹ 450', paymentStatus: 'Online Paid', status: 'ready', time: '11:33 AM', elapsed: '8 mins ago', note: 'Need 4 extra ketchup packets and plastic straws.' },
+            { id: 'KFC1252', customer: 'Table 7', phone: '4 People', email: '', type: 'dine-in', items: ['1 x Smoky Red Bucket', '2 x Garlic Bread'], extra: 0, amount: '₹ 760', paymentStatus: 'Paid', method: 'Card', status: 'ready', time: '11:30 AM', elapsed: '10 mins ago', note: 'Dine-in table needs to be cleaned first.' }
         ],
         changeStatus(id, nextStatus) {
             let o = this.orders.find(x => x.id === id);
@@ -130,7 +133,8 @@
                     <template x-for="o in orders" :key="o.id">
                         <div 
                             x-show="activeTab === 'all' || o.status === activeTab"
-                            class="flex flex-col xl:flex-row items-start xl:items-center justify-between py-3.5 gap-4 hover:bg-card-tint/40 transition-all rounded-lg px-2"
+                            @click="openOrderDetails(o)"
+                            class="flex flex-col xl:flex-row items-start xl:items-center justify-between py-3.5 gap-4 hover:bg-card-tint/40 transition-all rounded-lg px-2 cursor-pointer"
                         >
                             <!-- Col 1: Order ID & Channel -->
                             <div class="w-full xl:w-24 shrink-0 space-y-1">
@@ -195,7 +199,7 @@
                                 
                                 <!-- Ellipsis action menu button -->
                                 <button 
-                                    @click="
+                                    @click.stop="
                                         if (o.status === 'preparing') changeStatus(o.id, 'ready');
                                         else if (o.status === 'ready') changeStatus(o.id, 'delivery');
                                     "
@@ -315,6 +319,109 @@
             </x-card>
         </div>
 
+    </div>
+
+    <!-- Order Details Modal (Premium Glassmorphism Overlay) -->
+    <div 
+        x-show="selectedOrder" 
+        @keydown.escape.window="closeOrderDetails()"
+        class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-navy-deep/60 backdrop-blur-xs"
+        style="display: none;"
+        role="dialog" 
+        aria-modal="true"
+        @click.self="closeOrderDetails()"
+    >
+        <div 
+            x-show="selectedOrder"
+            x-transition:enter="transition ease-out duration-300 transform"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200 transform"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="relative w-full max-w-lg rounded-2xl bg-card shadow-2xl border border-border overflow-hidden"
+        >
+            <!-- Modal Header -->
+            <div class="border-b border-border bg-card-tint px-6 py-4.5 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-black text-ink leading-none">
+                        Order Details <span class="text-orange" x-text="`#${selectedOrder?.id}`"></span>
+                    </h3>
+                    <p class="text-[10px] text-muted font-bold uppercase mt-1.5" x-text="`Received at ${selectedOrder?.time} (${selectedOrder?.elapsed})`"></p>
+                </div>
+                <button 
+                    @click="closeOrderDetails()" 
+                    class="rounded-xl border border-border bg-card p-1.5 text-muted hover:text-ink hover:bg-card-tint transition-all cursor-pointer text-xs"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-5 text-xs text-ink text-left">
+                <!-- Customer Details Block -->
+                <div class="space-y-1.5 pb-3 border-b border-border/60">
+                    <span class="block text-[9px] font-bold text-muted uppercase tracking-wider">Customer Details</span>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span class="font-extrabold text-ink text-sm" x-text="selectedOrder?.customer"></span>
+                        <span x-show="selectedOrder?.phone && selectedOrder?.phone !== 'N/A'" class="text-slate-500 font-semibold" x-text="`(${selectedOrder?.phone})`"></span>
+                    </div>
+                    <template x-if="selectedOrder?.email">
+                        <span class="block text-[10px] text-orange font-bold mt-0.5" x-text="selectedOrder?.email"></span>
+                    </template>
+                </div>
+
+                <!-- Items Block -->
+                <div class="space-y-2 pb-3 border-b border-border/60">
+                    <span class="block text-[9px] font-bold text-muted uppercase tracking-wider">Ordered Items</span>
+                    <div class="space-y-2">
+                        <template x-for="item in selectedOrder?.items">
+                            <div class="flex justify-between items-center py-1">
+                                <span class="font-extrabold text-ink" x-text="item"></span>
+                                <span class="text-[9px] font-bold bg-card-tint border border-border/60 px-1.5 py-0.5 rounded text-muted uppercase" x-text="selectedOrder?.status"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Customer Note Block -->
+                <div class="space-y-1.5 pb-3 border-b border-border/60">
+                    <span class="block text-[9px] font-bold text-muted uppercase tracking-wider">Special Instructions / Customer Note</span>
+                    <div class="rounded-xl bg-orange/5 border border-orange/10 p-3">
+                        <p class="italic text-slate-700 leading-normal" x-text="selectedOrder?.note || 'No special instructions provided by the customer.'"></p>
+                    </div>
+                </div>
+
+                <!-- Payment Details Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="block text-[9px] font-bold text-muted uppercase tracking-wider">Payment Info</span>
+                        <div class="mt-1 font-extrabold text-ink" x-text="selectedOrder?.paymentStatus"></div>
+                        <div x-show="selectedOrder?.method" class="text-[10px] text-muted mt-0.5" x-text="`via ${selectedOrder?.method}`"></div>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-[9px] font-bold text-muted uppercase tracking-wider">Total Amount</span>
+                        <div class="mt-0.5 text-lg font-black text-ink" x-text="selectedOrder?.amount"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="border-t border-border bg-card-tint px-6 py-4 flex gap-3">
+                <button 
+                    @click="closeOrderDetails()" 
+                    class="flex-1 rounded-xl border border-border bg-card hover:bg-card-tint py-2.5 text-xs font-bold transition-all cursor-pointer text-center"
+                >
+                    Close
+                </button>
+                <a 
+                    href="/orders" 
+                    class="flex-1 rounded-xl bg-orange hover:bg-orange/95 text-white py-2.5 text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-md shadow-orange/15"
+                >
+                    🍳 Manage in Kitchen
+                </a>
+            </div>
+        </div>
     </div>
 
 </div>
