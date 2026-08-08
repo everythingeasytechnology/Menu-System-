@@ -11,6 +11,13 @@ class CategoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signInBusinessOwner('category-owner@example.com');
+    }
+
     /**
      * Test categories index page lists categories.
      */

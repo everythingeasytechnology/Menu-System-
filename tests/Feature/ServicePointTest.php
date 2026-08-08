@@ -10,6 +10,13 @@ class ServicePointTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signInBusinessOwner('service-point-owner@example.com');
+    }
+
     /**
      * Test index lists points and categories.
      */

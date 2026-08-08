@@ -11,6 +11,13 @@ class MenuTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signInBusinessOwner('menu-owner@example.com');
+    }
+
     /**
      * Test the index route returns items.
      */

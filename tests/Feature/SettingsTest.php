@@ -16,6 +16,13 @@ class SettingsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->signInBusinessOwner('settings-owner@example.com');
+    }
+
     /**
      * Test settings index page is accessible.
      */
@@ -122,6 +129,8 @@ class SettingsTest extends TestCase
             'name' => 'Manager User',
             'email' => 'manager@example.com',
             'password' => Hash::make('old_password'),
+            'role' => 'owner',
+            'status' => 'active',
         ]);
 
         // Try changing password

@@ -126,13 +126,24 @@
                 @click="open = !open" 
                 class="flex items-center gap-2.5 rounded-xl border border-border p-1 pr-3 hover:bg-card-tint transition-all focus:outline-none cursor-pointer"
             >
+                @php
+                    $profileUser = auth()->user();
+                    $profileName = $profileUser?->name ?? 'Business Owner';
+                    $profileRole = $profileUser?->role ? str_replace('_', ' ', $profileUser->role) : 'Owner';
+                    $profileInitials = collect(explode(' ', $profileName))
+                        ->filter()
+                        ->map(fn ($part) => mb_substr($part, 0, 1))
+                        ->take(2)
+                        ->implode('');
+                @endphp
+
                 <!-- Initials Orange Icon -->
                 <span class="h-8 w-8 rounded-lg bg-orange text-white text-xs font-black flex items-center justify-center shadow-sm">
-                    AK
+                    {{ strtoupper($profileInitials ?: 'BO') }}
                 </span>
                 <div class="hidden xl:flex flex-col text-left">
-                    <span class="text-[10px] font-extrabold text-ink leading-tight">Arjun Kumar</span>
-                    <span class="text-[8px] text-muted font-bold uppercase tracking-wider mt-0.5">Manager</span>
+                    <span class="text-[10px] font-extrabold text-ink leading-tight">{{ $profileName }}</span>
+                    <span class="text-[8px] text-muted font-bold uppercase tracking-wider mt-0.5">{{ $profileRole }}</span>
                 </div>
                 <svg class="h-3 w-3 text-muted transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -150,7 +161,10 @@
                 style="display: none;"
             >
                 <a href="/settings" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-ink hover:bg-card-tint transition-all">Settings</a>
-                <button class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger hover:bg-danger/5">Logout</button>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger hover:bg-danger/5">Logout</button>
+                </form>
             </div>
         </div>
     </div>
