@@ -10,12 +10,22 @@ class RazorpaySetting extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'enabled',
         'key_id',
+        'key_secret',
+    ];
+
+    protected $hidden = [
         'key_secret',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 }

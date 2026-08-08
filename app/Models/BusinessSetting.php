@@ -10,6 +10,7 @@ class BusinessSetting extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'brand_name',
         'logo_path',
         'business_email',
@@ -32,4 +33,9 @@ class BusinessSetting extends Model
         'cgst' => 'float',
         'sgst' => 'float',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 }

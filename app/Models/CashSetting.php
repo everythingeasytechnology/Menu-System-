@@ -10,10 +10,16 @@ class CashSetting extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'enabled',
     ];
 
     protected $casts = [
         'enabled' => 'boolean',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
 }

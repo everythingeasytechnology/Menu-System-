@@ -97,14 +97,22 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'enabled' => 'sometimes|boolean',
             'key_id' => 'required_if:enabled,1|nullable|string|max:255',
-            'key_secret' => 'required_if:enabled,1|nullable|string|max:255',
+            'key_secret' => 'nullable|string|max:255',
         ]);
 
         $razorpay = RazorpaySetting::firstOrCreate([]);
+
+        if ($request->has('enabled') && ! $request->filled('key_secret') && ! $razorpay->key_secret) {
+            return redirect()->back()
+                ->withErrors(['key_secret' => 'The key secret field is required when Razorpay is enabled.'])
+                ->withInput($request->except('key_secret'))
+                ->with('active_tab', 'payments');
+        }
+
         $razorpay->update([
             'enabled' => $request->has('enabled'),
             'key_id' => $request->key_id,
-            'key_secret' => $request->key_secret,
+            'key_secret' => $request->filled('key_secret') ? $request->key_secret : $razorpay->key_secret,
         ]);
 
         return redirect()->back()

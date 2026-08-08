@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Requests\Api\V1\Orders\StoreOrderRequest;
+use App\Http\Requests\Api\V1\Orders\UpdateOrderStatusRequest;
+use App\Http\Resources\Api\V1\OrderResource;
+use App\Models\Order;
+use App\Services\OrderService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class OrderController extends ApiController
+{
+    public function __construct(private readonly OrderService $orderService)
+    {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $orders = $this->baseQuery($request)
+            ->when($request->filled('status'), fn ($query) => $query->where('order_status', $request->input('status')))
+            ->latest()
+            ->paginate((int) $request->input('per_page', 25));
+
+        return $this->success(OrderResource::collection($orders), 'Orders');
+    }
+
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        $business = $this->business($request);
+
+        if (! $business) {
+            return $this->error('Business profile not found', 404);
+        }
+
+        $order = $this->orderService->create($business, $request->validated(), $request->user());
+
+        return $this->success(new OrderResource($order), 'Order created successfully', 201);
+    }
+
+    public function show(Request $request, Order $order): JsonResponse
+    {
+        if ($order->business_id !== $this->businessId($request)) {
+            return $this->error('Resource not found', 404);
+        }
+
+        return $this->success(new OrderResource($order->load(['items', 'payments'])), 'Order details');
+    }
+
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
+    {
+        if ($order->business_id !== $this->businessId($request)) {
+            return $this->error('Resource not found', 404);
+        }
+
+        $order = $this->orderService->updateStatus($order, $request->validated('status'), $request->user());
+
+        return $this->success(new OrderResource($order), 'Order status updated');
+    }
+
+    public function active(Request $request): JsonResponse
+    {
+        $orders = $this->baseQuery($request)
+            ->whereIn('order_status', Order::ACTIVE_STATUSES)
+            ->latest()
+            ->paginate((int) $request->input('per_page', 25));
+
+        return $this->success(OrderResource::collection($orders), 'Active orders');
+    }
+
+    public function byStatus(Request $request, string $status): JsonResponse
+    {
+        if (! in_array($status, Order::STATUSES, true)) {
+            return $this->error('Invalid order status', 422);
+        }
+
+        $orders = $this->baseQuery($request)
+            ->where('order_status', $status)
+            ->latest()
+            ->paginate((int) $request->input('per_page', 25));
+
+        return $this->success(OrderResource::collection($orders), ucfirst($status).' orders');
+    }
+
+    public function cancel(Request $request, Order $order): JsonResponse
+    {
+        if ($order->business_id !== $this->businessId($request)) {
+            return $this->error('Resource not found', 404);
+        }
+
+        if (in_array($order->order_status, ['completed', 'cancelled'], true)) {
+            return $this->error('Order cannot be cancelled from its current status', 422);
+        }
+
+        $order = $this->orderService->updateStatus($order, 'cancelled', $request->user());
+
+        return $this->success(new OrderResource($order), 'Order cancelled');
+    }
+
+    private function baseQuery(Request $request)
+    {
+        return Order::with(['items', 'payments'])
+            ->where('business_id', $this->businessId($request))
+            ->when($request->filled('from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('from')))
+            ->when($request->filled('to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('to')));
+    }
+}

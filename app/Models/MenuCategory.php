@@ -10,12 +10,28 @@ class MenuCategory extends Model
     use HasFactory;
 
     protected $fillable = [
+        'business_id',
         'name',
         'code',
+        'description',
+        'image_path',
+        'sort_order',
         'active',
+        'status',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'sort_order' => 'integer',
     ];
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    public function menuItems()
+    {
+        return $this->hasMany(MenuItem::class);
+    }
 }

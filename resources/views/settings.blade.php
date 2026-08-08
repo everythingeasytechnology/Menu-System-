@@ -500,8 +500,9 @@
                                 <input 
                                     :type="showSecret ? 'text' : 'password'" 
                                     name="key_secret" 
-                                    value="{{ old('key_secret', $razorpay->key_secret) }}"
+                                    value="{{ old('key_secret') }}"
                                     placeholder="••••••••••••••••••••••••"
+                                    autocomplete="new-password"
                                     class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
                                 >
                             </div>
