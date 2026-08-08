@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Requests\Api\V1\Orders\DirectOrderRequest;
 use App\Http\Requests\Api\V1\Orders\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Orders\UpdateOrderStatusRequest;
 use App\Http\Resources\Api\V1\OrderResource;
@@ -18,12 +19,20 @@ class OrderController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $orders = $this->baseQuery($request)
-            ->when($request->filled('status'), fn ($query) => $query->where('order_status', $request->input('status')))
+        $orders = $this->filteredQuery($request)
             ->latest()
             ->paginate((int) $request->input('per_page', 25));
 
         return $this->success(OrderResource::collection($orders), 'Orders');
+    }
+
+    public function all(Request $request): JsonResponse
+    {
+        $orders = $this->filteredQuery($request)
+            ->latest()
+            ->get();
+
+        return $this->success(OrderResource::collection($orders), 'All orders');
     }
 
     public function store(StoreOrderRequest $request): JsonResponse
@@ -37,6 +46,22 @@ class OrderController extends ApiController
         $order = $this->orderService->create($business, $request->validated(), $request->user());
 
         return $this->success(new OrderResource($order), 'Order created successfully', 201);
+    }
+
+    public function directStore(DirectOrderRequest $request): JsonResponse
+    {
+        $business = $this->business($request);
+
+        if (! $business) {
+            return $this->error('Business profile not found', 404);
+        }
+
+        $data = $request->validated();
+        $data['order_type'] ??= 'takeaway';
+
+        $order = $this->orderService->create($business, $data, $request->user());
+
+        return $this->success(new OrderResource($order), 'Direct order created successfully', 201);
     }
 
     public function show(Request $request, Order $order): JsonResponse
@@ -104,5 +129,22 @@ class OrderController extends ApiController
             ->where('business_id', $this->businessId($request))
             ->when($request->filled('from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('from')))
             ->when($request->filled('to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('to')));
+    }
+
+    private function filteredQuery(Request $request)
+    {
+        return $this->baseQuery($request)
+            ->when($request->filled('status'), fn ($query) => $query->where('order_status', $request->input('status')))
+            ->when($request->filled('payment_status'), fn ($query) => $query->where('payment_status', $request->input('payment_status')))
+            ->when($request->filled('order_type'), fn ($query) => $query->where('order_type', $request->input('order_type')))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('order_number', 'like', '%'.$search.'%')
+                        ->orWhere('customer_name', 'like', '%'.$search.'%')
+                        ->orWhere('customer_phone', 'like', '%'.$search.'%');
+                });
+            });
     }
 }

@@ -2,9 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\BusinessOwnerLoginController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\OrderOperationsController;
 use App\Http\Controllers\ServicePointController;
 
 Route::middleware('guest')->group(function () {
@@ -16,23 +19,22 @@ Route::post('/logout', [BusinessOwnerLoginController::class, 'destroy'])->middle
 
 Route::middleware(['auth', 'business.owner'])->group(function () {
     // Executive Dashboard
-    Route::get('/', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Operations
-    Route::get('/orders', function () {
-        $settings = \App\Models\BusinessSetting::first() ?? new \App\Models\BusinessSetting([
-            'brand_name' => 'Everyday Eats',
-            'gst_enabled' => false,
-            'cgst' => 2.5,
-            'sgst' => 2.5,
-        ]);
-        return view('orders', compact('settings'));
-    });
+    Route::get('/orders/history', [OrderOperationsController::class, 'history'])->name('dashboard.orders.history');
+    Route::get('/orders', [OrderOperationsController::class, 'index'])->name('dashboard.orders.index');
+    Route::get('/orders/live-feed', [OrderOperationsController::class, 'feed'])->name('dashboard.orders.feed');
+    Route::post('/orders/{order}/status', [OrderOperationsController::class, 'updateStatus'])->name('dashboard.orders.status');
+    Route::post('/orders/{order}/items', [OrderOperationsController::class, 'addItem'])->name('dashboard.orders.items.store');
+    Route::post('/orders/{order}/items/{item}/status', [OrderOperationsController::class, 'updateItemStatus'])->name('dashboard.orders.items.status');
+    Route::post('/orders/{order}/payment', [OrderOperationsController::class, 'updatePayment'])->name('dashboard.orders.payment');
+    Route::post('/orders/{order}/cancel', [OrderOperationsController::class, 'cancel'])->name('dashboard.orders.cancel');
 
     Route::get('/service-points', [ServicePointController::class, 'index'])->name('service-points.index');
     Route::post('/service-points', [ServicePointController::class, 'store'])->name('service-points.store');
+    Route::get('/service-points/{id}/scanner', [ServicePointController::class, 'scanner'])->name('service-points.scanner');
+    Route::post('/service-points/{id}/settle', [ServicePointController::class, 'settle'])->name('service-points.settle');
     Route::put('/service-points/{id}', [ServicePointController::class, 'update'])->name('service-points.update');
     Route::delete('/service-points/{id}', [ServicePointController::class, 'destroy'])->name('service-points.destroy');
 
@@ -43,6 +45,12 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
     Route::put('/menu/{id}', [MenuController::class, 'update'])->name('menu.update');
     Route::post('/menu/{id}/toggle-stock', [MenuController::class, 'toggleStock'])->name('menu.toggle-stock');
     Route::delete('/menu/{id}', [MenuController::class, 'destroy'])->name('menu.destroy');
+
+    Route::get('/coupons', [CouponController::class, 'index'])->name('dashboard.coupons.index');
+    Route::post('/coupons', [CouponController::class, 'store'])->name('dashboard.coupons.store');
+    Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('dashboard.coupons.update');
+    Route::post('/coupons/{coupon}/toggle', [CouponController::class, 'toggle'])->name('dashboard.coupons.toggle');
+    Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('dashboard.coupons.destroy');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');

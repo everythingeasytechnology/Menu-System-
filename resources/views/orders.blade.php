@@ -1,400 +1,240 @@
 @extends('layouts.app')
 
-@section('title', 'System Orders')
+@section('title', 'Live Orders')
 
 @section('content')
-<div 
-    x-data="{ 
-        activeTab: 'all',
-        searchQuery: '',
-        statusFilter: 'all',
-        selectedOrderId: '#43291',
-        isLoading: false,
+<div
+    x-data="ordersPage({
+        initialOrders: @js($ordersPayload),
+        selectedOrderId: @js($selectedOrderId),
+        statuses: @js($statuses),
+        itemStatuses: @js($itemStatuses),
+        menuItems: @js($menuItemsPayload),
+        feedUrl: '{{ route('dashboard.orders.feed') }}',
+        csrf: '{{ csrf_token() }}',
         gstSettings: {
             enabled: {{ $settings->gst_enabled ? 'true' : 'false' }},
             cgstRate: {{ $settings->cgst ?? 2.5 }},
             sgstRate: {{ $settings->sgst ?? 2.5 }},
-            brandName: '{{ addslashes($settings->brand_name ?? 'KFC') }}',
+            brandName: '{{ addslashes($settings->brand_name ?? $business->name) }}',
             gstNo: '{{ addslashes($settings->gst_no ?? '') }}',
-            address: '{{ addslashes($settings->address ?? 'Connaught Place') }}',
-            pincode: '{{ addslashes($settings->pincode ?? '110001') }}'
-        },
-
-        orders: [
-            {
-                id: '#43291',
-                channel: '🍽️ Dining',
-                customer: 'Rahul Sharma',
-                phone: '9876543210',
-                email: 'rahul@example.com',
-                location: 'Table 12 (Ground Floor)',
-                amount: '₹ 1,145.50',
-                payment: 'Paid via Stripe',
-                paymentStatus: 'paid',
-                status: 'preparing',
-                note: 'Please make the chicken extra crispy, and pack dips separately.',
-                items: [
-                    { name: '8 Pc Hot & Crispy Chicken', qty: 1, status: 'preparing' },
-                    { name: 'Pepsi (1.25 L)', qty: 2, status: 'ready' },
-                    { name: 'Parmesan Truffle Fries', qty: 1, status: 'served' }
-                ]
-            },
-            {
-                id: '#43290',
-                channel: '🥡 Packed',
-                customer: 'Arjun Kumar',
-                phone: '9876543211',
-                email: 'arjun@example.com',
-                location: 'Counter 2',
-                amount: '₹ 420.80',
-                payment: 'Paid',
-                paymentStatus: 'paid',
-                status: 'kitchen',
-                note: 'No onions in the sandwich, please.',
-                items: [
-                    { name: 'Turkey Club Sandwich', qty: 1, status: 'kitchen' },
-                    { name: 'Fresh Orange Juice', qty: 1, status: 'pending' }
-                ]
-            },
-            {
-                id: '#43289',
-                channel: '🥡 Packed',
-                customer: 'Walk-in Customer',
-                phone: 'N/A',
-                email: '',
-                location: 'Counter 1',
-                amount: '₹ 152.20',
-                payment: 'Paid (Cash)',
-                paymentStatus: 'paid',
-                status: 'ready',
-                note: '',
-                items: [
-                    { name: 'Zinger Burger', qty: 1, status: 'ready' },
-                    { name: 'Pepsi (600ml)', qty: 1, status: 'served' }
-                ]
-            },
-            {
-                id: '#43288',
-                channel: '🍽️ Dining',
-                customer: 'Priya Verma',
-                phone: '9876543290',
-                email: 'priya@example.com',
-                location: 'Table 4 (Cafe Floor)',
-                amount: '₹ 884.40',
-                payment: 'Unpaid',
-                paymentStatus: 'unpaid',
-                status: 'pending',
-                note: 'Need 4 extra ketchup packets and plastic straws.',
-                items: [
-                    { name: 'Smoky Red Bucket', qty: 1, status: 'pending' },
-                    { name: 'Garlic Bread (2 Pc)', qty: 2, status: 'pending' },
-                    { name: 'Lava Cake', qty: 1, status: 'pending' }
-                ]
-            }
-        ],
-
-        get selectedOrder() {
-            return this.orders.find(o => o.id === this.selectedOrderId);
-        },
-
-        triggerSearch() {
-            this.isLoading = true;
-            setTimeout(() => { this.isLoading = false }, 300);
-        },
-
-        // Advance individual item status
-        advanceItem(orderId, itemName, nextStatus) {
-            let order = this.orders.find(o => o.id === orderId);
-            if (order) {
-                let item = order.items.find(i => i.name === itemName);
-                if (item) {
-                    item.status = nextStatus;
-                }
-                
-                // Recalculate global order status based on item states
-                let statuses = order.items.map(i => i.status);
-                if (statuses.every(s => s === 'served' || s === 'cancelled')) {
-                    if (statuses.every(s => s === 'cancelled')) {
-                        order.status = 'cancelled';
-                    } else {
-                        order.status = 'served';
-                    }
-                } else if (statuses.every(s => s === 'ready' || s === 'served' || s === 'cancelled')) {
-                    order.status = 'ready';
-                } else if (statuses.includes('preparing')) {
-                    order.status = 'preparing';
-                } else if (statuses.includes('kitchen')) {
-                    order.status = 'kitchen';
-                } else {
-                    order.status = 'pending';
-                }
-            }
-        },
-
-        // Cancel the entire order ticket
-        cancelOrder(orderId) {
-            let order = this.orders.find(o => o.id === orderId);
-            if (order) {
-                order.status = 'cancelled';
-                order.items.forEach(i => i.status = 'cancelled');
-            }
-        },
-
-        // Print POS style bill receipt
-        printReceipt(order) {
-            if (window.printOrderReceipt) {
-                window.printOrderReceipt(order, this.gstSettings);
-            }
+            address: '{{ addslashes($settings->address ?? '') }}',
+            pincode: '{{ addslashes($settings->pincode ?? '') }}'
         }
-    }"
-    class="space-y-6"
+    })"
+    x-init="start()"
+    class="space-y-3"
 >
-    <!-- Page Title & Control Actions -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-            <h1 class="text-xl font-bold tracking-tight text-ink">Order Operations</h1>
-            <p class="text-xs text-muted mt-0.5">Control individual items and operational status from the kitchen deck.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <button 
-                @click="alert('New ticket wizard...')"
-                class="rounded-xl bg-orange hover:bg-orange/95 px-4.5 py-2 text-xs font-bold text-white shadow-md shadow-orange/20 cursor-pointer flex items-center gap-1.5"
-            >
-                <span>+ New Ticket</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Filters & Search Control Grid -->
-    <x-card class="p-4" variant="default">
-        <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
-            <!-- Tabs (Dine-in, Takeaway, Room Service) -->
-            <div class="flex items-center gap-1 bg-card-tint border border-border p-1 rounded-lg w-full lg:w-auto">
-                <button 
-                    @click="activeTab = 'all'; triggerSearch()"
-                    :class="activeTab === 'all' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
-                >
-                    All Channels
-                </button>
-                <button 
-                    @click="activeTab = 'dine-in'; triggerSearch()"
-                    :class="activeTab === 'dine-in' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
-                >
-                    Dining
-                </button>
-                <button 
-                    @click="activeTab = 'takeaway'; triggerSearch()"
-                    :class="activeTab === 'takeaway' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
-                    class="flex-1 lg:flex-none rounded px-3 py-1.5 text-[10px] cursor-pointer"
-                >
-                    Packed
-                </button>
+    <x-card class="p-2" variant="default">
+        <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex w-full items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card-tint p-0.5 lg:w-auto">
+                <button @click="activeTab = 'all'" :class="tabClass('all')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">All</button>
+                <button @click="activeTab = 'dine-in'" :class="tabClass('dine-in')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Dining</button>
+                <button @click="activeTab = 'takeaway'" :class="tabClass('takeaway')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Packed</button>
+                <button @click="activeTab = 'room-service'" :class="tabClass('room-service')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Room</button>
             </div>
 
-            <!-- Search and Status Filters -->
-            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                <input 
-                    type="text" 
+            <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                <input
+                    type="text"
                     x-model="searchQuery"
-                    @input.debounce.300ms="triggerSearch()"
-                    placeholder="Search by order ID or table..."
-                    class="w-full rounded-xl border border-border bg-card-tint px-3 py-2 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange outline-none"
+                    placeholder="Search order, customer, phone, location..."
+                    class="w-full rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] text-ink outline-none transition-all placeholder:text-muted focus:border-orange lg:w-72"
                 >
 
-                <select 
-                    x-model="statusFilter"
-                    @change="triggerSearch()"
-                    class="rounded-xl border border-border bg-card-tint px-3 py-2 text-xs font-semibold text-ink outline-none cursor-pointer"
-                >
+                <select x-model="statusFilter" class="rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] font-semibold text-ink outline-none">
                     <option value="all">All Statuses</option>
-                    <option value="new">New</option>
-                    <option value="preparing">Preparing</option>
-                    <option value="ready">Ready</option>
-                    <option value="served">Served</option>
+                    @foreach($statuses as $status => $label)
+                        <option value="{{ $status }}">{{ $label }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
     </x-card>
 
-    <!-- Splits Grid: Orders List & Item status control center -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start relative">
-        <!-- Skeleton loader overlay -->
-        <div x-show="isLoading" class="absolute inset-0 bg-bg/65 backdrop-blur-[1px] z-10 flex justify-center items-center rounded-card" style="display: none;">
-            <div class="animate-spin rounded-full h-8 w-8 border-2 border-orange border-t-transparent"></div>
-        </div>
-
-        <!-- Left: Orders Table list (Col-span 2) -->
-        <div class="lg:col-span-2 space-y-4">
-            <x-card class="p-3" variant="default">
-                <div class="max-h-[580px] overflow-y-auto overflow-x-auto pr-1">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 bg-card z-10">
-                            <tr class="border-b border-border text-[9px] font-bold text-muted uppercase tracking-wider bg-card">
-                                <th class="pb-2.5 pl-2">Order ID</th>
-                                <th class="pb-2.5 hidden sm:table-cell">Channel</th>
-                                <th class="pb-2.5">Location</th>
-                                <th class="pb-2.5 hidden md:table-cell">Customer</th>
-                                <th class="pb-2.5 text-center hidden sm:table-cell">Items</th>
-                                <th class="pb-2.5">Total</th>
-                                <th class="pb-2.5 hidden sm:table-cell">Payment</th>
-                                <th class="pb-2.5">Status</th>
+    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="space-y-3">
+            <x-card class="p-0" variant="default">
+                <div class="max-h-[calc(100vh-238px)] overflow-auto">
+                    <table class="w-full min-w-[640px] border-collapse text-left">
+                        <thead class="sticky top-0 z-10 bg-card">
+                            <tr class="border-b border-border bg-card-tint text-[9px] font-bold uppercase tracking-wider text-muted">
+                                <th class="px-3 py-2">Order</th>
+                                <th class="px-3 py-2">Location</th>
+                                <th class="px-3 py-2">Customer</th>
+                                <th class="px-3 py-2 text-center">Items</th>
+                                <th class="px-3 py-2">Payment</th>
+                                <th class="px-3 py-2">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/60">
-                            <template x-for="o in orders" :key="o.id">
-                                <tr 
-                                    x-show="
-                                        (activeTab === 'all' || 
-                                         (activeTab === 'dine-in' && o.channel.includes('Dining')) || 
-                                         (activeTab === 'takeaway' && o.channel.includes('Packed'))) &&
-                                        (statusFilter === 'all' || o.status === statusFilter) &&
-                                        (searchQuery === '' || o.id.toLowerCase().includes(searchQuery.toLowerCase()) || o.location.toLowerCase().includes(searchQuery.toLowerCase()) || o.customer.toLowerCase().includes(searchQuery.toLowerCase()))
-                                    "
-                                    @click="selectedOrderId = o.id"
-                                    :class="selectedOrderId === o.id ? 'bg-orange/5 font-semibold' : 'hover:bg-card-tint/30'"
-                                    class="cursor-pointer transition-all border-b border-border/40"
+                            <template x-for="order in filteredOrders" :key="order.id">
+                                <tr
+                                    @click="selectOrder(order.id)"
+                                    :class="selectedOrderId === order.id ? 'bg-orange/5' : 'hover:bg-card-tint/40'"
+                                    class="cursor-pointer transition-all"
                                 >
-                                    <td class="py-2.5 pl-2 font-bold text-orange text-xs" x-text="o.id"></td>
-                                    <td class="py-2.5 text-xs font-semibold text-muted hidden sm:table-cell" x-text="o.channel"></td>
-                                    <td class="py-2.5 text-xs text-ink" x-text="o.location"></td>
-                                    <td class="py-2.5 text-xs text-muted hidden md:table-cell">
-                                        <div class="flex items-center gap-1 font-bold text-ink">
-                                            <span x-text="o.customer"></span>
-                                            <span class="text-[9px] font-normal text-muted" x-text="`(${o.phone})`"></span>
-                                        </div>
-                                        <template x-if="o.email">
-                                            <div class="text-[9px] text-orange font-medium mt-0.5" x-text="o.email"></div>
-                                        </template>
+                                    <td class="px-3 py-2 text-[11px] font-black text-orange" x-text="order.displayId"></td>
+                                    <td class="px-3 py-2 text-[11px] font-bold text-ink" x-text="order.location"></td>
+                                    <td class="px-3 py-2">
+                                        <div class="text-[11px] font-bold text-ink" x-text="order.customer"></div>
+                                        <div class="text-[9px] font-semibold text-muted" x-text="order.phone"></div>
                                     </td>
-                                    <td class="py-2.5 text-xs text-muted text-center hidden sm:table-cell" x-text="o.items.length"></td>
-                                    <td class="py-2.5 font-bold text-ink text-xs" x-text="o.amount"></td>
-                                    <!-- Payment status column -->
-                                    <td class="py-2.5 text-xs hidden sm:table-cell">
-                                        <span 
-                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider"
-                                            :class="{
-                                                'bg-success/5 text-success border border-success/10': o.paymentStatus === 'paid',
-                                                'bg-danger/5 text-danger border border-danger/10': o.paymentStatus === 'unpaid',
-                                                'bg-orange/5 text-orange border border-orange/10': o.paymentStatus === 'pending'
-                                            }"
-                                            x-text="o.paymentStatus"
-                                        ></span>
+                                    <td class="px-3 py-2 text-center text-[11px] font-bold text-muted" x-text="order.itemCount"></td>
+                                    <td class="px-3 py-2">
+                                        <span class="inline-flex rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider" :class="paymentClass(order.paymentStatus)" x-text="order.paymentLabel"></span>
                                     </td>
-                                    <td class="py-2.5">
-                                        <span 
-                                            class="inline-flex items-center rounded-lg px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider"
-                                            :class="{
-                                                'bg-slate-100 text-slate-600 border border-slate-200': o.status === 'pending',
-                                                'bg-blue-50 text-blue-500 border border-blue-100': o.status === 'kitchen',
-                                                'bg-orange/5 text-orange border border-orange/10': o.status === 'preparing',
-                                                'bg-teal/5 text-teal border border-teal/10': o.status === 'ready',
-                                                'bg-success/5 text-success border border-success/10': o.status === 'served',
-                                                'bg-danger/5 text-danger border border-danger/10': o.status === 'cancelled'
-                                            }"
-                                            x-text="o.status"
-                                        ></span>
+                                    <td class="px-3 py-2">
+                                        <span class="inline-flex rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider" :class="statusClass(order.status)" x-text="order.statusLabel"></span>
                                     </td>
                                 </tr>
                             </template>
+
+                            <tr x-show="filteredOrders.length === 0">
+                                <td colspan="6" class="px-4 py-8 text-center">
+                                    <p class="text-xs font-black text-ink">No orders found</p>
+                                    <p class="mt-1 text-xs text-muted">Try clearing filters or wait for new orders.</p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </x-card>
         </div>
 
-        <!-- Right: Particular Item status Control Panel (Col-span 1) -->
-        <div 
-            class="lg:col-span-1"
-            :class="selectedOrderId ? 'fixed inset-0 z-50 flex items-end justify-center lg:static lg:z-auto lg:flex lg:items-start lg:justify-start bg-navy-deep/60 backdrop-blur-xs lg:bg-transparent lg:backdrop-blur-none p-4' : 'hidden lg:block'"
+        <div
+            class="xl:col-span-1"
+            :class="selectedOrderId ? 'fixed inset-0 z-50 flex items-end justify-center bg-navy-deep/60 p-3 backdrop-blur-xs xl:static xl:z-auto xl:block xl:bg-transparent xl:p-0 xl:backdrop-blur-none' : 'hidden xl:block'"
             @click.self="selectedOrderId = null"
         >
             <template x-if="selectedOrder">
-                <x-card class="p-5 space-y-5 w-full max-w-md lg:max-w-none shadow-2xl lg:shadow-none border border-border lg:border-none" variant="default">
-                    <!-- Heading info -->
-                    <div class="pb-3.5 border-b border-border flex justify-between items-start">
+                <x-card class="w-full max-w-sm space-y-3 border border-border p-3 shadow-2xl xl:max-w-none xl:shadow-sm" variant="default">
+                    <div class="flex items-start justify-between border-b border-border pb-2">
                         <div>
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Active Ticket Detail</span>
-                            <h3 class="text-sm font-extrabold text-ink block mt-0.5" x-text="selectedOrder.location"></h3>
-                            <!-- Customer Details inside details drawer -->
-                            <div class="mt-1.5 text-[10px] text-slate-500 font-semibold text-left">
-                                <span class="text-ink font-extrabold" x-text="selectedOrder.customer"></span>
-                                <span x-show="selectedOrder.phone && selectedOrder.phone !== 'N/A'" x-text="` (${selectedOrder.phone})`"></span>
-                                <template x-if="selectedOrder.email">
-                                    <span x-text="` • ${selectedOrder.email}`" class="text-orange font-bold"></span>
-                                </template>
-                            </div>
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider text-muted">Order Detail</span>
+                            <h3 class="mt-0.5 text-xs font-extrabold text-ink" x-text="selectedOrder.location"></h3>
+                            <p class="mt-0.5 text-[10px] font-semibold text-muted">
+                                <span x-text="selectedOrder.customer"></span>
+                                <span x-show="selectedOrder.phone !== 'N/A'" x-text="` (${selectedOrder.phone})`"></span>
+                            </p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-orange" x-text="selectedOrder.id"></span>
-                            <button 
-                                type="button"
-                                @click="selectedOrderId = null" 
-                                class="lg:hidden text-muted hover:text-ink font-bold text-sm cursor-pointer p-1"
-                            >
-                                ✕
-                            </button>
+                        <div class="text-right">
+                            <span class="block text-xs font-black text-orange" x-text="selectedOrder.displayId"></span>
+                            <button type="button" @click="selectedOrderId = null" class="mt-1 text-[11px] font-bold text-muted hover:text-ink xl:hidden">Close</button>
                         </div>
                     </div>
- 
-                    <!-- Items list progress tracker -->
-                    <div class="space-y-3">
-                        <span class="block text-[10px] font-bold text-muted uppercase tracking-wider">Item Progress Control</span>
-                        
-                        <div class="divide-y divide-border/60">
-                            <template x-for="item in selectedOrder.items" :key="item.name">
-                                <div class="py-2 flex items-center justify-between gap-3 text-xs">
+
+                    <div class="space-y-2">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-muted">Items</span>
+                        <div class="max-h-56 divide-y divide-border/60 overflow-auto">
+                            <template x-for="item in selectedOrder.items" :key="item.id">
+                                <div class="grid grid-cols-[minmax(0,1fr)_112px] items-center gap-2 py-1.5 text-[11px]">
                                     <div class="min-w-0">
-                                        <span class="font-extrabold text-ink truncate block max-w-[200px]" :title="item.name" x-text="item.name"></span>
-                                        <span class="block text-[9px] text-muted mt-0.5" x-text="`Qty: ${item.qty}`"></span>
+                                        <span class="block truncate font-extrabold text-ink" x-text="item.name"></span>
+                                        <span class="block text-[9px] text-muted" x-text="`Qty: ${item.qty}`"></span>
                                     </div>
-                                    <div class="flex items-center shrink-0">
-                                        <select 
-                                            @change="advanceItem(selectedOrder.id, item.name, $event.target.value)"
-                                            class="rounded-lg border border-border/85 bg-card-tint py-1 px-1.5 text-[9px] font-extrabold text-ink outline-none cursor-pointer focus:border-orange focus:ring-1 focus:ring-orange/20 transition-all"
+                                    <label class="block">
+                                        <span class="mb-0.5 block text-[8px] font-bold uppercase tracking-wider text-muted">Item Status</span>
+                                        <select
+                                            :value="item.status"
+                                            @click.stop
+                                            @change="updateOrderItemStatus(selectedOrder.id, item.id, $event.target.value)"
+                                            :disabled="isUpdatingItemStatus || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
+                                            class="w-full rounded-md border px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                            :class="statusClass(item.status)"
                                         >
-                                            <option value="pending" :selected="item.status === 'pending'">📋 Pending</option>
-                                            <option value="kitchen" :selected="item.status === 'kitchen'">🍳 Kitchen</option>
-                                            <option value="preparing" :selected="item.status === 'preparing'">🔥 Preparing</option>
-                                            <option value="ready" :selected="item.status === 'ready'">🔔 Ready</option>
-                                            <option value="served" :selected="item.status === 'served'">🍽️ Served</option>
-                                            <option value="cancelled" :selected="item.status === 'cancelled'">🚫 Cancelled</option>
+                                            <template x-for="statusOption in itemStatuses" :key="statusOption.value">
+                                                <option :value="statusOption.value" x-text="statusOption.label"></option>
+                                            </template>
                                         </select>
-                                    </div>
+                                    </label>
                                 </div>
                             </template>
                         </div>
                     </div>
 
-                    <!-- Customer Note / Kitchen instructions -->
+                    <div class="border-t border-border pt-2">
+                        <button
+                            type="button"
+                            @click="openAddItemModal()"
+                            :disabled="menuItems.length === 0 || !selectedOrder || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
+                            class="w-full rounded-lg bg-orange px-3 py-2 text-[11px] font-bold text-white shadow-md shadow-orange/20 transition-all hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Add Item
+                        </button>
+
+                        <template x-if="menuItems.length === 0">
+                            <p class="mt-1.5 text-[10px] font-semibold text-muted">No active menu items available.</p>
+                        </template>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2">
+                        <label class="block">
+                            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Order Status</span>
+                            <select
+                                @change="updateOrderStatus(selectedOrder.id, $event.target.value)"
+                                class="w-full rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange"
+                            >
+                                @foreach($statuses as $status => $label)
+                                    <option value="{{ $status }}" :selected="selectedOrder.status === '{{ $status }}'">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                    </div>
+
                     <template x-if="selectedOrder.note">
-                        <div class="bg-orange/5 border border-orange/10 p-2.5 rounded-xl text-left">
-                            <span class="block text-[8px] font-bold text-orange uppercase tracking-wider">Kitchen Note / Instructions</span>
-                            <p class="text-[10px] italic text-slate-700 leading-normal mt-0.5" x-text="selectedOrder.note"></p>
+                        <div class="rounded-lg border border-orange/10 bg-orange/5 p-2">
+                            <span class="block text-[8px] font-bold uppercase tracking-wider text-orange">Instructions</span>
+                            <p class="mt-1 text-[10px] italic leading-normal text-slate-700" x-text="selectedOrder.note"></p>
                         </div>
                     </template>
 
-                    <!-- Footer Action details -->
-                    <div class="border-t border-border pt-4 flex flex-col gap-3">
-                        <div class="flex justify-between items-center text-[10px] text-muted font-bold">
-                            <span x-text="`Payment: ${selectedOrder.payment}`"></span>
-                            <span x-text="`Total: ${selectedOrder.amount}`" class="text-ink"></span>
+                    <div class="border-t border-border pt-3">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-[10px] font-bold text-muted">
+                                <span x-text="`Payment: ${selectedOrder.paymentLabel}`"></span>
+                                <span class="text-ink" x-text="selectedOrder.amount"></span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <label class="block">
+                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Status</span>
+                                    <select x-model="paymentForm.status" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
+                                        <option value="unpaid">Unpaid</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="paid">Paid</option>
+                                    </select>
+                                </label>
+
+                                <label class="block">
+                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Method</span>
+                                    <select x-model="paymentForm.method" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
+                                        <option value="cash">Cash</option>
+                                        <option value="online">Online</option>
+                                        <option value="razorpay">Razorpay</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div class="grid grid-cols-[minmax(0,1fr)_88px] gap-1.5">
+                                <label class="block">
+                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Amount</span>
+                                    <input type="number" min="0" step="0.01" x-model.number="paymentForm.amount" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
+                                </label>
+
+                                <button type="button" @click="markCashPaid()" :disabled="isUpdatingPayment" class="self-end rounded-lg bg-success/10 py-1.5 text-[10px] font-black text-success transition-all hover:bg-success/20 disabled:opacity-50">Cash Paid</button>
+                            </div>
+
+                            <template x-if="paymentError">
+                                <p class="rounded-lg border border-danger/10 bg-danger/5 px-2 py-1.5 text-[10px] font-bold text-danger" x-text="paymentError"></p>
+                            </template>
                         </div>
-                        <div class="flex gap-2">
-                            <button 
-                                @click="printReceipt(selectedOrder)"
-                                class="flex-1 rounded-xl bg-orange hover:bg-orange/95 text-white py-2.5 text-xs font-bold shadow-md shadow-orange/20 cursor-pointer transition-all text-center flex items-center justify-center gap-1.5"
-                            >
-                                🖨️ Print Bill
-                            </button>
-                            <template x-if="selectedOrder.status !== 'served' && selectedOrder.status !== 'cancelled'">
-                                <button 
-                                    @click="cancelOrder(selectedOrder.id)"
-                                    class="flex-1 rounded-xl bg-danger/10 hover:bg-danger/20 text-danger py-2.5 text-xs font-bold transition-all cursor-pointer text-center"
-                                >
-                                    🚫 Cancel Ticket
-                                </button>
+
+                        <div class="mt-2 flex gap-2">
+                            <button type="button" @click="updatePayment()" :disabled="isUpdatingPayment" class="flex-1 rounded-lg bg-teal/10 py-2 text-center text-[11px] font-bold text-teal transition-all hover:bg-teal/20 disabled:opacity-50" x-text="isUpdatingPayment ? 'Saving...' : 'Update Payment'"></button>
+                            <button type="button" @click="printReceipt(selectedOrder)" class="flex-1 rounded-lg bg-orange py-2 text-center text-[11px] font-bold text-white shadow-md shadow-orange/20 transition-all hover:bg-orange/95">Print</button>
+                            <template x-if="selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled'">
+                                <button type="button" @click="cancelOrder(selectedOrder.id)" class="flex-1 rounded-lg bg-danger/10 py-2 text-center text-[11px] font-bold text-danger transition-all hover:bg-danger/20">Cancel</button>
                             </template>
                         </div>
                     </div>
@@ -402,159 +242,620 @@
             </template>
 
             <template x-if="!selectedOrder">
-                <x-card class="p-5 text-center flex flex-col justify-center items-center h-48 border border-dashed border-border" variant="default">
-                    <span class="text-xl">🛎️</span>
-                    <h3 class="text-xs font-bold text-ink mt-2">No Ticket Selected</h3>
-                    <p class="text-[10px] text-muted mt-1 leading-normal">Select an active order ticket on the left ledger to manage item progress.</p>
+                <x-card class="flex h-36 flex-col items-center justify-center border border-dashed border-border p-3 text-center" variant="default">
+                    <h3 class="text-xs font-bold text-ink">No Order Selected</h3>
+                    <p class="mt-1 text-[10px] leading-normal text-muted">Select an order from the live database list.</p>
                 </x-card>
             </template>
         </div>
     </div>
+
+    <div
+        x-show="isAddItemModalOpen"
+        x-transition.opacity
+        style="display: none;"
+        class="fixed inset-0 z-[80] flex items-end justify-center bg-navy-deep/60 p-3 backdrop-blur-xs sm:items-center"
+        @click.self="closeAddItemModal()"
+        @keydown.escape.window="closeAddItemModal()"
+    >
+        <form
+            @submit.prevent="addOrderItem()"
+            class="w-full max-w-md rounded-card border border-border bg-card p-3 shadow-2xl"
+        >
+            <div class="flex items-start justify-between gap-3 border-b border-border pb-2">
+                <div>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider text-muted">Order Detail</span>
+                    <h3 class="mt-0.5 text-sm font-black text-ink">Add Item</h3>
+                    <p class="mt-0.5 text-[10px] font-semibold text-muted" x-show="selectedOrder">
+                        <span x-text="selectedOrder?.displayId"></span>
+                        <span x-text="selectedOrder ? ` - ${selectedOrder.location}` : ''"></span>
+                    </p>
+                </div>
+                <button type="button" @click="closeAddItemModal()" class="rounded-lg border border-border bg-card-tint px-2.5 py-1 text-[11px] font-bold text-muted hover:text-ink">Close</button>
+            </div>
+
+            <div class="mt-3 space-y-2">
+                <label class="block">
+                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Category</span>
+                    <select
+                        x-model="addItemForm.category"
+                        @change="syncSelectedCategory()"
+                        class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] font-bold text-ink outline-none focus:border-orange"
+                    >
+                        <template x-for="category in menuCategories" :key="category.value">
+                            <option :value="category.value" x-text="`${category.label} (${category.count})`"></option>
+                        </template>
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Search Items</span>
+                    <input
+                        type="text"
+                        x-model="addItemForm.itemSearch"
+                        @input.debounce.200ms="syncSelectedCategory()"
+                        class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] text-ink outline-none placeholder:text-muted focus:border-orange"
+                    >
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Item</span>
+                    <select
+                        x-model="addItemForm.menuItemId"
+                        @change="syncSelectedMenuItem()"
+                        :disabled="filteredMenuItemsForAdd.length === 0"
+                        class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] font-bold text-ink outline-none focus:border-orange disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <template x-for="menuItem in filteredMenuItemsForAdd" :key="menuItem.id">
+                            <option :value="String(menuItem.id)" x-text="`${menuItem.name} - ${menuItem.priceLabel}`"></option>
+                        </template>
+                    </select>
+                    <span x-show="filteredMenuItemsForAdd.length === 0" class="mt-1 block text-[10px] font-bold text-danger">No items found in this category.</span>
+                </label>
+
+                <template x-if="selectedMenuItemVariants.length > 0">
+                    <label class="block">
+                        <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Variant</span>
+                        <select
+                            x-model="addItemForm.variantId"
+                            class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] font-bold text-ink outline-none focus:border-orange"
+                        >
+                            <template x-for="variant in selectedMenuItemVariants" :key="variant.id">
+                                <option :value="String(variant.id)" x-text="`${variant.label} - ${variant.priceLabel}`"></option>
+                            </template>
+                        </select>
+                    </label>
+                </template>
+
+                <div class="grid grid-cols-[90px_minmax(0,1fr)] gap-2">
+                    <label class="block">
+                        <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Qty</span>
+                        <input
+                            type="number"
+                            min="1"
+                            max="99"
+                            x-model.number="addItemForm.quantity"
+                            class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] font-bold text-ink outline-none focus:border-orange"
+                        >
+                    </label>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Instructions</span>
+                        <input
+                            type="text"
+                            x-model="addItemForm.specialInstructions"
+                            class="w-full rounded-lg border border-border bg-card-tint px-3 py-2 text-[12px] text-ink outline-none placeholder:text-muted focus:border-orange"
+                        >
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between rounded-lg border border-orange/10 bg-orange/5 px-3 py-2 text-[11px] font-bold">
+                    <span class="text-muted" x-text="selectedMenuItem?.name || 'Item'"></span>
+                    <span class="text-orange" x-text="selectedAddItemPriceLabel"></span>
+                </div>
+
+                <template x-if="addItemError">
+                    <p class="rounded-lg border border-danger/10 bg-danger/5 px-3 py-2 text-[11px] font-bold text-danger" x-text="addItemError"></p>
+                </template>
+            </div>
+
+            <div class="mt-3 flex gap-2 border-t border-border pt-3">
+                <button type="button" @click="closeAddItemModal()" class="flex-1 rounded-lg border border-border bg-card-tint py-2 text-[11px] font-bold text-ink hover:bg-card">Cancel</button>
+                <button
+                    type="submit"
+                    :disabled="isAddingItem || !selectedMenuItem || !selectedMenuItemIsVisible"
+                    class="flex-1 rounded-lg bg-orange py-2 text-[11px] font-bold text-white shadow-md shadow-orange/20 transition-all hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
+                    x-text="isAddingItem ? 'Adding...' : 'Add Item'"
+                ></button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-    window.printOrderReceipt = function(order, gstSettings) {
-        if (!order) return;
-        
-        let subtotal = order.amount ? parseFloat(order.amount.replace(/[^\d\.]/g, '')) : 0;
-        let total = subtotal;
-        let cgstAmount = 0;
-        let sgstAmount = 0;
-        let taxDetailsHtml = '';
-        
-        if (gstSettings && gstSettings.enabled) {
-            let totalTaxRate = gstSettings.cgstRate + gstSettings.sgstRate;
-            subtotal = total / (1 + totalTaxRate / 100);
-            cgstAmount = subtotal * (gstSettings.cgstRate / 100);
-            sgstAmount = subtotal * (gstSettings.sgstRate / 100);
-            
-            taxDetailsHtml = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                    <span>CGST (${gstSettings.cgstRate}%):</span>
-                    <span>₹ ${cgstAmount.toFixed(2)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 3px; border-bottom: 1px dashed #000; padding-bottom: 4px;">
-                    <span>SGST (${gstSettings.sgstRate}%):</span>
-                    <span>₹ ${sgstAmount.toFixed(2)}</span>
-                </div>
-            `;
-        }
-        
-        let itemsHtml = order.items.map(item => `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <div style="max-width: 75%; text-align: left;">
-                    <span style="font-weight: bold;">${item.name}</span>
-                    <span style="display: block; font-size: 8px; color: #555;">Status: ${item.status}</span>
-                </div>
-                <span>x${item.qty}</span>
-            </div>
-        `).join('');
-        
-        let brandName = gstSettings ? gstSettings.brandName : 'KFC';
-        let address = gstSettings ? gstSettings.address : 'Connaught Place';
-        let pincode = gstSettings ? gstSettings.pincode : '110001';
-        let gstNo = gstSettings ? gstSettings.gstNo : '';
-        
-        let printWindow = window.open('', '_blank', 'width=380,height=600');
-        printWindow.document.write(`
-            <html>
-            <head>
-                <title>Bill Receipt - ${order.id}</title>
-                <style>
-                    @media print {
-                        body {
-                            width: 74mm;
-                            margin: 0;
-                            padding: 5px;
-                        }
+    function ordersPage(config) {
+        return {
+            orders: config.initialOrders || [],
+            selectedOrderId: config.selectedOrderId,
+            statuses: config.statuses || {},
+            itemStatuses: config.itemStatuses || [],
+            menuItems: config.menuItems || [],
+            liveStatuses: ['pending', 'confirmed', 'preparing', 'ready', 'served'],
+            activeTab: 'all',
+            searchQuery: '',
+            statusFilter: 'all',
+            refreshTimer: null,
+            isUpdatingItemStatus: false,
+            isUpdatingPayment: false,
+            isAddingItem: false,
+            isAddItemModalOpen: false,
+            addItemError: '',
+            paymentError: '',
+            paymentForm: {
+                status: 'unpaid',
+                method: 'cash',
+                amount: 0,
+                transactionId: ''
+            },
+            addItemForm: {
+                category: config.menuItems?.[0]?.category || '',
+                menuItemId: config.menuItems?.[0]?.id ? String(config.menuItems[0].id) : '',
+                variantId: '',
+                quantity: 1,
+                specialInstructions: '',
+                itemSearch: ''
+            },
+
+            start() {
+                this.syncSelectedCategory();
+                this.syncPaymentForm();
+                this.refreshTimer = setInterval(() => this.refreshOrders(), 20000);
+            },
+
+            get selectedOrder() {
+                return this.orders.find((order) => order.id === this.selectedOrderId) || null;
+            },
+
+            selectOrder(orderId) {
+                this.selectedOrderId = orderId;
+                this.syncPaymentForm();
+            },
+
+            get menuCategories() {
+                const counts = new Map();
+
+                this.menuItems.forEach((menuItem) => {
+                    const category = menuItem.category || '';
+                    counts.set(category, (counts.get(category) || 0) + 1);
+                });
+
+                return Array.from(counts.entries()).map(([value, count]) => ({
+                    value,
+                    label: value || 'Uncategorized',
+                    count
+                }));
+            },
+
+            get filteredMenuItemsForAdd() {
+                const category = this.addItemForm.category || '';
+                const query = (this.addItemForm.itemSearch || '').toLowerCase().trim();
+
+                return this.menuItems.filter((menuItem) => {
+                    const categoryMatches = String(menuItem.category || '') === String(category);
+                    const searchMatches = query === ''
+                        || menuItem.name.toLowerCase().includes(query)
+                        || (menuItem.category || '').toLowerCase().includes(query);
+
+                    return categoryMatches && searchMatches;
+                });
+            },
+
+            get selectedMenuItem() {
+                return this.menuItems.find((menuItem) => String(menuItem.id) === String(this.addItemForm.menuItemId)) || null;
+            },
+
+            get selectedMenuItemIsVisible() {
+                return this.filteredMenuItemsForAdd.some((menuItem) => String(menuItem.id) === String(this.addItemForm.menuItemId));
+            },
+
+            get selectedMenuItemVariants() {
+                return this.selectedMenuItem?.variants || [];
+            },
+
+            get selectedAddItemPriceLabel() {
+                const variant = this.selectedMenuItemVariants.find((itemVariant) => String(itemVariant.id) === String(this.addItemForm.variantId));
+
+                return variant?.priceLabel || this.selectedMenuItem?.priceLabel || '';
+            },
+
+            get filteredOrders() {
+                const query = this.searchQuery.toLowerCase();
+
+                return this.orders.filter((order) => {
+                    const channelMatches = this.activeTab === 'all' || order.channelType === this.activeTab;
+                    const statusMatches = this.statusFilter === 'all' || order.status === this.statusFilter;
+                    const searchMatches = query === ''
+                        || order.displayId.toLowerCase().includes(query)
+                        || order.orderNumber.toLowerCase().includes(query)
+                        || order.location.toLowerCase().includes(query)
+                        || order.customer.toLowerCase().includes(query)
+                        || order.phone.toLowerCase().includes(query);
+
+                    return channelMatches && statusMatches && searchMatches;
+                });
+            },
+
+            tabClass(tab) {
+                return this.activeTab === tab
+                    ? 'bg-white text-ink shadow-sm'
+                    : 'text-muted hover:text-ink';
+            },
+
+            statusClass(status) {
+                return {
+                    pending: 'bg-slate-100 text-slate-600 border border-slate-200',
+                    confirmed: 'bg-blue-50 text-blue-500 border border-blue-100',
+                    preparing: 'bg-orange/10 text-orange border border-orange/10',
+                    ready: 'bg-teal/10 text-teal border border-teal/10',
+                    served: 'bg-success/10 text-success border border-success/10',
+                    completed: 'bg-success/10 text-success border border-success/10',
+                    cancelled: 'bg-danger/10 text-danger border border-danger/10'
+                }[status] || 'bg-card-tint text-muted border border-border';
+            },
+
+            paymentClass(status) {
+                return {
+                    paid: 'bg-success/10 text-success border border-success/10',
+                    unpaid: 'bg-danger/10 text-danger border border-danger/10',
+                    pending: 'bg-orange/10 text-orange border border-orange/10'
+                }[status] || 'bg-card-tint text-muted border border-border';
+            },
+
+            syncSelectedCategory() {
+                if (!this.addItemForm.category && this.menuCategories.length > 0) {
+                    this.addItemForm.category = this.menuCategories[0].value;
+                }
+
+                const currentItemVisible = this.filteredMenuItemsForAdd.some((menuItem) => String(menuItem.id) === String(this.addItemForm.menuItemId));
+
+                if (!currentItemVisible) {
+                    this.addItemForm.menuItemId = this.filteredMenuItemsForAdd[0]?.id
+                        ? String(this.filteredMenuItemsForAdd[0].id)
+                        : '';
+                }
+
+                this.syncSelectedMenuItem();
+            },
+
+            syncSelectedMenuItem() {
+                if (this.selectedMenuItemVariants.length > 0) {
+                    const hasSelectedVariant = this.selectedMenuItemVariants.some((variant) => String(variant.id) === String(this.addItemForm.variantId));
+                    this.addItemForm.variantId = hasSelectedVariant ? String(this.addItemForm.variantId) : String(this.selectedMenuItemVariants[0].id);
+                    return;
+                }
+
+                this.addItemForm.variantId = '';
+            },
+
+            openAddItemModal() {
+                if (this.menuItems.length === 0 || !this.selectedOrder) return;
+
+                if (!this.addItemForm.menuItemId && this.menuItems[0]?.id) {
+                    this.addItemForm.menuItemId = String(this.menuItems[0].id);
+                }
+
+                this.addItemError = '';
+                this.addItemForm.itemSearch = '';
+                this.addItemForm.quantity = Math.max(1, Number(this.addItemForm.quantity || 1));
+                this.syncSelectedCategory();
+                this.isAddItemModalOpen = true;
+            },
+
+            closeAddItemModal() {
+                if (this.isAddingItem) return;
+
+                this.isAddItemModalOpen = false;
+                this.addItemError = '';
+            },
+
+            validationMessage(payload) {
+                if (payload?.message && payload.message !== 'Validation failed') {
+                    return payload.message;
+                }
+
+                const firstErrorGroup = Object.values(payload?.errors || {})[0];
+                if (Array.isArray(firstErrorGroup) && firstErrorGroup.length > 0) {
+                    return firstErrorGroup[0];
+                }
+
+                return 'Unable to add item.';
+            },
+
+            syncPaymentForm() {
+                const order = this.selectedOrder;
+                if (!order) return;
+
+                this.paymentForm.status = order.paymentStatus || 'unpaid';
+                this.paymentForm.method = order.paymentMethod || 'cash';
+                this.paymentForm.amount = Number(order.rawTotal || 0);
+                this.paymentForm.transactionId = '';
+                this.paymentError = '';
+            },
+
+            isLiveOrder(order) {
+                return this.liveStatuses.includes(order.status)
+                    || (order.status === 'completed' && order.paymentStatus !== 'paid');
+            },
+
+            replaceOrder(updatedOrder) {
+                const index = this.orders.findIndex((order) => order.id === updatedOrder.id);
+
+                if (!this.isLiveOrder(updatedOrder)) {
+                    if (index >= 0) {
+                        this.orders.splice(index, 1);
                     }
-                    body {
-                        font-family: 'Courier New', Courier, monospace;
-                        width: 74mm;
-                        margin: 0 auto;
-                        padding: 10px 5px;
-                        font-size: 10px;
-                        line-height: 1.4;
-                        color: #000;
+
+                    if (this.selectedOrderId === updatedOrder.id) {
+                        this.selectedOrderId = this.orders[0]?.id || null;
+                        this.syncPaymentForm();
                     }
-                    .text-center { text-align: center; }
-                    .text-right { text-align: right; }
-                    .bold { font-weight: bold; }
-                    .divider { border-top: 1px dashed #000; margin: 6px 0; }
-                    .brand-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-                    .receipt-header { margin-bottom: 8px; }
-                    .receipt-footer { margin-top: 12px; font-size: 8px; text-align: center; }
-                </style>
-            </head>
-            <body>
-                <div class="text-center receipt-header">
-                    <div class="brand-title">${brandName}</div>
-                    <div>${address}</div>
-                    <div>PIN: ${pincode}</div>
-                    ${gstNo ? `<div>GSTIN: ${gstNo}</div>` : ''}
-                </div>
-                
-                <div class="divider"></div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 9px;">
-                    <span>Order ID: <b>${order.id}</b></span>
-                    <span>Date: ${new Date().toLocaleDateString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 9px; margin-top: 2px;">
-                    <span>Channel: ${order.channel}</span>
-                    <span>Loc: ${order.location}</span>
-                </div>
-                <div style="font-size: 9px; margin-top: 2px; text-align: left;">
-                    <span>Cust: ${order.customer} ${order.phone !== 'N/A' ? '(' + order.phone + ')' : ''}</span>
-                </div>
-                
-                <div class="divider"></div>
-                
-                <div style="font-weight: bold; display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Item Description</span>
-                    <span>Qty</span>
-                </div>
-                
-                <div class="divider"></div>
-                
-                <div>${itemsHtml}</div>
-                
-                <div class="divider"></div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-                    <span>Subtotal:</span>
-                    <span>₹ ${subtotal.toFixed(2)}</span>
-                </div>
-                
-                ${taxDetailsHtml}
-                
-                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-top: 4px; border-bottom: 1px dashed #000; padding-bottom: 4px;">
-                    <span>TOTAL BILL:</span>
-                    <span>${order.amount}</span>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 8px; margin-top: 4px; color: #333;">
-                    <span>Payment Status:</span>
-                    <span style="text-transform: uppercase; font-weight: bold;">${order.paymentStatus} (${order.payment})</span>
-                </div>
-                
-                <div class="divider"></div>
-                
-                <div class="receipt-footer">
-                    <p class="bold" style="margin: 2px 0;">Thank you for dining with us!</p>
-                    <p style="margin: 2px 0;">Powered by EverythingEasy ServiceOS</p>
-                </div>
-                
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() { window.close(); }, 500);
+
+                    return;
+                }
+
+                if (index >= 0) {
+                    this.orders.splice(index, 1, updatedOrder);
+                } else {
+                    this.orders.unshift(updatedOrder);
+                }
+
+                if (!this.selectedOrderId) {
+                    this.selectedOrderId = updatedOrder.id;
+                }
+
+                if (this.selectedOrderId === updatedOrder.id) {
+                    this.syncPaymentForm();
+                }
+            },
+
+            async updateOrderStatus(orderId, status) {
+                const response = await fetch(`/orders/${orderId}/status`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const payload = await response.json();
+                if (!response.ok || !payload.success) {
+                    alert(payload.message || 'Unable to update order status.');
+                    return;
+                }
+
+                this.replaceOrder(payload.order);
+            },
+
+            async updateOrderItemStatus(orderId, itemId, status) {
+                this.isUpdatingItemStatus = true;
+
+                const response = await fetch(`/orders/${orderId}/items/${itemId}/status`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                const payload = await response.json();
+                this.isUpdatingItemStatus = false;
+
+                if (!response.ok || !payload.success) {
+                    alert(payload.message || 'Unable to update item status.');
+                    await this.refreshOrders();
+                    return;
+                }
+
+                this.replaceOrder(payload.order);
+            },
+
+            async markCashPaid() {
+                this.paymentForm.status = 'paid';
+                this.paymentForm.method = 'cash';
+                this.paymentForm.amount = Number(this.selectedOrder?.rawTotal || this.paymentForm.amount || 0);
+                await this.updatePayment();
+            },
+
+            async updatePayment() {
+                if (!this.selectedOrder) return;
+
+                this.paymentError = '';
+                const amount = Number(this.paymentForm.amount || 0);
+                if (amount < 0) {
+                    this.paymentError = 'Amount cannot be negative.';
+                    return;
+                }
+
+                this.isUpdatingPayment = true;
+
+                const response = await fetch(`/orders/${this.selectedOrder.id}/payment`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
+                    },
+                    body: JSON.stringify({
+                        payment_status: this.paymentForm.status,
+                        payment_method: this.paymentForm.status === 'unpaid' ? null : this.paymentForm.method,
+                        amount,
+                        transaction_id: this.paymentForm.transactionId || null
+                    })
+                });
+
+                const payload = await response.json();
+                this.isUpdatingPayment = false;
+
+                if (!response.ok || !payload.success) {
+                    this.paymentError = this.validationMessage(payload);
+                    return;
+                }
+
+                this.replaceOrder(payload.order);
+            },
+
+            async addOrderItem() {
+                this.addItemError = '';
+
+                if (!this.selectedOrder || !this.selectedMenuItem || !this.selectedMenuItemIsVisible) {
+                    this.addItemError = 'Select an item first.';
+                    return;
+                }
+
+                const quantity = Number(this.addItemForm.quantity || 1);
+                if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+                    this.addItemError = 'Quantity must be between 1 and 99.';
+                    return;
+                }
+
+                this.isAddingItem = true;
+
+                const response = await fetch(`/orders/${this.selectedOrder.id}/items`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
+                    },
+                    body: JSON.stringify({
+                        menu_item_id: Number(this.addItemForm.menuItemId),
+                        variant_id: this.addItemForm.variantId ? Number(this.addItemForm.variantId) : null,
+                        quantity,
+                        special_instructions: this.addItemForm.specialInstructions || null
+                    })
+                });
+
+                const payload = await response.json();
+                this.isAddingItem = false;
+
+                if (!response.ok || !payload.success) {
+                    this.addItemError = this.validationMessage(payload);
+                    return;
+                }
+
+                this.replaceOrder(payload.order);
+                this.addItemForm.quantity = 1;
+                this.addItemForm.specialInstructions = '';
+                this.closeAddItemModal();
+            },
+
+            async cancelOrder(orderId) {
+                const response = await fetch(`/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
                     }
-                <\/script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-    };
+                });
+
+                const payload = await response.json();
+                if (!response.ok || !payload.success) {
+                    alert(payload.message || 'Unable to cancel order.');
+                    return;
+                }
+
+                this.replaceOrder(payload.order);
+            },
+
+            async refreshOrders() {
+                const response = await fetch(`${config.feedUrl}?limit=100&active_only=1`, {
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) return;
+                const payload = await response.json();
+                if (payload.success) {
+                    this.orders = payload.orders || [];
+                    if (this.selectedOrderId && !this.orders.some((order) => order.id === this.selectedOrderId)) {
+                        this.selectedOrderId = this.orders[0]?.id || null;
+                    }
+                }
+            },
+
+            printReceipt(order) {
+                if (!order) return;
+
+                const gst = config.gstSettings || {};
+                const total = Number(order.rawTotal || 0);
+                const totalTaxRate = gst.enabled ? Number(gst.cgstRate || 0) + Number(gst.sgstRate || 0) : 0;
+                const subtotal = totalTaxRate > 0 ? total / (1 + totalTaxRate / 100) : total;
+                const cgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.cgstRate || 0) / 100) : 0;
+                const sgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.sgstRate || 0) / 100) : 0;
+                const itemsHtml = order.items.map((item) => `
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                        <span>${item.name}</span>
+                        <span>x${item.qty}</span>
+                    </div>
+                `).join('');
+
+                const taxHtml = gst.enabled ? `
+                    <div style="display:flex;justify-content:space-between;"><span>CGST (${gst.cgstRate}%):</span><span>Rs. ${cgstAmount.toFixed(2)}</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span>SGST (${gst.sgstRate}%):</span><span>Rs. ${sgstAmount.toFixed(2)}</span></div>
+                ` : '';
+
+                const printWindow = window.open('', '_blank', 'width=380,height=600');
+                printWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Bill Receipt - ${order.displayId}</title>
+                        <style>
+                            body { font-family: Courier, monospace; width: 74mm; margin: 0 auto; padding: 10px 5px; font-size: 10px; color: #000; }
+                            .center { text-align: center; }
+                            .divider { border-top: 1px dashed #000; margin: 6px 0; }
+                            .bold { font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="center">
+                            <div class="bold">${gst.brandName || 'Business'}</div>
+                            <div>${gst.address || ''}</div>
+                            ${gst.pincode ? `<div>PIN: ${gst.pincode}</div>` : ''}
+                            ${gst.gstNo ? `<div>GSTIN: ${gst.gstNo}</div>` : ''}
+                        </div>
+                        <div class="divider"></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Order:</span><span>${order.displayId}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Channel:</span><span>${order.channel}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Location:</span><span>${order.location}</span></div>
+                        <div class="divider"></div>
+                        ${itemsHtml}
+                        <div class="divider"></div>
+                        ${taxHtml}
+                        <div style="display:flex;justify-content:space-between;font-size:12px;" class="bold"><span>Total:</span><span>${order.amount}</span></div>
+                        <div class="divider"></div>
+                        <div class="center">Thank you</div>
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(function() { window.close(); }, 500);
+                            }
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            }
+        };
+    }
 </script>
 @endsection

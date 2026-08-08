@@ -5,8 +5,10 @@
 @section('content')
 <div 
     x-data="servicePointManager({
-        initialPoints: {{ $points->toJson() }},
-        initialCategories: {{ json_encode($categories) }}
+        initialPoints: @js($points),
+        initialCategories: @js($categories),
+        businessName: @js($business->name),
+        csrf: '{{ csrf_token() }}'
     })"
     class="space-y-6"
 >
@@ -210,7 +212,7 @@
     <!-- Sliding Sidebar Checkout Drawer -->
     <div 
         x-show="drawerOpen" 
-        class="fixed inset-y-0 right-0 w-96 bg-card border-l border-border shadow-2xl z-50 flex flex-col justify-between"
+        class="fixed inset-y-0 right-0 w-full max-w-md bg-card border-l border-border shadow-2xl z-50 flex flex-col justify-between"
         style="display: none;"
         x-transition:enter="transition-transform ease-out duration-300"
         x-transition:enter-start="translate-x-full"
@@ -237,92 +239,92 @@
 
                 <!-- Drawer Content -->
                 <div class="p-6 flex-1 overflow-y-auto space-y-6">
-                    <!-- Scan-to-Order Link Card -->
-                    <div class="bg-card border border-border/80 rounded-xl p-4 space-y-3 shadow-xs">
+                    <!-- Scan-to-Order Actions -->
+                    <div class="bg-card border border-border/80 rounded-xl p-3 space-y-3 shadow-xs">
                         <div class="flex justify-between items-center pb-2 border-b border-border/60">
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">📱 Scan to Order</span>
+                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Scan to Order</span>
                             <span class="text-[8px] font-bold text-teal bg-teal/5 px-2 py-0.5 rounded-lg border border-teal/10">Active Link</span>
                         </div>
-                        
-                        <div class="flex items-center gap-4">
-                            <!-- QR Visual Mockup -->
-                            <div class="w-18 h-18 bg-card-tint border border-border rounded-lg flex flex-col items-center justify-center p-1.5 shrink-0 relative">
-                                <div class="w-full h-full border border-ink/40 rounded flex flex-wrap gap-0.5 p-0.5 bg-white">
-                                    <div class="w-3.5 h-3.5 bg-ink rounded-xs"></div>
-                                    <div class="w-3.5 h-3.5 bg-ink rounded-xs opacity-20"></div>
-                                    <div class="w-3.5 h-3.5 bg-ink rounded-xs opacity-50"></div>
-                                    <div class="w-3.5 h-3.5 bg-ink rounded-xs"></div>
-                                </div>
-                            </div>
 
-                            <div class="flex-1 min-w-0 space-y-1">
-                                <span class="block text-[8px] font-bold text-muted uppercase tracking-wider">Scan Link</span>
-                                <input 
-                                    type="text" 
-                                    readonly
-                                    :value="`http://127.0.0.1:8004/menu?point=${selectedTable.code}`"
-                                    class="w-full bg-card-tint border border-border/65 rounded-lg px-2 py-1 text-[8px] font-mono text-ink outline-none select-all"
-                                >
-                            </div>
-                        </div>
-
-                        <!-- sharing triggers -->
-                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-border/40">
+                        <div class="grid grid-cols-3 gap-2">
                             <button 
-                                @click="alert('Printing QR code sticker card for ' + selectedTable.name)"
-                                class="rounded-lg border border-border bg-card py-1.5 text-[9px] font-bold text-ink hover:bg-card-tint cursor-pointer active:scale-95 transition-all"
-                            >
-                                🖨️ Print QR Tag
-                            </button>
-                            <button 
-                                @click="
-                                    navigator.clipboard.writeText(`http://127.0.0.1:8004/menu?point=${selectedTable.code}`);
-                                    alert('Link copied to clipboard!');
-                                "
+                                @click="copyScanLink()"
                                 class="rounded-lg border border-orange/10 bg-orange/5 text-orange py-1.5 text-[9px] font-bold hover:bg-orange/10 cursor-pointer active:scale-95 transition-all"
                             >
-                                🔗 Copy Link
+                                Copy Link
                             </button>
+                            <button 
+                                @click="openScannerModal()"
+                                class="rounded-lg border border-border bg-card py-1.5 text-[9px] font-bold text-ink hover:bg-card-tint cursor-pointer active:scale-95 transition-all"
+                            >
+                                View
+                            </button>
+                            <a
+                                :href="`${selectedTable.scanner_url}?download=1`"
+                                class="rounded-lg border border-border bg-card py-1.5 text-center text-[9px] font-bold text-ink hover:bg-card-tint active:scale-95 transition-all"
+                            >
+                                Download
+                            </a>
                         </div>
+                        <span x-show="copyMessage" x-text="copyMessage" class="block text-[8px] font-bold text-teal"></span>
                     </div>
 
-                    <!-- Active Bill Log and Food items adding -->
-                    <div class="space-y-3.5" x-show="selectedTable.status !== 'available'">
+                    <!-- Active Bill Log -->
+                    <div class="space-y-3.5">
                         <div class="flex justify-between items-center">
                             <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider">Items on Bill</span>
                             <span class="text-[9px] font-extrabold text-orange" x-text="selectedTable.order_number"></span>
                         </div>
 
                         <div class="rounded-xl border border-border p-3.5 bg-card-tint space-y-2.5">
-                            <div class="space-y-1.5 max-h-36 overflow-y-auto">
-                                <template x-for="item in selectedTable.items">
-                                    <div class="flex justify-between items-center text-xs text-muted font-semibold">
-                                        <span x-text="item"></span>
-                                        <span class="text-[9px] text-teal">✓</span>
+                            <div class="space-y-2 max-h-56 overflow-y-auto">
+                                <template x-for="order in selectedTable.active_orders" :key="order.id">
+                                    <div class="rounded-lg border border-border bg-card p-2.5">
+                                        <div class="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
+                                            <div class="min-w-0">
+                                                <span class="block truncate text-[10px] font-black text-ink" x-text="order.display_id"></span>
+                                                <span class="block truncate text-[8px] font-bold text-muted" x-text="order.customer"></span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="block text-[10px] font-black text-ink" x-text="order.amount_label"></span>
+                                                <span class="block text-[8px] font-bold uppercase text-muted" x-text="`${order.status_label} / ${order.payment_status}`"></span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 space-y-1">
+                                            <template x-for="item in order.items" :key="item.id">
+                                                <div class="flex items-center justify-between gap-2 text-[10px] font-semibold text-muted">
+                                                    <span class="min-w-0 truncate" x-text="item.label"></span>
+                                                    <span class="shrink-0 rounded bg-card-tint px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider text-slate-500" x-text="item.status_label"></span>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
                                 </template>
-                                <template x-if="!selectedTable.items || selectedTable.items.length === 0">
+
+                                <template x-if="(!selectedTable.active_orders || selectedTable.active_orders.length === 0) && (!selectedTable.items || selectedTable.items.length === 0)">
                                     <span class="text-xs text-slate-400 block text-center py-2">No active orders added.</span>
+                                </template>
+
+                                <template x-if="(!selectedTable.active_orders || selectedTable.active_orders.length === 0) && selectedTable.items && selectedTable.items.length > 0">
+                                    <div class="space-y-1.5">
+                                        <template x-for="item in selectedTable.items" :key="item.label">
+                                            <div class="flex justify-between items-center text-xs text-muted font-semibold">
+                                                <span x-text="item.label"></span>
+                                                <span class="text-[9px] text-teal" x-text="item.status_label || 'Added'"></span>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </template>
                             </div>
                             <div class="h-px bg-border my-2"></div>
                             <div class="flex justify-between text-xs font-bold text-ink">
                                 <span>Running Balance</span>
-                                <span x-text="`₹ ${parseInt(selectedTable.amount)}`"></span>
-                            </div>
-                        </div>
-
-                        <!-- Menu Quick Adds Roster -->
-                        <div class="space-y-2">
-                            <span class="text-[9px] font-extrabold text-muted uppercase tracking-wider block">Quick Add Items</span>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button @click="addMockItem('Zinger Burger', 199)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍔 Burger (₹199)</button>
-                                <button @click="addMockItem('Garlic Bread', 120)" class="rounded-lg border border-border bg-card px-2.5 py-1.5 text-[10px] font-bold text-ink hover:border-orange hover:text-orange cursor-pointer">🍞 Garlic Bread (₹120)</button>
+                                <span x-text="`Rs. ${Number(selectedTable.amount || 0).toFixed(2)}`"></span>
                             </div>
                         </div>
 
                         <!-- Table Status Advancer -->
-                        <div class="pt-4.5 border-t border-border">
+                        <div class="pt-3 border-t border-border" x-show="selectedTable.status !== 'available'">
                             <button 
                                 @click="advanceStatus('bill-pending')"
                                 class="w-full rounded-lg border border-warning/30 bg-warning/5 text-warning py-2 text-[10px] font-bold hover:bg-warning/10 cursor-pointer active:scale-95 transition-all"
@@ -347,9 +349,10 @@
                     <!-- Checkout Trigger Button (If active) -->
                     <button 
                         x-show="selectedTable.status !== 'available'"
-                        @click="advanceStatus('available')"
-                        class="w-full rounded-xl bg-teal hover:bg-teal/95 py-3 text-xs font-bold text-white shadow-md shadow-teal/15 cursor-pointer"
-                        x-text="`Checkout & Settle (₹ ${parseInt(selectedTable.amount)})`"
+                        @click="settleSelectedTable()"
+                        :disabled="settling"
+                        class="w-full rounded-xl bg-teal hover:bg-teal/95 py-3 text-xs font-bold text-white shadow-md shadow-teal/15 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                        x-text="settling ? 'Settling...' : `Checkout & Settle (Rs. ${Number(selectedTable.amount || 0).toFixed(2)})`"
                     >
                     </button>
                     <button 
@@ -358,6 +361,74 @@
                     >
                         Close Panel
                     </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Scanner Preview Modal -->
+    <div
+        x-show="scannerModalOpen"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-navy-deep/70 p-4 backdrop-blur-xs"
+        style="display: none;"
+        x-transition.opacity
+        @click.self="scannerModalOpen = false"
+    >
+        <template x-if="selectedTable">
+            <div class="w-full max-w-sm rounded-card border border-border bg-card shadow-2xl">
+                <div class="flex items-center justify-between border-b border-border bg-card-tint px-5 py-4">
+                    <div>
+                        <span class="block text-[9px] font-black uppercase tracking-wider text-orange">Scan to Order</span>
+                        <h3 class="mt-1 text-sm font-black text-ink" x-text="businessName"></h3>
+                        <p class="mt-0.5 text-[10px] font-semibold text-muted" x-text="`${selectedTable.name} (${selectedTable.code})`"></p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="scannerModalOpen = false"
+                        class="rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-black text-muted hover:text-ink"
+                    >
+                        X
+                    </button>
+                </div>
+
+                <div class="space-y-4 p-5">
+                    <div class="mx-auto flex h-56 w-56 items-center justify-center rounded-2xl border border-border bg-white p-4 shadow-xs">
+                        <img :src="selectedTable.scanner_url" :alt="`${selectedTable.name} QR scanner`" class="h-full w-full object-contain">
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="block text-[8px] font-bold uppercase tracking-wider text-muted">Scan Link</span>
+                        <input
+                            type="text"
+                            readonly
+                            :value="selectedTable.scan_url"
+                            class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[9px] font-mono text-ink outline-none select-all"
+                        >
+                        <span x-show="copyMessage" x-text="copyMessage" class="block text-[8px] font-bold text-teal"></span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button
+                            type="button"
+                            @click="copyScanLink()"
+                            class="rounded-lg border border-orange/10 bg-orange/5 py-2 text-[9px] font-bold text-orange hover:bg-orange/10"
+                        >
+                            Copy Link
+                        </button>
+                        <button
+                            type="button"
+                            @click="printScanner()"
+                            class="rounded-lg border border-border bg-card py-2 text-[9px] font-bold text-ink hover:bg-card-tint"
+                        >
+                            Print
+                        </button>
+                        <a
+                            :href="`${selectedTable.scanner_url}?download=1`"
+                            class="rounded-lg border border-border bg-card py-2 text-center text-[9px] font-bold text-ink hover:bg-card-tint"
+                        >
+                            Download
+                        </a>
+                    </div>
                 </div>
             </div>
         </template>
@@ -472,11 +543,15 @@ function servicePointManager(config) {
     return {
         tables: config.initialPoints,
         categories: config.initialCategories,
+        businessName: config.businessName || 'Hotel',
         activeFloor: config.initialCategories.length > 0 ? config.initialCategories[0] : '',
         drawerOpen: false,
         selectedTableId: null,
         createModalOpen: false,
+        scannerModalOpen: false,
         statusFilter: 'all',
+        copyMessage: '',
+        settling: false,
 
         // Form Fields
         categoryInput: '',
@@ -505,6 +580,77 @@ function servicePointManager(config) {
             this.createModalOpen = true;
         },
 
+        openScannerModal() {
+            this.copyMessage = '';
+            this.scannerModalOpen = true;
+        },
+
+        replacePoint(updatedPoint) {
+            let index = this.tables.findIndex(t => t.id === updatedPoint.id);
+            if (index >= 0) {
+                Object.assign(this.tables[index], updatedPoint);
+            }
+        },
+
+        async copyScanLink() {
+            let t = this.selectedTable;
+            if (!t) return;
+
+            await navigator.clipboard.writeText(t.scan_url);
+            this.copyMessage = 'Link copied';
+            setTimeout(() => this.copyMessage = '', 1800);
+        },
+
+        escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[character]));
+        },
+
+        printScanner() {
+            let t = this.selectedTable;
+            if (!t) return;
+
+            let printWindow = window.open('', '_blank', 'width=420,height=560');
+            if (!printWindow) return;
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${this.escapeHtml(t.name)} QR Tag</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #111827; }
+                            .tag { width: 280px; border: 1px solid #d1d5db; border-radius: 12px; padding: 18px; text-align: center; }
+                            img { width: 190px; height: 190px; object-fit: contain; }
+                            .eyebrow { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #f97316; font-weight: 800; margin-bottom: 6px; }
+                            h1 { font-size: 18px; margin: 0 0 4px; }
+                            p { font-size: 12px; margin: 4px 0; color: #64748b; word-break: break-all; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="tag">
+                            <div class="eyebrow">Scan to Order</div>
+                            <h1>${this.escapeHtml(this.businessName)}</h1>
+                            <p>${this.escapeHtml(t.name)} (${this.escapeHtml(t.code)})</p>
+                            <img src="${t.scanner_url}" alt="QR scanner">
+                            <p>${this.escapeHtml(t.scan_url)}</p>
+                        </div>
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(function() { window.close(); }, 500);
+                            }
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        },
+
         // Trigger PUT updates to backend
         async syncPoint(point) {
             try {
@@ -512,7 +658,7 @@ function servicePointManager(config) {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': config.csrf
                     },
                     body: JSON.stringify({
                         status: point.status,
@@ -522,38 +668,66 @@ function servicePointManager(config) {
                 });
                 let data = await response.json();
                 if (data.success) {
-                    // Update state with synced record from server
-                    point.status = data.point.status;
-                    point.amount = data.point.amount;
-                    point.items = data.point.items;
-                    point.order_number = data.point.order_number;
+                    this.replacePoint(data.point);
+                } else if (data.message) {
+                    alert(data.message);
                 }
+
+                return Boolean(data.success);
             } catch (e) {
                 console.error('Failed to sync service point data', e);
-            }
-        },
-
-        // Mock Order Action
-        addMockItem(itemName, price) {
-            let t = this.selectedTable;
-            if (t) {
-                if (t.status === 'available') {
-                    t.status = 'occupied';
-                }
-                t.items = t.items || [];
-                t.items.push('1x ' + itemName);
-                t.amount = parseFloat(t.amount || 0) + price;
-                this.syncPoint(t);
+                return false;
             }
         },
 
         // Advance Point State
-        advanceStatus(status) {
+        async advanceStatus(status) {
             let t = this.selectedTable;
             if (t) {
                 t.status = status;
-                this.syncPoint(t);
+                let synced = await this.syncPoint(t);
+                if (synced && status === 'available') {
+                    this.drawerOpen = false;
+                }
+            }
+        },
+
+        async settleSelectedTable() {
+            let t = this.selectedTable;
+            if (!t || this.settling) return;
+
+            if (!t.active_order_count) {
+                await this.advanceStatus('available');
+                return;
+            }
+
+            if (!confirm(`Settle ${t.active_order_count} active order(s) and free ${t.name}?`)) {
+                return;
+            }
+
+            this.settling = true;
+            try {
+                let response = await fetch(`/service-points/${t.id}/settle`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf
+                    }
+                });
+                let data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    alert(data.message || 'Could not settle service point.');
+                    return;
+                }
+
+                this.replacePoint(data.point);
                 this.drawerOpen = false;
+            } catch (e) {
+                console.error('Failed to settle service point', e);
+                alert('Could not settle service point.');
+            } finally {
+                this.settling = false;
             }
         },
 
@@ -570,7 +744,7 @@ function servicePointManager(config) {
                 let response = await fetch(`/service-points/${point.id}`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': config.csrf
                     }
                 });
                 let data = await response.json();

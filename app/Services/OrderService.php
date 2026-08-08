@@ -5,11 +5,13 @@ namespace App\Services;
 use App\Models\Business;
 use App\Models\MenuItem;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\RestaurantTable;
 use App\Models\Room;
 use App\Models\ServicePoint;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -104,6 +106,10 @@ class OrderService
         return DB::transaction(function () use ($order, $status, $user) {
             $oldStatus = $order->order_status;
             $order->update(['order_status' => $status]);
+            $itemStatus = $this->itemStatusForOrderStatus($status);
+            if ($itemStatus) {
+                $order->items()->update(['status' => $itemStatus]);
+            }
 
             if ($status === 'completed') {
                 $order->update(['payment_status' => $order->payment_status === 'unpaid' ? 'pending' : $order->payment_status]);
@@ -122,8 +128,199 @@ class OrderService
                 'new_status' => $status,
             ]);
 
-            return $order->fresh(['items', 'payments']);
+            $this->releaseLocationIfSettled($order);
+
+            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
+    }
+
+    public function addItem(Order $order, array $data, ?User $user = null, bool $includeGlobalMenuItems = false): Order
+    {
+        return DB::transaction(function () use ($order, $data, $user, $includeGlobalMenuItems) {
+            $order = $order->fresh(['coupon', 'payments']);
+
+            if (in_array($order->order_status, ['completed', 'cancelled'], true)) {
+                throw ValidationException::withMessages([
+                    'order' => ['Items cannot be added to completed or cancelled orders.'],
+                ]);
+            }
+
+            [$lineItems, $addedSubtotal, $addedTax] = $this->buildLineItems($order->business_id, [$data], $includeGlobalMenuItems);
+            $lineItem = $order->items()->create($lineItems[0]);
+
+            $subtotal = round((float) $order->subtotal + $addedSubtotal, 2);
+            $tax = round((float) $order->tax + $addedTax, 2);
+            $discount = $order->coupon
+                ? $this->couponService->discountFor($order->coupon, $subtotal)
+                : min((float) $order->discount, $subtotal);
+            $total = round(max(0, $subtotal + $tax - $discount), 2);
+
+            $order->update([
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'discount' => $discount,
+                'total' => $total,
+                'payment_status' => $order->payment_status === 'paid' ? 'pending' : $order->payment_status,
+            ]);
+            $this->syncOrderStatusFromItems($order);
+
+            if ($order->payment_status !== 'paid') {
+                $order->payments()
+                    ->whereIn('status', ['pending', 'failed'])
+                    ->update(['amount' => $total]);
+            }
+
+            $this->notificationService->notifyBusiness(
+                $order->business_id,
+                'order_item_added',
+                'Order item added',
+                "{$lineItem->quantity} x {$lineItem->item_name} was added to {$order->order_number}.",
+                ['order_id' => $order->id, 'order_item_id' => $lineItem->id],
+            );
+
+            $this->auditLogService->record($user, $order->business_id, 'order.item_added', $order, [
+                'order_item_id' => $lineItem->id,
+                'item_name' => $lineItem->item_name,
+                'quantity' => $lineItem->quantity,
+                'total' => $lineItem->total,
+            ]);
+
+            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+        });
+    }
+
+    public function updateItemStatus(Order $order, OrderItem $item, string $status, ?User $user = null): Order
+    {
+        return DB::transaction(function () use ($order, $item, $status, $user) {
+            if ($item->order_id !== $order->id) {
+                throw ValidationException::withMessages([
+                    'item' => ['Order item does not belong to this order.'],
+                ]);
+            }
+
+            if (in_array($order->order_status, ['completed', 'cancelled'], true)) {
+                throw ValidationException::withMessages([
+                    'order' => ['Items cannot be updated on completed or cancelled orders.'],
+                ]);
+            }
+
+            $oldStatus = $item->status ?: $order->order_status;
+            $item->update(['status' => $status]);
+            $this->syncOrderStatusFromItems($order);
+
+            $this->notificationService->notifyBusiness(
+                $order->business_id,
+                'order_item_status_changed',
+                'Order item updated',
+                "{$item->item_name} changed to {$status} on {$order->order_number}.",
+                ['order_id' => $order->id, 'order_item_id' => $item->id, 'old_status' => $oldStatus, 'new_status' => $status],
+            );
+
+            $this->auditLogService->record($user, $order->business_id, 'order.item_status_changed', $order, [
+                'order_item_id' => $item->id,
+                'item_name' => $item->item_name,
+                'old_status' => $oldStatus,
+                'new_status' => $status,
+            ]);
+
+            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+        });
+    }
+
+    public function updatePayment(Order $order, array $data, ?User $user = null): Order
+    {
+        return DB::transaction(function () use ($order, $data, $user) {
+            $order = $order->fresh(['payments']);
+            $paymentStatus = $data['payment_status'];
+            $method = $data['payment_method'] ?? $order->payments()->latest()->value('payment_method') ?? 'cash';
+            $amount = round((float) ($data['amount'] ?? $order->total), 2);
+
+            if ($paymentStatus === 'unpaid') {
+                $order->update(['payment_status' => 'unpaid']);
+                $payment = null;
+            } else {
+                $gatewayStatus = $paymentStatus === 'paid' ? 'paid' : ($paymentStatus === 'refunded' ? 'refunded' : 'pending');
+                $payment = $order->payments()->latest()->first();
+
+                if (! $payment || $payment->status === 'paid' && $gatewayStatus !== 'paid') {
+                    $payment = new Payment([
+                        'order_id' => $order->id,
+                        'business_id' => $order->business_id,
+                    ]);
+                }
+
+                $payment->fill([
+                    'business_id' => $order->business_id,
+                    'payment_method' => $method,
+                    'payment_gateway' => $method === 'razorpay' ? 'razorpay' : null,
+                    'transaction_id' => $data['transaction_id'] ?? $payment->transaction_id,
+                    'amount' => $amount,
+                    'status' => $gatewayStatus,
+                    'paid_at' => $gatewayStatus === 'paid' ? ($payment->paid_at ?: now()) : null,
+                ])->save();
+
+                $order->update(['payment_status' => $paymentStatus === 'refunded' ? 'pending' : $paymentStatus]);
+            }
+
+            $this->notificationService->notifyBusiness(
+                $order->business_id,
+                'order_payment_updated',
+                'Payment updated',
+                "Order {$order->order_number} payment changed to {$paymentStatus}.",
+                ['order_id' => $order->id, 'payment_id' => $payment?->id, 'payment_status' => $paymentStatus],
+            );
+
+            $this->auditLogService->record($user, $order->business_id, 'order.payment_updated', $order, [
+                'payment_id' => $payment?->id,
+                'payment_method' => $method,
+                'payment_status' => $paymentStatus,
+                'amount' => $amount,
+            ]);
+
+            $this->releaseLocationIfSettled($order);
+
+            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+        });
+    }
+
+    private function releaseLocationIfSettled(Order $order): void
+    {
+        $order->refresh();
+
+        if ($order->order_status !== 'completed' || $order->payment_status !== 'paid') {
+            return;
+        }
+
+        if ($order->service_point_id) {
+            if (! $this->hasLiveOrdersForLocation($order, 'service_point_id', $order->service_point_id)) {
+                ServicePoint::whereKey($order->service_point_id)->update([
+                    'status' => 'available',
+                    'order_number' => null,
+                    'amount' => 0,
+                    'items' => null,
+                ]);
+            }
+        }
+
+        if ($order->table_id) {
+            if (! $this->hasLiveOrdersForLocation($order, 'table_id', $order->table_id)) {
+                RestaurantTable::whereKey($order->table_id)->update(['status' => 'available']);
+            }
+        }
+
+        if ($order->room_id) {
+            if (! $this->hasLiveOrdersForLocation($order, 'room_id', $order->room_id)) {
+                Room::whereKey($order->room_id)->update(['status' => 'available']);
+            }
+        }
+    }
+
+    private function hasLiveOrdersForLocation(Order $order, string $column, int $locationId): bool
+    {
+        return Order::where('business_id', $order->business_id)
+            ->where($column, $locationId)
+            ->live()
+            ->exists();
     }
 
     private function assertLocationBelongsToBusiness(int $businessId, ?int $tableId, ?int $roomId, ?int $servicePointId): void
@@ -141,7 +338,7 @@ class OrderService
         }
     }
 
-    private function buildLineItems(int $businessId, array $items): array
+    private function buildLineItems(int $businessId, array $items, bool $includeGlobalMenuItems = false): array
     {
         $lineItems = [];
         $subtotal = 0.0;
@@ -149,7 +346,13 @@ class OrderService
 
         foreach ($items as $itemData) {
             $menuItem = MenuItem::with('variants')
-                ->where('business_id', $businessId)
+                ->where(function ($query) use ($businessId, $includeGlobalMenuItems) {
+                    $query->where('business_id', $businessId);
+
+                    if ($includeGlobalMenuItems) {
+                        $query->orWhereNull('business_id');
+                    }
+                })
                 ->where('status', 'active')
                 ->where('availability', true)
                 ->where('stock', true)
@@ -168,6 +371,10 @@ class OrderService
                 }
             }
 
+            if (! $variant && (float) $menuItem->price <= 0 && $menuItem->variants->isNotEmpty()) {
+                $variant = $menuItem->variants->sortBy('price')->first();
+            }
+
             $price = round((float) ($variant?->price ?? $menuItem->price), 2);
             $quantity = (int) $itemData['quantity'];
             $lineSubtotal = round($price * $quantity, 2);
@@ -181,6 +388,7 @@ class OrderService
                 'variant_label' => $variant?->label,
                 'price' => $price,
                 'quantity' => $quantity,
+                'status' => $itemData['status'] ?? 'pending',
                 'tax' => $lineTax,
                 'discount' => 0,
                 'total' => $lineTotal,
@@ -194,10 +402,69 @@ class OrderService
         return [$lineItems, round($subtotal, 2), round($tax, 2)];
     }
 
+    private function syncOrderStatusFromItems(Order $order): void
+    {
+        if (in_array($order->order_status, ['completed', 'cancelled'], true)) {
+            return;
+        }
+
+        $statuses = $order->items()
+            ->get(['status'])
+            ->map(fn (OrderItem $item) => $item->status ?: $this->itemStatusForOrderStatus($order->order_status) ?: 'pending')
+            ->values();
+
+        if ($statuses->isEmpty()) {
+            return;
+        }
+
+        $newStatus = $this->aggregateItemStatuses($statuses);
+
+        if ($newStatus !== $order->order_status) {
+            $order->update(['order_status' => $newStatus]);
+        }
+    }
+
+    private function aggregateItemStatuses(Collection $statuses): string
+    {
+        if ($statuses->every(fn (string $status) => $status === 'cancelled')) {
+            return 'cancelled';
+        }
+
+        if ($statuses->every(fn (string $status) => in_array($status, ['served', 'cancelled'], true))) {
+            return 'served';
+        }
+
+        if ($statuses->every(fn (string $status) => in_array($status, ['ready', 'served', 'cancelled'], true))) {
+            return 'ready';
+        }
+
+        if ($statuses->contains('preparing')) {
+            return 'preparing';
+        }
+
+        if ($statuses->contains('confirmed')) {
+            return 'confirmed';
+        }
+
+        return 'pending';
+    }
+
+    private function itemStatusForOrderStatus(string $status): ?string
+    {
+        if ($status === 'completed') {
+            return 'served';
+        }
+
+        return in_array($status, OrderItem::STATUSES, true) ? $status : null;
+    }
+
     private function generateOrderNumber(): string
     {
+        $nextNumber = ((int) Order::max('id')) + 1001;
+
         do {
-            $number = 'ORD-'.now()->format('Ymd').'-'.str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+            $number = 'ORD-'.$nextNumber;
+            $nextNumber++;
         } while (Order::where('order_number', $number)->exists());
 
         return $number;

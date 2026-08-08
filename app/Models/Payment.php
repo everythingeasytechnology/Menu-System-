@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
+    public const METHODS = ['cash', 'online', 'razorpay'];
+
+    public const STATUSES = ['pending', 'paid', 'failed', 'refunded'];
+
     protected $fillable = [
         'order_id',
         'business_id',

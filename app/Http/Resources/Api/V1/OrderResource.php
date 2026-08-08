@@ -12,6 +12,7 @@ class OrderResource extends JsonResource
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
+            'display_order_id' => $this->compactNumber(),
             'order_type' => $this->order_type,
             'table_id' => $this->table_id,
             'room_id' => $this->room_id,

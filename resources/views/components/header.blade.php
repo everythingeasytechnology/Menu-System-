@@ -1,169 +1,163 @@
-<header class="flex h-20 items-center justify-between border-b border-border bg-card px-4 md:px-6 shadow-sm shrink-0">
-    <!-- Left Section: Mobile Menu & Branch Location Selector -->
-    <div class="flex items-center gap-4">
-        <!-- Toggle Sidebar (Mobile) -->
-        <button 
-            @click="sidebarOpen = true" 
-            class="rounded-xl p-2 text-muted hover:bg-card-tint hover:text-ink lg:hidden border border-border transition-colors cursor-pointer"
+@php
+    $profileUser = auth()->user();
+    $profileName = $profileUser?->name ?? 'Business Owner';
+    $profileRole = $profileUser?->role ? str_replace('_', ' ', $profileUser->role) : 'Owner';
+    $profileInitials = collect(explode(' ', $profileName))
+        ->filter()
+        ->map(fn ($part) => mb_substr($part, 0, 1))
+        ->take(2)
+        ->implode('');
+    $today = now('Asia/Kolkata');
+@endphp
+
+<header class="flex h-20 shrink-0 items-center justify-between border-b border-border bg-card px-4 shadow-sm md:px-8">
+    <div class="flex min-w-0 items-center gap-4">
+        <button
+            type="button"
+            @click="sidebarOpen = true"
+            class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted transition hover:bg-card-tint hover:text-ink lg:hidden"
+            aria-label="Open navigation"
         >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M5 12h14M5 17h14" />
             </svg>
         </button>
- 
-        <!-- Location Dropdown switcher -->
-        <div x-data="{ open: false }" class="relative">
-            <button 
-                @click="open = !open" 
-                class="flex items-center gap-2.5 rounded-xl border border-transparent px-2 py-1.5 text-xs font-semibold text-ink hover:bg-card-tint transition-all focus:outline-none cursor-pointer"
-            >
-                <span class="text-orange text-sm">📍</span>
-                <span class="font-bold text-ink truncate max-w-[110px] sm:max-w-none" x-text="activeBranch">KFC Connaught Place</span>
-                <svg class="h-3 w-3 text-muted transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
 
-            <!-- Dropdown Options -->
-            <div 
-                x-show="open" 
-                @click.outside="open = false"
-                x-transition:enter="transition ease-out duration-100"
-                x-transition:enter-start="opacity-0 scale-95"
-                x-transition:enter-end="opacity-100 scale-100"
-                class="absolute left-0 mt-2 w-56 origin-top-left rounded-2xl bg-card border border-border p-1.5 shadow-xl z-30" 
-                style="display: none;"
+        <div x-data="{ open: false }" class="relative hidden sm:block">
+            <button
+                type="button"
+                @click="open = !open"
+                class="flex h-12 min-w-[190px] items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 text-sm font-extrabold text-ink shadow-sm transition hover:bg-card-tint"
             >
-                <button 
-                    @click="activeBranch = 'KFC Connaught Place'; open = false" 
-                    class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-card-tint transition-all"
-                    :class="activeBranch === 'KFC Connaught Place' ? 'text-orange bg-orange/5 font-bold' : 'text-ink'"
-                >
-                    <span>📍</span>
-                    <span>KFC Connaught Place</span>
-                </button>
-                <button 
-                    @click="activeBranch = 'KFC Saket Mall'; open = false" 
-                    class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium hover:bg-card-tint transition-all"
-                    :class="activeBranch === 'KFC Saket Mall' ? 'text-orange bg-orange/5 font-bold' : 'text-ink'"
-                >
-                    <span>📍</span>
-                    <span>KFC Saket Mall</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Center Section: Command Search Bar with Ctrl+K shortcut -->
-    <div class="hidden md:flex max-w-lg w-full mx-6 relative">
-        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-            <svg class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-        </div>
-        <input 
-            type="text" 
-            placeholder="Search orders, menu, customers..." 
-            class="w-full rounded-xl border border-border bg-card-tint py-2.5 pl-10 pr-16 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
-            @keyup.keydown.meta.k.window="$el.focus()"
-            @keyup.keydown.ctrl.k.window="$el.focus()"
-        >
-        <div class="absolute inset-y-0 right-0 flex items-center pr-3.5">
-            <kbd class="hidden sm:inline-block rounded-lg border border-border bg-card px-1.5 py-0.5 text-[9px] font-bold text-muted shadow-xs">Ctrl + K</kbd>
-        </div>
-    </div>
-
-    <!-- Right Section: Alerts, Date Box & User profile metadata -->
-    <div class="flex items-center gap-4">
-        <!-- Notifications Bell -->
-        <div x-data="{ open: false }" class="relative">
-            <button 
-                @click="open = !open" 
-                class="relative rounded-xl border border-border p-2.5 text-muted hover:bg-card-tint hover:text-ink transition-colors focus:outline-none cursor-pointer"
-            >
-                <span class="absolute top-1.5 right-1.5 flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-orange"></span>
+                <span class="flex min-w-0 items-center gap-3">
+                    <span class="text-orange">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.75a6.75 6.75 0 0 0-6.75 6.75c0 4.6 5.54 10.7 5.78 10.96a1.32 1.32 0 0 0 1.94 0c.24-.26 5.78-6.36 5.78-10.96A6.75 6.75 0 0 0 12 2.75Zm0 9.25a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
+                        </svg>
+                    </span>
+                    <span class="truncate" x-text="activeBranch">Restaurant Branch</span>
                 </span>
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg class="h-4 w-4 shrink-0 text-muted transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                 </svg>
             </button>
 
-            <!-- Notification list overlay -->
-            <div 
-                x-show="open" 
+            <div
+                x-show="open"
                 @click.outside="open = false"
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
-                class="absolute right-0 mt-2 w-72 origin-top-right rounded-2xl bg-card border border-border p-4 shadow-xl z-30" 
+                class="absolute left-0 z-30 mt-2 w-60 origin-top-left rounded-xl border border-border bg-card p-1.5 shadow-xl"
                 style="display: none;"
             >
-                <div class="flex items-center justify-between pb-2.5 border-b border-border mb-2.5">
-                    <span class="text-xs font-black text-ink">Notifications</span>
-                    <button class="text-[10px] font-bold text-orange hover:underline">Clear all</button>
-                </div>
-                <div class="space-y-2 text-[11px] text-muted">
-                    <div class="p-1.5 rounded-lg hover:bg-card-tint cursor-pointer">🍔 Order #KFC1256 received</div>
-                    <div class="p-1.5 rounded-lg hover:bg-card-tint cursor-pointer">🍳 Order #KFC1252 is ready</div>
-                </div>
+                @foreach(['Restaurant Branch', 'Main Dining', 'Takeaway Counter'] as $branch)
+                    <button
+                        type="button"
+                        @click="activeBranch = '{{ $branch }}'; open = false"
+                        class="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-bold transition hover:bg-card-tint"
+                        :class="activeBranch === '{{ $branch }}' ? 'text-orange bg-orange/5' : 'text-ink'"
+                    >
+                        {{ $branch }}
+                    </button>
+                @endforeach
             </div>
         </div>
+    </div>
 
-        <!-- Date Picker Card -->
-        <div class="hidden lg:flex items-center gap-2 rounded-xl border border-border bg-card-tint px-3 py-1.5">
-            <span class="text-xs">📅</span>
-            <div class="flex flex-col text-left">
-                <span class="text-[10px] font-bold text-ink leading-tight">07 May 2025</span>
-                <span class="text-[8px] text-muted font-bold tracking-wider uppercase mt-0.5">Wednesday</span>
-            </div>
-        </div>
-
-        <!-- Profile Avatar Metadata selector -->
-        <div x-data="{ open: false }" class="relative">
-            <button 
-                @click="open = !open" 
-                class="flex items-center gap-2.5 rounded-xl border border-border p-1 pr-3 hover:bg-card-tint transition-all focus:outline-none cursor-pointer"
+    <div class="mx-4 hidden w-full max-w-xl md:block">
+        <label class="relative block">
+            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-muted">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+                </svg>
+            </span>
+            <input
+                type="search"
+                placeholder="Search orders, menu, customers..."
+                class="h-12 w-full rounded-xl border border-border bg-card px-4 pl-12 text-sm font-semibold text-ink outline-none transition placeholder:text-muted focus:border-orange focus:ring-4 focus:ring-orange/10"
             >
-                @php
-                    $profileUser = auth()->user();
-                    $profileName = $profileUser?->name ?? 'Business Owner';
-                    $profileRole = $profileUser?->role ? str_replace('_', ' ', $profileUser->role) : 'Owner';
-                    $profileInitials = collect(explode(' ', $profileName))
-                        ->filter()
-                        ->map(fn ($part) => mb_substr($part, 0, 1))
-                        ->take(2)
-                        ->implode('');
-                @endphp
+        </label>
+    </div>
 
-                <!-- Initials Orange Icon -->
-                <span class="h-8 w-8 rounded-lg bg-orange text-white text-xs font-black flex items-center justify-center shadow-sm">
+    <div class="flex shrink-0 items-center gap-3">
+        <div x-data="{ open: false }" class="relative">
+            <button
+                type="button"
+                @click="open = !open"
+                class="relative inline-flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card text-muted shadow-sm transition hover:bg-card-tint hover:text-ink"
+                aria-label="Notifications"
+            >
+                <span class="absolute right-2 top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-orange px-1 text-[9px] font-black leading-none text-white">3</span>
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25h-7.5m7.5 0H19l-1.25-2.5V11a5.75 5.75 0 0 0-11.5 0v3.75L5 17.25h3.25m7.5 0a3.75 3.75 0 0 1-7.5 0" />
+                </svg>
+            </button>
+
+            <div
+                x-show="open"
+                @click.outside="open = false"
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="absolute right-0 z-30 mt-2 w-72 origin-top-right rounded-xl border border-border bg-card p-4 shadow-xl"
+                style="display: none;"
+            >
+                <div class="flex items-center justify-between border-b border-border pb-3">
+                    <span class="text-sm font-black text-ink">Notifications</span>
+                    <button type="button" class="text-xs font-bold text-orange">Clear all</button>
+                </div>
+                <div class="mt-3 space-y-2 text-xs font-semibold text-muted">
+                    <div class="rounded-lg bg-card-tint px-3 py-2">Order received from Table 7</div>
+                    <div class="rounded-lg bg-card-tint px-3 py-2">Kitchen marked one item ready</div>
+                    <div class="rounded-lg bg-card-tint px-3 py-2">Cash payment needs review</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden h-12 items-center gap-3 rounded-xl border border-border bg-card px-4 shadow-sm lg:flex">
+            <span class="text-muted">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 3.75v3M17 3.75v3M4.75 9.25h14.5M6.75 5.25h10.5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-10a2 2 0 0 1 2-2Z" />
+                </svg>
+            </span>
+            <span class="text-left">
+                <span class="block text-xs font-black leading-tight text-ink">{{ $today->format('d M Y') }}</span>
+                <span class="mt-0.5 block text-[10px] font-black uppercase tracking-wider text-muted">{{ $today->format('l') }}</span>
+            </span>
+        </div>
+
+        <div x-data="{ open: false }" class="relative">
+            <button
+                type="button"
+                @click="open = !open"
+                class="flex h-12 items-center gap-3 rounded-xl border border-border bg-card py-1 pl-1 pr-3 shadow-sm transition hover:bg-card-tint"
+            >
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange text-sm font-black text-white shadow-sm">
                     {{ strtoupper($profileInitials ?: 'BO') }}
                 </span>
-                <div class="hidden xl:flex flex-col text-left">
-                    <span class="text-[10px] font-extrabold text-ink leading-tight">{{ $profileName }}</span>
-                    <span class="text-[8px] text-muted font-bold uppercase tracking-wider mt-0.5">{{ $profileRole }}</span>
-                </div>
-                <svg class="h-3 w-3 text-muted transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                <span class="hidden min-w-0 text-left xl:block">
+                    <span class="block max-w-28 truncate text-xs font-black leading-tight text-ink">{{ $profileName }}</span>
+                    <span class="mt-0.5 block text-[10px] font-black uppercase tracking-wider text-muted">{{ $profileRole }}</span>
+                </span>
+                <svg class="h-4 w-4 text-muted transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                 </svg>
             </button>
 
-            <!-- Dropdown Options -->
-            <div 
-                x-show="open" 
+            <div
+                x-show="open"
                 @click.outside="open = false"
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
-                class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-card border border-border p-1.5 shadow-xl z-30" 
+                class="absolute right-0 z-30 mt-2 w-48 origin-top-right rounded-xl border border-border bg-card p-1.5 shadow-xl"
                 style="display: none;"
             >
-                <a href="/settings" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-ink hover:bg-card-tint transition-all">Settings</a>
+                <a href="/settings" class="block rounded-lg px-3 py-2 text-xs font-bold text-ink transition hover:bg-card-tint">Settings</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-danger hover:bg-danger/5">Logout</button>
+                    <button type="submit" class="block w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-danger transition hover:bg-danger/5">Logout</button>
                 </form>
             </div>
         </div>

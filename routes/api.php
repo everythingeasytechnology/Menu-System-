@@ -64,8 +64,10 @@ Route::prefix('v1')->group(function () {
         Route::post('menu-items/{menuItem}/availability', [MenuItemController::class, 'toggleAvailability']);
         Route::apiResource('menu-items', MenuItemController::class)->parameters(['menu-items' => 'menuItem']);
 
+        Route::get('orders/all', [OrderController::class, 'all']);
         Route::get('orders/active', [OrderController::class, 'active']);
         Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
+        Route::post('orders/direct', [OrderController::class, 'directStore']);
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus']);
         Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);

@@ -1,15 +1,31 @@
 @php
+    $activeOrderCount = 0;
+
+    try {
+        if (
+            auth()->check()
+            && auth()->user()->business_id
+            && \Illuminate\Support\Facades\Schema::hasTable('orders')
+        ) {
+            $activeOrderCount = \App\Models\Order::where('business_id', auth()->user()->business_id)
+                ->live()
+                ->count();
+        }
+    } catch (\Throwable $e) {
+        $activeOrderCount = 0;
+    }
+
     $menuItems = [
-        ['label' => 'Dashboard', 'route' => '/', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"/></svg>'],
-        ['label' => 'Live Orders', 'route' => 'orders', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>', 'badge' => 12],
-        ['label' => 'Service Points', 'route' => 'service-points', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>'],
-        
-        ['label' => 'Categories', 'route' => 'categories', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>', 'group' => 'MENU MANAGEMENT'],
-        ['label' => 'Menu Items', 'route' => 'menu', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>'],
-        
-        ['label' => 'Staff Members', 'route' => 'staff', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>', 'group' => 'STAFF MANAGEMENT'],
-        ['label' => 'Reports Dashboard', 'route' => 'reports', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg>', 'group' => 'REPORTS'],
-        ['label' => 'Settings', 'route' => 'settings', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'group' => 'SYSTEM SETTINGS'],
+        ['label' => 'Dashboard', 'route' => '/', 'exact' => true, 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 5.75a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a1.5 1.5 0 0 1-1.5-1.5v-3Zm8.5 0a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a1.5 1.5 0 0 1-1.5-1.5v-3Zm-8.5 8.5a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a1.5 1.5 0 0 1-1.5-1.5v-3Zm8.5 0a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a1.5 1.5 0 0 1-1.5-1.5v-3Z" /></svg>'],
+        ['label' => 'Live Orders', 'route' => 'orders', 'exact' => true, 'badge' => $activeOrderCount, 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 8.75h10.5l1 10.5H5.75l1-10.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 8.75v-1a3 3 0 0 1 6 0v1" /></svg>'],
+        ['label' => 'Service Points', 'route' => 'service-points', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 5.75A2 2 0 0 1 6.75 4h10.5a2 2 0 0 1 2 1.75v11.5A2 2 0 0 1 17.25 19H6.75a2 2 0 0 1-2-1.75V5.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8 8h8M8 12h5M8 16h8" /></svg>'],
+        ['label' => 'Categories', 'route' => 'categories', 'group' => 'MENU MANAGEMENT', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8.25h14M6.75 5.25h10.5A1.75 1.75 0 0 1 19 7v11.25H5V7a1.75 1.75 0 0 1 1.75-1.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 18.25v-10m9 10v-10" /></svg>'],
+        ['label' => 'Menu Items', 'route' => 'menu', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 4.75h13v14.5h-13V4.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5" /></svg>'],
+        ['label' => 'Coupons', 'route' => 'coupons', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 8.25A2.25 2.25 0 0 1 7 6h10a2.25 2.25 0 0 1 2.25 2.25v2a2 2 0 0 0 0 3.5v2A2.25 2.25 0 0 1 17 18H7a2.25 2.25 0 0 1-2.25-2.25v-2a2 2 0 0 0 0-3.5v-2Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 8.5v7" /></svg>'],
+        ['label' => 'Staff Members', 'route' => 'staff', 'group' => 'STAFF MANAGEMENT', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M8.75 11.25a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM15.75 10.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5ZM4.5 19.25a4.25 4.25 0 0 1 8.5 0M13.75 18.25a3.25 3.25 0 0 1 5.75-2" /></svg>'],
+        ['label' => 'Reports Dashboard', 'route' => 'reports', 'group' => 'REPORTS', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 18.75v-5.5h3.5v5.5h-3.5Zm5.5 0v-9.5h3.5v9.5h-3.5Zm5.5 0v-13.5h3.5v13.5h-3.5Z" /></svg>'],
+        ['label' => 'Order History', 'route' => 'orders/history', 'exact' => true, 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M5.75 6.75h12.5v12.5H5.75V6.75Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.5 10h7M8.5 13h7M8.5 16h4" /></svg>'],
+        ['label' => 'Settings', 'route' => 'settings', 'group' => 'SETTINGS', 'icon' => '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8.75a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 12a6.5 6.5 0 0 0-.1-1.1l2.05-1.6-2-3.45-2.4.95a6.7 6.7 0 0 0-1.9-1.1L13.75 3h-3.5l-.4 2.7a6.7 6.7 0 0 0-1.9 1.1l-2.4-.95-2 3.45 2.05 1.6A6.5 6.5 0 0 0 5.5 12c0 .38.03.75.1 1.1l-2.05 1.6 2 3.45 2.4-.95c.57.47 1.2.84 1.9 1.1l.4 2.7h3.5l.4-2.7c.7-.26 1.33-.63 1.9-1.1l2.4.95 2-3.45-2.05-1.6c.07-.35.1-.72.1-1.1Z" /></svg>'],
     ];
 
     $business = null;
@@ -18,114 +34,127 @@
             $business = \App\Models\BusinessSetting::first();
         }
     } catch (\Throwable $e) {
-        // Fail silently
+        // Keep the sidebar available during early database setup.
     }
-    $brandName = $business?->brand_name ?? 'EverythingEasy';
+
+    $brandName = $business?->brand_name ?? 'SmartMenu';
     $logoUrl = $business?->logo_path ? asset('storage/' . $business->logo_path) : null;
 @endphp
 
-<!-- Mobile Sidebar Backdrop (locks layout view when open) -->
-<div 
-    x-show="sidebarOpen" 
+<div
+    x-show="sidebarOpen"
     x-transition:enter="transition-opacity ease-linear duration-300"
     x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100"
     x-transition:leave="transition-opacity ease-linear duration-300"
     x-transition:leave-start="opacity-100"
     x-transition:leave-end="opacity-0"
-    class="fixed inset-0 z-40 bg-navy-deep/80 lg:hidden" 
-    @click="sidebarOpen = false">
-</div>
+    class="fixed inset-0 z-40 bg-navy-deep/80 lg:hidden"
+    @click="sidebarOpen = false"
+></div>
 
-<!-- Sidebar Main Panel (Premium Dark Theme) -->
-<aside 
+<aside
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-    class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-navy-deep border-r border-navy/20 transition-transform duration-300 ease-in-out lg:static lg:z-auto">
-    
-    <!-- Branding Header -->
-    <div class="flex h-20 items-center justify-between px-6 border-b border-navy/40">
-        <a href="/" class="flex items-center gap-3 group">
+    class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/5 bg-[#121c28] text-white shadow-2xl shadow-navy/20 transition-transform duration-300 ease-in-out lg:static lg:z-auto"
+>
+    <div class="flex h-24 items-center justify-between border-b border-white/5 px-5">
+        <a href="/" class="flex min-w-0 items-center gap-3">
             @if($logoUrl)
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-navy/10 shadow-lg group-hover:scale-105 transition-all overflow-hidden p-1">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 shadow-lg">
                     <img src="{{ $logoUrl }}" alt="{{ $brandName }}" class="h-full w-full object-contain">
-                </div>
+                </span>
             @else
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30 group-hover:scale-105 transition-all">
-                    <!-- Lighting bolt icon -->
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30">
+                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5v15M6 4.5v4.75a2 2 0 0 0 4 0V4.5M16.5 4.5v15M16.5 4.5c2 1 3 2.65 3 5.25 0 2.2-1.1 3.75-3 4" />
                     </svg>
-                </div>
+                </span>
             @endif
-            <div class="flex flex-col">
-                <span class="text-base font-bold tracking-tight text-white leading-tight">{{ $brandName }}</span>
-                <span class="text-[11px] font-semibold tracking-wider text-orange uppercase">ServiceOS</span>
-            </div>
+            <span class="min-w-0">
+                <span class="block truncate text-lg font-black leading-5 tracking-tight">
+                    {{ $brandName === 'SmartMenu' ? 'Smart' : $brandName }}@if($brandName === 'SmartMenu')<span class="text-orange">Menu</span>@endif
+                </span>
+                <span class="mt-0.5 block text-xs font-semibold text-slate-300">System</span>
+            </span>
         </a>
-        <button @click="sidebarOpen = false" class="rounded-lg p-1.5 text-muted hover:text-white lg:hidden cursor-pointer">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+
+        <button
+            type="button"
+            @click="sidebarOpen = false"
+            class="rounded-lg p-2 text-slate-300 transition hover:bg-white/5 hover:text-white lg:hidden"
+            aria-label="Close navigation"
+        >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <button type="button" class="hidden rounded-lg p-2 text-slate-300 transition hover:bg-white/5 hover:text-white lg:inline-flex" aria-label="Navigation">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M5 12h14M5 17h14" />
             </svg>
         </button>
     </div>
 
-    <!-- Navigation List (Scrollable) -->
-    <div class="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-        @php
-            $currentGroup = null;
-        @endphp
+    <div class="flex-1 overflow-y-auto px-4 py-5">
+        @php $currentGroup = null; @endphp
 
         <nav class="space-y-1">
             @foreach($menuItems as $item)
                 @if(isset($item['group']) && $item['group'] !== $currentGroup)
                     @php $currentGroup = $item['group']; @endphp
-                    <div class="pt-6 pb-2 px-3 text-[10px] font-bold tracking-wider text-muted uppercase">
+                    <div class="px-3 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                         {{ $currentGroup }}
                     </div>
                 @endif
 
                 @php
                     $isHome = $item['route'] === '/';
-                    $isActive = $isHome 
-                        ? request()->is('/') 
-                        : request()->is($item['route']) || request()->is($item['route'] . '/*');
-                    
+                    $isActive = $isHome
+                        ? request()->is('/')
+                        : (($item['exact'] ?? false)
+                            ? request()->is($item['route'])
+                            : request()->is($item['route']) || request()->is($item['route'] . '/*'));
                     $linkHref = $isHome ? '/' : '/' . $item['route'];
                 @endphp
 
-                <a 
-                    href="{{ $linkHref }}" 
-                    class="flex items-center justify-between px-3.5 py-3 text-xs font-semibold rounded-xl transition-all duration-200 group {{ $isActive ? 'bg-orange text-white shadow-md shadow-orange/20 font-bold' : 'text-slate-400 hover:text-white hover:bg-navy/40' }}">
-                    <div class="flex items-center gap-3.5">
-                        <span class="{{ $isActive ? 'text-white' : 'text-slate-400 group-hover:text-orange transition-colors' }}">
+                <a
+                    href="{{ $linkHref }}"
+                    class="group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition {{ $isActive ? 'bg-orange text-white shadow-lg shadow-orange/25' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"
+                >
+                    <span class="flex min-w-0 items-center gap-3">
+                        <span class="{{ $isActive ? 'text-white' : 'text-slate-400 group-hover:text-orange' }}">
                             {!! $item['icon'] !!}
                         </span>
-                        <span>{{ $item['label'] }}</span>
-                    </div>
-                    
-                    <!-- Optional Badge -->
-                    @if(isset($item['badge']))
-                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange text-[9px] font-bold text-white" x-text="{{ $item['badge'] }}"></span>
+                        <span class="truncate">{{ $item['label'] }}</span>
+                    </span>
+
+                    @if(($item['badge'] ?? 0) > 0)
+                        <span class="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-orange px-1.5 text-[10px] font-black text-white {{ $isActive ? 'ring-2 ring-white/25' : '' }}">
+                            {{ $item['badge'] }}
+                        </span>
                     @endif
                 </a>
             @endforeach
         </nav>
     </div>
 
-    <!-- Footer System Switcher / SaaS Status -->
-    <div class="border-t border-navy/40 p-4 bg-navy-deep/40">
-        <div class="flex items-center justify-between rounded-xl bg-navy/30 p-3 border border-navy/20">
-            <div class="flex items-center gap-2.5">
-                <div class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+    <div class="p-4">
+        <div class="overflow-hidden rounded-xl border border-white/5 bg-white/[0.04] p-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="relative flex h-3 w-3 shrink-0">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60"></span>
+                        <span class="relative inline-flex h-3 w-3 rounded-full bg-success"></span>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block truncate text-sm font-black text-white">System Status</span>
+                        <span class="block truncate text-xs font-semibold text-slate-400">All Systems Operational</span>
+                    </span>
                 </div>
-                <div class="flex flex-col">
-                    <span class="text-xs font-semibold text-white">System Status</span>
-                    <span class="text-[10px] text-muted">All Nodes Operational</span>
-                </div>
+                <span class="rounded-lg bg-white/10 px-2 py-1 text-[10px] font-black text-slate-300">v1.2.0</span>
             </div>
-            <span class="inline-flex items-center rounded-md bg-teal/20 px-2 py-0.5 text-[9px] font-bold text-teal">v1.2.0</span>
+            <div class="mt-4 h-8 rounded-lg bg-gradient-to-r from-transparent via-orange/20 to-orange/45"></div>
         </div>
     </div>
 </aside>

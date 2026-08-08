@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,6 +73,17 @@ class Order extends Model
         return $this->belongsTo(Coupon::class);
     }
 
+    public function scopeLive(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereIn('order_status', self::ACTIVE_STATUSES)
+                ->orWhere(function (Builder $query) {
+                    $query->where('order_status', 'completed')
+                        ->where('payment_status', '!=', 'paid');
+                });
+        });
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -80,5 +92,19 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function compactNumber(): string
+    {
+        return self::compactOrderNumber($this->order_number, $this->id);
+    }
+
+    public static function compactOrderNumber(?string $orderNumber, ?int $fallbackId = null): string
+    {
+        if ($orderNumber && preg_match('/(\d{3,8})$/', $orderNumber, $matches)) {
+            return '#'.$matches[1];
+        }
+
+        return '#'.($fallbackId ?: 'ORDER');
     }
 }
