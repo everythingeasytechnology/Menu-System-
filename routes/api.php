@@ -40,6 +40,8 @@ Route::prefix('v1')->group(function () {
         Route::get('business', [BusinessController::class, 'show']);
         Route::put('business', [BusinessController::class, 'update']);
         Route::get('business/settings', [BusinessController::class, 'settings']);
+        Route::put('business/settings', [BusinessController::class, 'updateSettings']);
+        Route::patch('business/settings', [BusinessController::class, 'updateSettings']);
         Route::get('business/status', [BusinessController::class, 'status']);
 
         Route::get('staff/roles', [StaffController::class, 'roles']);

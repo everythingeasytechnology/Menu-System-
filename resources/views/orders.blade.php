@@ -12,15 +12,15 @@
         menuItems: @js($menuItemsPayload),
         feedUrl: '{{ route('dashboard.orders.feed') }}',
         csrf: '{{ csrf_token() }}',
-        gstSettings: {
-            enabled: {{ $settings->gst_enabled ? 'true' : 'false' }},
-            cgstRate: {{ $settings->cgst ?? 2.5 }},
-            sgstRate: {{ $settings->sgst ?? 2.5 }},
-            brandName: '{{ addslashes($settings->brand_name ?? $business->name) }}',
-            gstNo: '{{ addslashes($settings->gst_no ?? '') }}',
-            address: '{{ addslashes($settings->address ?? '') }}',
-            pincode: '{{ addslashes($settings->pincode ?? '') }}'
-        }
+        gstSettings: @js([
+            'enabled' => (bool) $settings->gst_enabled,
+            'cgstRate' => (float) ($settings->cgst ?? 2.5),
+            'sgstRate' => (float) ($settings->sgst ?? 2.5),
+            'brandName' => $settings->brand_name ?? $business->name,
+            'gstNo' => $settings->gst_no ?? '',
+            'address' => $settings->address ?? '',
+            'pincode' => $settings->pincode ?? '',
+        ])
     })"
     x-init="start()"
     class="space-y-3"
@@ -802,23 +802,31 @@
                 const subtotal = totalTaxRate > 0 ? total / (1 + totalTaxRate / 100) : total;
                 const cgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.cgstRate || 0) / 100) : 0;
                 const sgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.sgstRate || 0) / 100) : 0;
+                const escapeHtml = (value) => String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
                 const itemsHtml = order.items.map((item) => `
                     <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                        <span>${item.name}</span>
-                        <span>x${item.qty}</span>
+                        <span>${escapeHtml(item.name)}</span>
+                        <span>x${escapeHtml(item.qty)}</span>
                     </div>
                 `).join('');
 
                 const taxHtml = gst.enabled ? `
-                    <div style="display:flex;justify-content:space-between;"><span>CGST (${gst.cgstRate}%):</span><span>Rs. ${cgstAmount.toFixed(2)}</span></div>
-                    <div style="display:flex;justify-content:space-between;"><span>SGST (${gst.sgstRate}%):</span><span>Rs. ${sgstAmount.toFixed(2)}</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span>CGST (${escapeHtml(gst.cgstRate)}%):</span><span>Rs. ${cgstAmount.toFixed(2)}</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span>SGST (${escapeHtml(gst.sgstRate)}%):</span><span>Rs. ${sgstAmount.toFixed(2)}</span></div>
                 ` : '';
 
                 const printWindow = window.open('', '_blank', 'width=380,height=600');
-                printWindow.document.write(`
+                if (!printWindow) return;
+
+                const receiptHtml = `
                     <html>
                     <head>
-                        <title>Bill Receipt - ${order.displayId}</title>
+                        <title>Bill Receipt - ${escapeHtml(order.displayId)}</title>
                         <style>
                             body { font-family: Courier, monospace; width: 74mm; margin: 0 auto; padding: 10px 5px; font-size: 10px; color: #000; }
                             .center { text-align: center; }
@@ -828,32 +836,34 @@
                     </head>
                     <body>
                         <div class="center">
-                            <div class="bold">${gst.brandName || 'Business'}</div>
-                            <div>${gst.address || ''}</div>
-                            ${gst.pincode ? `<div>PIN: ${gst.pincode}</div>` : ''}
-                            ${gst.gstNo ? `<div>GSTIN: ${gst.gstNo}</div>` : ''}
+                            <div class="bold">${escapeHtml(gst.brandName || 'Business')}</div>
+                            <div>${escapeHtml(gst.address || '')}</div>
+                            ${gst.pincode ? `<div>PIN: ${escapeHtml(gst.pincode)}</div>` : ''}
+                            ${gst.gstNo ? `<div>GSTIN: ${escapeHtml(gst.gstNo)}</div>` : ''}
                         </div>
                         <div class="divider"></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Order:</span><span>${order.displayId}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Channel:</span><span>${order.channel}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Location:</span><span>${order.location}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Order:</span><span>${escapeHtml(order.displayId)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Channel:</span><span>${escapeHtml(order.channel)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Location:</span><span>${escapeHtml(order.location)}</span></div>
                         <div class="divider"></div>
                         ${itemsHtml}
                         <div class="divider"></div>
                         ${taxHtml}
-                        <div style="display:flex;justify-content:space-between;font-size:12px;" class="bold"><span>Total:</span><span>${order.amount}</span></div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;" class="bold"><span>Total:</span><span>${escapeHtml(order.amount)}</span></div>
                         <div class="divider"></div>
                         <div class="center">Thank you</div>
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(function() { window.close(); }, 500);
-                            }
-                        <\/script>
                     </body>
                     </html>
-                `);
+                `;
+
+                printWindow.document.write(receiptHtml);
                 printWindow.document.close();
+                printWindow.focus();
+
+                setTimeout(() => {
+                    printWindow.print();
+                    setTimeout(() => printWindow.close(), 500);
+                }, 250);
             }
         };
     }

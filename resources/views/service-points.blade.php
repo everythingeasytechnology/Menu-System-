@@ -618,7 +618,7 @@ function servicePointManager(config) {
             let printWindow = window.open('', '_blank', 'width=420,height=560');
             if (!printWindow) return;
 
-            printWindow.document.write(`
+            const scannerHtml = `
                 <html>
                     <head>
                         <title>${this.escapeHtml(t.name)} QR Tag</title>
@@ -639,16 +639,18 @@ function servicePointManager(config) {
                             <img src="${t.scanner_url}" alt="QR scanner">
                             <p>${this.escapeHtml(t.scan_url)}</p>
                         </div>
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(function() { window.close(); }, 500);
-                            }
-                        <\/script>
                     </body>
                 </html>
-            `);
+            `;
+
+            printWindow.document.write(scannerHtml);
             printWindow.document.close();
+            printWindow.focus();
+
+            setTimeout(() => {
+                printWindow.print();
+                setTimeout(() => printWindow.close(), 500);
+            }, 250);
         },
 
         // Trigger PUT updates to backend
