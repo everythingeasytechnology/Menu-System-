@@ -802,62 +802,77 @@
                 const subtotal = totalTaxRate > 0 ? total / (1 + totalTaxRate / 100) : total;
                 const cgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.cgstRate || 0) / 100) : 0;
                 const sgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.sgstRate || 0) / 100) : 0;
-                const escapeHtml = (value) => String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-                const itemsHtml = order.items.map((item) => `
-                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                        <span>${escapeHtml(item.name)}</span>
-                        <span>x${escapeHtml(item.qty)}</span>
-                    </div>
-                `).join('');
-
-                const taxHtml = gst.enabled ? `
-                    <div style="display:flex;justify-content:space-between;"><span>CGST (${escapeHtml(gst.cgstRate)}%):</span><span>Rs. ${cgstAmount.toFixed(2)}</span></div>
-                    <div style="display:flex;justify-content:space-between;"><span>SGST (${escapeHtml(gst.sgstRate)}%):</span><span>Rs. ${sgstAmount.toFixed(2)}</span></div>
-                ` : '';
-
                 const printWindow = window.open('', '_blank', 'width=380,height=600');
                 if (!printWindow) return;
+                const doc = printWindow.document;
+                doc.title = 'Bill Receipt - ' + String(order.displayId || '');
+                doc.body.innerHTML = '';
 
-                const receiptHtml = `
-                    <html>
-                    <head>
-                        <title>Bill Receipt - ${escapeHtml(order.displayId)}</title>
-                        <style>
-                            body { font-family: Courier, monospace; width: 74mm; margin: 0 auto; padding: 10px 5px; font-size: 10px; color: #000; }
-                            .center { text-align: center; }
-                            .divider { border-top: 1px dashed #000; margin: 6px 0; }
-                            .bold { font-weight: bold; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="center">
-                            <div class="bold">${escapeHtml(gst.brandName || 'Business')}</div>
-                            <div>${escapeHtml(gst.address || '')}</div>
-                            ${gst.pincode ? `<div>PIN: ${escapeHtml(gst.pincode)}</div>` : ''}
-                            ${gst.gstNo ? `<div>GSTIN: ${escapeHtml(gst.gstNo)}</div>` : ''}
-                        </div>
-                        <div class="divider"></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Order:</span><span>${escapeHtml(order.displayId)}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Channel:</span><span>${escapeHtml(order.channel)}</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span>Location:</span><span>${escapeHtml(order.location)}</span></div>
-                        <div class="divider"></div>
-                        ${itemsHtml}
-                        <div class="divider"></div>
-                        ${taxHtml}
-                        <div style="display:flex;justify-content:space-between;font-size:12px;" class="bold"><span>Total:</span><span>${escapeHtml(order.amount)}</span></div>
-                        <div class="divider"></div>
-                        <div class="center">Thank you</div>
-                    </body>
-                    </html>
-                `;
+                const style = doc.createElement('style');
+                style.textContent = 'body{font-family:Courier,monospace;width:74mm;margin:0 auto;padding:10px 5px;font-size:10px;color:#000}.center{text-align:center}.divider{border-top:1px dashed #000;margin:6px 0}.bold{font-weight:bold}.row{display:flex;justify-content:space-between;margin-bottom:5px}.total{font-size:12px}';
+                doc.head.appendChild(style);
 
-                printWindow.document.write(receiptHtml);
-                printWindow.document.close();
+                const addDiv = (text, className = '') => {
+                    const div = doc.createElement('div');
+                    if (className) div.className = className;
+                    div.textContent = String(text || '');
+                    doc.body.appendChild(div);
+                    return div;
+                };
+
+                const addDivider = () => addDiv('', 'divider');
+                const addRow = (label, value, className = '') => {
+                    const row = doc.createElement('div');
+                    row.className = 'row' + (className ? ' ' + className : '');
+
+                    const labelEl = doc.createElement('span');
+                    labelEl.textContent = String(label || '');
+                    row.appendChild(labelEl);
+
+                    const valueEl = doc.createElement('span');
+                    valueEl.textContent = String(value || '');
+                    row.appendChild(valueEl);
+
+                    doc.body.appendChild(row);
+                    return row;
+                };
+
+                const header = doc.createElement('div');
+                header.className = 'center';
+                doc.body.appendChild(header);
+
+                const brand = doc.createElement('div');
+                brand.className = 'bold';
+                brand.textContent = String(gst.brandName || 'Business');
+                header.appendChild(brand);
+
+                [gst.address || '', gst.pincode ? 'PIN: ' + gst.pincode : '', gst.gstNo ? 'GSTIN: ' + gst.gstNo : '']
+                    .filter(Boolean)
+                    .forEach((line) => {
+                        const lineEl = doc.createElement('div');
+                        lineEl.textContent = String(line);
+                        header.appendChild(lineEl);
+                    });
+
+                addDivider();
+                addRow('Order:', order.displayId);
+                addRow('Channel:', order.channel);
+                addRow('Location:', order.location);
+                addDivider();
+
+                order.items.forEach((item) => {
+                    addRow(item.name, 'x' + String(item.qty || 0));
+                });
+
+                addDivider();
+                if (gst.enabled) {
+                    addRow('CGST (' + String(gst.cgstRate || 0) + '%):', 'Rs. ' + cgstAmount.toFixed(2));
+                    addRow('SGST (' + String(gst.sgstRate || 0) + '%):', 'Rs. ' + sgstAmount.toFixed(2));
+                }
+                addRow('Total:', order.amount, 'bold total');
+                addDivider();
+                addDiv('Thank you', 'center');
+
                 printWindow.focus();
 
                 setTimeout(() => {

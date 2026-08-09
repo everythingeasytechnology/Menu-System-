@@ -617,34 +617,41 @@ function servicePointManager(config) {
 
             let printWindow = window.open('', '_blank', 'width=420,height=560');
             if (!printWindow) return;
+            let doc = printWindow.document;
 
-            const scannerHtml = `
-                <html>
-                    <head>
-                        <title>${this.escapeHtml(t.name)} QR Tag</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #111827; }
-                            .tag { width: 280px; border: 1px solid #d1d5db; border-radius: 12px; padding: 18px; text-align: center; }
-                            img { width: 190px; height: 190px; object-fit: contain; }
-                            .eyebrow { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #f97316; font-weight: 800; margin-bottom: 6px; }
-                            h1 { font-size: 18px; margin: 0 0 4px; }
-                            p { font-size: 12px; margin: 4px 0; color: #64748b; word-break: break-all; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="tag">
-                            <div class="eyebrow">Scan to Order</div>
-                            <h1>${this.escapeHtml(this.businessName)}</h1>
-                            <p>${this.escapeHtml(t.name)} (${this.escapeHtml(t.code)})</p>
-                            <img src="${t.scanner_url}" alt="QR scanner">
-                            <p>${this.escapeHtml(t.scan_url)}</p>
-                        </div>
-                    </body>
-                </html>
-            `;
+            doc.title = String(t.name || 'Service Point') + ' QR Tag';
+            doc.body.innerHTML = '';
 
-            printWindow.document.write(scannerHtml);
-            printWindow.document.close();
+            let style = doc.createElement('style');
+            style.textContent = 'body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#111827}.tag{width:280px;border:1px solid #d1d5db;border-radius:12px;padding:18px;text-align:center}img{width:190px;height:190px;object-fit:contain}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#f97316;font-weight:800;margin-bottom:6px}h1{font-size:18px;margin:0 0 4px}p{font-size:12px;margin:4px 0;color:#64748b;word-break:break-all}';
+            doc.head.appendChild(style);
+
+            let tag = doc.createElement('div');
+            tag.className = 'tag';
+            doc.body.appendChild(tag);
+
+            let eyebrow = doc.createElement('div');
+            eyebrow.className = 'eyebrow';
+            eyebrow.textContent = 'Scan to Order';
+            tag.appendChild(eyebrow);
+
+            let title = doc.createElement('h1');
+            title.textContent = String(this.businessName || '');
+            tag.appendChild(title);
+
+            let point = doc.createElement('p');
+            point.textContent = String(t.name || '') + ' (' + String(t.code || '') + ')';
+            tag.appendChild(point);
+
+            let image = doc.createElement('img');
+            image.src = t.scanner_url;
+            image.alt = 'QR scanner';
+            tag.appendChild(image);
+
+            let link = doc.createElement('p');
+            link.textContent = String(t.scan_url || '');
+            tag.appendChild(link);
+
             printWindow.focus();
 
             setTimeout(() => {
