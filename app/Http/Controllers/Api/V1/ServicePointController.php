@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\Models\ServicePoint;
 use App\Services\AuditLogService;
 use App\Services\QrCodeService;
+use App\Services\ScanUrlService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -148,6 +149,6 @@ class ServicePointController extends ApiController
 
     private function scanUrl(ServicePoint $servicePoint): string
     {
-        return url('/api/v1/public/menu/'.$servicePoint->qr_identifier);
+        return ScanUrlService::forQr($servicePoint->qr_identifier);
     }
 }

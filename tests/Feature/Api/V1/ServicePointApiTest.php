@@ -47,4 +47,27 @@ class ServicePointApiTest extends ApiTestCase
 
         $this->assertStringContainsString('scanner.svg', $download->headers->get('Content-Disposition'));
     }
+
+    public function test_service_point_scan_url_can_point_to_react_customer_menu(): void
+    {
+        config(['app.customer_menu_url' => 'https://menu.example.com/menu?point={qr}']);
+        [, $user] = $this->createBusinessUser('react-menu-owner@example.com');
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/service-points', [
+                'name' => 'React Table',
+                'seats' => 4,
+                'category' => 'Dining Hall',
+            ]);
+
+        $qrIdentifier = $response->json('data.qr_identifier');
+
+        $response->assertCreated()
+            ->assertJsonPath('data.scan_url', 'https://menu.example.com/menu?point='.$qrIdentifier);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/service-points/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.scan_url', 'https://menu.example.com/menu?point='.$qrIdentifier);
+    }
 }

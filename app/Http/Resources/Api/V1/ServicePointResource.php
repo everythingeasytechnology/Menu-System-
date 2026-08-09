@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Services\ScanUrlService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,7 +20,7 @@ class ServicePointResource extends JsonResource
             'point_type' => $this->point_type,
             'status' => $this->status,
             'is_active' => $this->is_active,
-            'scan_url' => url('/api/v1/public/menu/'.$this->qr_identifier),
+            'scan_url' => ScanUrlService::forQr($this->qr_identifier),
             'scanner_download_url' => url('/api/v1/service-points/'.$this->id.'/scanner'),
             'order_number' => $this->order_number,
             'amount' => (float) $this->amount,

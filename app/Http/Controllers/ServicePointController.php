@@ -10,6 +10,7 @@ use App\Models\ServicePoint;
 use App\Services\OrderService;
 use App\Services\OwnerDashboardService;
 use App\Services\QrCodeService;
+use App\Services\ScanUrlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -350,6 +351,6 @@ class ServicePointController extends Controller
 
     private function scanUrl(ServicePoint $point): string
     {
-        return url('/api/v1/public/menu/'.$point->qr_identifier);
+        return ScanUrlService::forQr($point->qr_identifier);
     }
 }
