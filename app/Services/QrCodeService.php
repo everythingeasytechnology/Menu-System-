@@ -24,7 +24,7 @@ class QrCodeService
             }
         }
 
-        return $this->fallbackSvg($data);
+        return $this->remoteQrSvg($data);
     }
 
     private function svgWithEndroid(string $data): string
@@ -57,19 +57,24 @@ class QrCodeService
         return $writer->writeString($data, 'UTF-8', \BaconQrCode\Common\ErrorCorrectionLevel::H());
     }
 
-    private function fallbackSvg(string $data): string
+    private function remoteQrSvg(string $data): string
     {
         $escaped = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+        $qrImageUrl = htmlspecialchars(
+            'https://api.qrserver.com/v1/create-qr-code/?size=512x512&margin=24&data='.rawurlencode($data),
+            ENT_QUOTES,
+            'UTF-8'
+        );
 
         return <<<SVG
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="640" viewBox="0 0 512 640">
   <rect width="512" height="512" fill="#ffffff"/>
-  <rect x="32" y="32" width="448" height="448" rx="24" fill="#fff7ed" stroke="#fb923c" stroke-width="6"/>
-  <text x="256" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#1f2937">Scanner unavailable</text>
-  <text x="256" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#64748b">Open this scan link manually:</text>
-  <foreignObject x="66" y="250" width="380" height="140">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.35;color:#0f172a;word-break:break-all;text-align:center;">{$escaped}</div>
+  <image x="0" y="0" width="512" height="512" href="{$qrImageUrl}" xlink:href="{$qrImageUrl}"/>
+  <rect x="20" y="532" width="472" height="88" rx="16" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/>
+  <text x="256" y="568" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#f97316">Scan to Order</text>
+  <foreignObject x="46" y="582" width="420" height="30">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial,sans-serif;font-size:12px;line-height:1.25;color:#475569;word-break:break-all;text-align:center;">{$escaped}</div>
   </foreignObject>
 </svg>
 SVG;
