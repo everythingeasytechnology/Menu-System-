@@ -78,6 +78,31 @@ class DashboardLiveOrdersTest extends TestCase
         $response->assertSee('Cash Paid');
     }
 
+    public function test_kitchen_display_screen_uses_live_database_orders(): void
+    {
+        $this->createOrder([
+            'order_number' => 'ORD-WEB-KDS',
+            'customer_name' => 'Kitchen Guest',
+            'order_status' => 'preparing',
+            'notes' => 'No onion',
+        ]);
+
+        $response = $this->get('/kitchen-display');
+
+        $response->assertOk();
+        $response->assertSee('Kitchen Display');
+        $response->assertSee('Dashboard Cafe live orders');
+        $response->assertSee('ORD-WEB-KDS');
+        $response->assertSee('Kitchen Guest');
+        $response->assertSee('Veg Burger');
+        $response->assertSee('No onion');
+        $response->assertSee('Full Screen');
+        $response->assertSee('Start');
+        $response->assertSee('Ready');
+        $response->assertSee('Served');
+        $response->assertSee('preparing.png');
+    }
+
     public function test_live_orders_feed_returns_database_orders_for_current_business(): void
     {
         $this->createOrder([

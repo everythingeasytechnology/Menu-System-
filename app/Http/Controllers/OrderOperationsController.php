@@ -26,6 +26,11 @@ class OrderOperationsController extends Controller
         return view('orders', $this->dashboardService->ordersPageData(auth()->user()));
     }
 
+    public function kitchenDisplay()
+    {
+        return view('kitchen-display', $this->dashboardService->ordersPageData(auth()->user()));
+    }
+
     public function history(Request $request)
     {
         $business = $this->dashboardService->businessFor($request->user());

@@ -24,6 +24,7 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
     // Operations
     Route::get('/orders/history', [OrderOperationsController::class, 'history'])->name('dashboard.orders.history');
     Route::get('/orders', [OrderOperationsController::class, 'index'])->name('dashboard.orders.index');
+    Route::get('/kitchen-display', [OrderOperationsController::class, 'kitchenDisplay'])->name('dashboard.kitchen-display');
     Route::get('/orders/live-feed', [OrderOperationsController::class, 'feed'])->name('dashboard.orders.feed');
     Route::post('/orders/{order}/status', [OrderOperationsController::class, 'updateStatus'])->name('dashboard.orders.status');
     Route::post('/orders/{order}/items', [OrderOperationsController::class, 'addItem'])->name('dashboard.orders.items.store');

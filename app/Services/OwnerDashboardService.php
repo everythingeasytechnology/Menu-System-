@@ -212,6 +212,8 @@ class OwnerDashboardService
             'status' => $order->order_status,
             'statusLabel' => self::STATUS_LABELS[$order->order_status] ?? ucfirst($order->order_status),
             'time' => $order->created_at?->format('h:i A') ?? '',
+            'date' => $order->created_at?->format('d M Y') ?? '',
+            'sortKey' => $order->created_at?->timestamp ?? 0,
             'elapsed' => $order->created_at?->diffForHumans() ?? '',
             'note' => $order->notes,
             'items' => $items,

@@ -20,127 +20,205 @@
             'gstNo' => $settings->gst_no ?? '',
             'address' => $settings->address ?? '',
             'pincode' => $settings->pincode ?? '',
+        ]),
+        statusImages: @js([
+            'confirmed' => asset('images/order-status/kitchen.png'),
+            'preparing' => asset('images/order-status/preparing.png'),
+            'ready' => asset('images/order-status/ready.png'),
+            'served' => asset('images/order-status/served.png'),
+            'completed' => asset('images/order-status/served.png'),
+            'cancelled' => asset('images/order-status/cancelled.png'),
         ])
     })"
     x-init="start()"
-    class="space-y-3"
+    class="space-y-4"
 >
-    <x-card class="p-2" variant="default">
-        <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex w-full items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card-tint p-0.5 lg:w-auto">
-                <button @click="activeTab = 'all'" :class="tabClass('all')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">All</button>
-                <button @click="activeTab = 'dine-in'" :class="tabClass('dine-in')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Dining</button>
-                <button @click="activeTab = 'takeaway'" :class="tabClass('takeaway')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Packed</button>
-                <button @click="activeTab = 'room-service'" :class="tabClass('room-service')" class="shrink-0 rounded-md px-2.5 py-1 text-[10px] font-bold">Room</button>
-            </div>
-
-            <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-                <input
-                    type="text"
-                    x-model="searchQuery"
-                    placeholder="Search order, customer, phone, location..."
-                    class="w-full rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] text-ink outline-none transition-all placeholder:text-muted focus:border-orange lg:w-72"
-                >
-
-                <select x-model="statusFilter" class="rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] font-semibold text-ink outline-none">
-                    <option value="all">All Statuses</option>
-                    @foreach($statuses as $status => $label)
-                        <option value="{{ $status }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </x-card>
-
-    <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div class="space-y-3">
-            <x-card class="p-0" variant="default">
-                <div class="max-h-[calc(100vh-238px)] overflow-auto">
-                    <table class="w-full min-w-[640px] border-collapse text-left">
-                        <thead class="sticky top-0 z-10 bg-card">
-                            <tr class="border-b border-border bg-card-tint text-[9px] font-bold uppercase tracking-wider text-muted">
-                                <th class="px-3 py-2">Order</th>
-                                <th class="px-3 py-2">Location</th>
-                                <th class="px-3 py-2">Customer</th>
-                                <th class="px-3 py-2 text-center">Items</th>
-                                <th class="px-3 py-2">Payment</th>
-                                <th class="px-3 py-2">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-border/60">
-                            <template x-for="order in filteredOrders" :key="order.id">
-                                <tr
-                                    @click="selectOrder(order.id)"
-                                    :class="selectedOrderId === order.id ? 'bg-orange/5' : 'hover:bg-card-tint/40'"
-                                    class="cursor-pointer transition-all"
-                                >
-                                    <td class="px-3 py-2 text-[11px] font-black text-orange" x-text="order.displayId"></td>
-                                    <td class="px-3 py-2 text-[11px] font-bold text-ink" x-text="order.location"></td>
-                                    <td class="px-3 py-2">
-                                        <div class="text-[11px] font-bold text-ink" x-text="order.customer"></div>
-                                        <div class="text-[9px] font-semibold text-muted" x-text="order.phone"></div>
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-[11px] font-bold text-muted" x-text="order.itemCount"></td>
-                                    <td class="px-3 py-2">
-                                        <span class="inline-flex rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider" :class="paymentClass(order.paymentStatus)" x-text="order.paymentLabel"></span>
-                                    </td>
-                                    <td class="px-3 py-2">
-                                        <span class="inline-flex rounded-md px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider" :class="statusClass(order.status)" x-text="order.statusLabel"></span>
-                                    </td>
-                                </tr>
-                            </template>
-
-                            <tr x-show="filteredOrders.length === 0">
-                                <td colspan="6" class="px-4 py-8 text-center">
-                                    <p class="text-xs font-black text-ink">No orders found</p>
-                                    <p class="mt-1 text-xs text-muted">Try clearing filters or wait for new orders.</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+        <section class="space-y-3">
+            <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-3 w-3 rounded-full bg-orange shadow-[0_0_0_4px_rgba(255,122,0,0.14)]"></span>
+                        <h1 class="text-xl font-black tracking-tight text-ink">Live Orders</h1>
+                    </div>
+                    <p class="mt-1 flex items-center gap-2 text-xs font-bold text-muted">
+                        <span class="h-2 w-2 rotate-45 rounded-[2px] bg-orange"></span>
+                        <span><span x-text="orders.length"></span> active orders</span>
+                    </p>
                 </div>
-            </x-card>
-        </div>
+
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <label class="relative block">
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" />
+                            </svg>
+                        </span>
+                        <input
+                            type="search"
+                            x-model="searchQuery"
+                            placeholder="Search orders..."
+                            class="h-9 w-full rounded-lg border border-border bg-card px-9 text-xs font-semibold text-ink shadow-sm outline-none placeholder:text-muted focus:border-orange focus:ring-4 focus:ring-orange/10 sm:w-56"
+                        >
+                    </label>
+
+                    <div class="flex h-9 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                        <button type="button" @click="viewMode = 'grid'" :class="viewMode === 'grid' ? 'bg-card-tint text-ink' : 'text-muted hover:text-ink'" class="flex w-10 items-center justify-center border-r border-border transition" aria-label="Grid view">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 5.75h5v5h-5v-5Zm9.5 0h5v5h-5v-5Zm-9.5 9.5h5v5h-5v-5Zm9.5 0h5v5h-5v-5Z" />
+                            </svg>
+                        </button>
+                        <button type="button" @click="viewMode = 'list'" :class="viewMode === 'list' ? 'bg-card-tint text-ink' : 'text-muted hover:text-ink'" class="flex w-10 items-center justify-center transition" aria-label="List view">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 6.75h11M8 12h11M8 17.25h11M4.75 6.75h.01M4.75 12h.01M4.75 17.25h.01" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <label class="relative block">
+                        <select x-model="sortMode" class="h-9 appearance-none rounded-lg border border-border bg-card py-0 pl-4 pr-9 text-xs font-black text-ink shadow-sm outline-none focus:border-orange focus:ring-4 focus:ring-orange/10">
+                            <option value="latest">Sort: Latest</option>
+                            <option value="oldest">Sort: Oldest</option>
+                            <option value="amount-high">Sort: Amount High</option>
+                            <option value="amount-low">Sort: Amount Low</option>
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-muted">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                            </svg>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-border bg-card-tint p-0.5 sm:w-max">
+                <button @click="activeTab = 'all'" :class="tabClass('all')" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-black transition">
+                    All <span class="ml-1 rounded-full bg-orange/10 px-1.5 py-0.5 text-[10px] text-orange" x-text="orders.length"></span>
+                </button>
+                <button @click="activeTab = 'dine-in'" :class="tabClass('dine-in')" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-black transition">
+                    Dining <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px]" x-text="channelCount('dine-in')"></span>
+                </button>
+                <button @click="activeTab = 'takeaway'" :class="tabClass('takeaway')" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-black transition">
+                    Packed <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px]" x-text="channelCount('takeaway')"></span>
+                </button>
+                <button @click="activeTab = 'room-service'" :class="tabClass('room-service')" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-black transition">
+                    Room <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px]" x-text="channelCount('room-service')"></span>
+                </button>
+            </div>
+
+            <div
+                class="gap-2"
+                :class="viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3' : 'grid grid-cols-1'"
+            >
+                <template x-for="order in sortedOrders" :key="order.id">
+                    <button
+                        type="button"
+                        @click="selectOrder(order.id)"
+                        class="group relative overflow-hidden rounded-card border bg-card p-2.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-navy/10"
+                        :class="[orderAccentClass(order), selectedOrderId === order.id ? 'ring-2 ring-orange/30' : '']"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-base font-black text-orange" :class="orderNumberClass(order)" x-text="order.displayId"></span>
+                            <span class="text-xs font-black text-muted" x-text="order.time"></span>
+                        </div>
+
+                        <div class="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 text-xs font-black text-ink">
+                                    <span class="text-orange" x-html="locationIcon(order)"></span>
+                                    <span class="truncate" x-text="order.location"></span>
+                                </div>
+                            </div>
+                            <div class="min-w-0 text-right">
+                                <div class="truncate text-xs font-black text-ink" x-text="order.customer"></div>
+                                <div class="truncate text-[10px] font-bold text-muted" x-text="order.phone"></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2 flex items-end justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs font-black text-ink">
+                                    <span x-text="`${order.itemCount} ${order.itemCount === 1 ? 'Item' : 'Items'}`"></span>
+                                    <span class="mx-1 text-muted">&middot;</span>
+                                    <span x-text="order.amount"></span>
+                                </p>
+                                <span class="mt-1 inline-flex max-w-full rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider" :class="paymentClass(order.paymentStatus)" x-text="order.paymentLabel"></span>
+                            </div>
+                            <div class="flex shrink-0 items-center gap-1.5">
+                                <span class="flex h-10 w-10 overflow-hidden rounded-lg border bg-card-tint" :class="itemStatusImageClass(order)" :title="itemStatusLabel(order)">
+                                    <img :src="itemStatusImageUrl(order)" :alt="itemStatusLabel(order)" class="h-full w-full object-cover">
+                                </span>
+                                <span class="rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider" :class="statusClass(itemStatusVisual(order))" x-text="itemStatusLabel(order)"></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="relative grid grid-cols-4 gap-2">
+                                <div class="absolute left-4 right-4 top-2 h-0.5 rounded-full bg-card-tint"></div>
+                                <template x-for="step in statusSteps" :key="step.status">
+                                    <div class="relative z-10 flex flex-col items-center">
+                                        <span class="flex h-4 w-4 items-center justify-center rounded-full border text-[8px] font-black shadow-sm" :class="stepCircleClass(order, step.status)" x-html="step.icon"></span>
+                                        <span class="sr-only" x-text="step.label"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </button>
+                </template>
+
+                <div x-show="sortedOrders.length === 0" class="col-span-full rounded-card border border-dashed border-border bg-card p-10 text-center">
+                    <p class="text-base font-black text-ink">No orders found</p>
+                    <p class="mt-1 text-sm font-semibold text-muted">Try clearing filters or wait for new orders.</p>
+                </div>
+            </div>
+
+            <p class="text-xs font-semibold text-muted" x-text="sortedOrders.length ? `Showing 1 to ${sortedOrders.length} of ${filteredOrders.length} orders` : 'No orders to show'"></p>
+        </section>
 
         <div
             class="xl:col-span-1"
-            :class="selectedOrderId ? 'fixed inset-0 z-50 flex items-end justify-center bg-navy-deep/60 p-3 backdrop-blur-xs xl:static xl:z-auto xl:block xl:bg-transparent xl:p-0 xl:backdrop-blur-none' : 'hidden xl:block'"
+            :class="selectedOrderId ? 'fixed inset-0 z-50 flex items-end justify-center bg-navy-deep/60 p-3 backdrop-blur-sm xl:sticky xl:top-4 xl:z-auto xl:block xl:bg-transparent xl:p-0 xl:backdrop-blur-none' : 'hidden xl:sticky xl:top-4 xl:block'"
             @click.self="selectedOrderId = null"
         >
             <template x-if="selectedOrder">
-                <x-card class="w-full max-w-sm space-y-3 border border-border p-3 shadow-2xl xl:max-w-none xl:shadow-sm" variant="default">
-                    <div class="flex items-start justify-between border-b border-border pb-2">
-                        <div>
-                            <span class="text-[9px] font-extrabold uppercase tracking-wider text-muted">Order Detail</span>
-                            <h3 class="mt-0.5 text-xs font-extrabold text-ink" x-text="selectedOrder.location"></h3>
-                            <p class="mt-0.5 text-[10px] font-semibold text-muted">
+                <x-card class="w-full max-w-xl space-y-3 border border-border p-4 shadow-2xl xl:max-w-none xl:shadow-sm" variant="default">
+                    <div class="flex items-start justify-between border-b border-border pb-3">
+                        <div class="min-w-0">
+                            <span class="text-[11px] font-black uppercase tracking-[0.18em] text-muted">Order Detail</span>
+                            <h3 class="mt-2 truncate text-xl font-black text-ink" x-text="selectedOrder.location"></h3>
+                            <p class="mt-1 text-sm font-semibold text-muted">
                                 <span x-text="selectedOrder.customer"></span>
                                 <span x-show="selectedOrder.phone !== 'N/A'" x-text="` (${selectedOrder.phone})`"></span>
                             </p>
+                            <p class="mt-1 flex items-center gap-2 text-xs font-bold text-muted">
+                                <span x-text="selectedOrder.time"></span>
+                                <span class="h-1 w-1 rounded-full bg-orange"></span>
+                                <span x-text="selectedOrder.date || ''"></span>
+                            </p>
                         </div>
                         <div class="text-right">
-                            <span class="block text-xs font-black text-orange" x-text="selectedOrder.displayId"></span>
-                            <button type="button" @click="selectedOrderId = null" class="mt-1 text-[11px] font-bold text-muted hover:text-ink xl:hidden">Close</button>
+                            <span class="block text-xl font-black text-orange" x-text="selectedOrder.displayId"></span>
+                            <button type="button" @click="selectedOrderId = null" class="mt-1 text-xs font-bold text-muted hover:text-ink xl:hidden">Close</button>
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <span class="block text-[10px] font-bold uppercase tracking-wider text-muted">Items</span>
-                        <div class="max-h-56 divide-y divide-border/60 overflow-auto">
+                        <span class="block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Items</span>
+                        <div class="max-h-56 divide-y divide-border/70 overflow-auto">
                             <template x-for="item in selectedOrder.items" :key="item.id">
-                                <div class="grid grid-cols-[minmax(0,1fr)_112px] items-center gap-2 py-1.5 text-[11px]">
+                                <div class="grid grid-cols-[minmax(0,1fr)_150px] items-center gap-3 py-2">
                                     <div class="min-w-0">
-                                        <span class="block truncate font-extrabold text-ink" x-text="item.name"></span>
-                                        <span class="block text-[9px] text-muted" x-text="`Qty: ${item.qty}`"></span>
+                                        <span class="block truncate text-sm font-black text-ink" x-text="item.name"></span>
+                                        <span class="mt-0.5 block text-xs font-bold text-muted" x-text="`Qty: ${item.qty}`"></span>
                                     </div>
                                     <label class="block">
-                                        <span class="mb-0.5 block text-[8px] font-bold uppercase tracking-wider text-muted">Item Status</span>
+                                        <span class="mb-1 block text-[10px] font-black uppercase tracking-wider text-muted">Item Status</span>
                                         <select
                                             :value="item.status"
                                             @click.stop
                                             @change="updateOrderItemStatus(selectedOrder.id, item.id, $event.target.value)"
                                             :disabled="isUpdatingItemStatus || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
-                                            class="w-full rounded-md border px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                            class="h-9 w-full rounded-lg border px-2 text-xs font-black uppercase tracking-wider outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                             :class="statusClass(item.status)"
                                         >
                                             <template x-for="statusOption in itemStatuses" :key="statusOption.value">
@@ -153,88 +231,92 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-border pt-2">
-                        <button
-                            type="button"
-                            @click="openAddItemModal()"
-                            :disabled="menuItems.length === 0 || !selectedOrder || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
-                            class="w-full rounded-lg bg-orange px-3 py-2 text-[11px] font-bold text-white shadow-md shadow-orange/20 transition-all hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
+                    <button
+                        type="button"
+                        @click="openAddItemModal()"
+                        :disabled="menuItems.length === 0 || !selectedOrder || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
+                        class="w-full rounded-xl bg-orange px-4 py-3 text-sm font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        Add Item
+                    </button>
+
+                    <template x-if="menuItems.length === 0">
+                        <p class="text-sm font-semibold text-muted">No active menu items available.</p>
+                    </template>
+
+                    <label class="block">
+                        <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Order Status</span>
+                        <select
+                            @change="updateOrderStatus(selectedOrder.id, $event.target.value)"
+                            class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange"
                         >
-                            Add Item
-                        </button>
-
-                        <template x-if="menuItems.length === 0">
-                            <p class="mt-1.5 text-[10px] font-semibold text-muted">No active menu items available.</p>
-                        </template>
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-2">
-                        <label class="block">
-                            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-muted">Order Status</span>
-                            <select
-                                @change="updateOrderStatus(selectedOrder.id, $event.target.value)"
-                                class="w-full rounded-lg border border-border bg-card-tint px-3 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange"
-                            >
-                                @foreach($statuses as $status => $label)
-                                    <option value="{{ $status }}" :selected="selectedOrder.status === '{{ $status }}'">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                    </div>
+                            @foreach($statuses as $status => $label)
+                                <option value="{{ $status }}" :selected="selectedOrder.status === '{{ $status }}'">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
 
                     <template x-if="selectedOrder.note">
-                        <div class="rounded-lg border border-orange/10 bg-orange/5 p-2">
-                            <span class="block text-[8px] font-bold uppercase tracking-wider text-orange">Instructions</span>
-                            <p class="mt-1 text-[10px] italic leading-normal text-slate-700" x-text="selectedOrder.note"></p>
+                        <div class="rounded-xl border border-orange/15 bg-orange/5 p-3">
+                            <span class="block text-[11px] font-black uppercase tracking-wider text-orange">Instructions</span>
+                            <p class="mt-2 text-sm font-semibold italic leading-normal text-slate-700" x-text="selectedOrder.note"></p>
                         </div>
                     </template>
 
                     <div class="border-t border-border pt-3">
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between text-[10px] font-bold text-muted">
-                                <span x-text="`Payment: ${selectedOrder.paymentLabel}`"></span>
-                                <span class="text-ink" x-text="selectedOrder.amount"></span>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-1.5">
-                                <label class="block">
-                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Status</span>
-                                    <select x-model="paymentForm.status" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
-                                        <option value="unpaid">Unpaid</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="paid">Paid</option>
-                                    </select>
-                                </label>
-
-                                <label class="block">
-                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Method</span>
-                                    <select x-model="paymentForm.method" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
-                                        <option value="cash">Cash</option>
-                                        <option value="online">Online</option>
-                                        <option value="razorpay">Razorpay</option>
-                                    </select>
-                                </label>
-                            </div>
-
-                            <div class="grid grid-cols-[minmax(0,1fr)_88px] gap-1.5">
-                                <label class="block">
-                                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">Amount</span>
-                                    <input type="number" min="0" step="0.01" x-model.number="paymentForm.amount" class="w-full rounded-lg border border-border bg-card-tint px-2 py-1.5 text-[11px] font-bold text-ink outline-none focus:border-orange">
-                                </label>
-
-                                <button type="button" @click="markCashPaid()" :disabled="isUpdatingPayment" class="self-end rounded-lg bg-success/10 py-1.5 text-[10px] font-black text-success transition-all hover:bg-success/20 disabled:opacity-50">Cash Paid</button>
-                            </div>
-
-                            <template x-if="paymentError">
-                                <p class="rounded-lg border border-danger/10 bg-danger/5 px-2 py-1.5 text-[10px] font-bold text-danger" x-text="paymentError"></p>
-                            </template>
+                        <div class="flex items-center justify-between gap-3 text-sm font-black">
+                            <span class="min-w-0 truncate text-muted" x-text="`Payment: ${selectedOrder.paymentLabel}`"></span>
+                            <span class="shrink-0 text-ink" x-text="selectedOrder.amount"></span>
                         </div>
 
-                        <div class="mt-2 flex gap-2">
-                            <button type="button" @click="updatePayment()" :disabled="isUpdatingPayment" class="flex-1 rounded-lg bg-teal/10 py-2 text-center text-[11px] font-bold text-teal transition-all hover:bg-teal/20 disabled:opacity-50" x-text="isUpdatingPayment ? 'Saving...' : 'Update Payment'"></button>
-                            <button type="button" @click="printReceipt(selectedOrder)" class="flex-1 rounded-lg bg-orange py-2 text-center text-[11px] font-bold text-white shadow-md shadow-orange/20 transition-all hover:bg-orange/95">Print</button>
+                        <div class="mt-3 grid grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
+                                <select x-model="paymentForm.status" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                                    <option value="unpaid">Unpaid</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="paid">Paid</option>
+                                </select>
+                            </label>
+
+                            <label class="block">
+                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Method</span>
+                                <select x-model="paymentForm.method" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                                    <option value="cash">Cash</option>
+                                    <option value="online">Online</option>
+                                    <option value="razorpay">Razorpay</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="mt-3 grid grid-cols-[minmax(0,1fr)_108px] gap-3">
+                            <label class="block">
+                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Amount</span>
+                                <input type="number" min="0" step="0.01" x-model.number="paymentForm.amount" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                            </label>
+
+                            <button type="button" @click="markCashPaid()" :disabled="isUpdatingPayment" class="self-end rounded-lg bg-success/10 py-2.5 text-xs font-black text-success transition hover:bg-success/20 disabled:opacity-50">Cash Paid</button>
+                        </div>
+
+                        <template x-if="paymentError">
+                            <p class="mt-3 rounded-xl border border-danger/10 bg-danger/5 px-3 py-2 text-xs font-bold text-danger" x-text="paymentError"></p>
+                        </template>
+
+                        <div class="mt-4 grid grid-cols-3 gap-2">
+                            <button type="button" @click="updatePayment()" :disabled="isUpdatingPayment" class="rounded-lg bg-teal/10 py-3 text-center text-xs font-black text-teal transition hover:bg-teal/20 disabled:opacity-50" x-text="isUpdatingPayment ? 'Saving...' : 'Update Payment'"></button>
+                            <button type="button" @click="printReceipt(selectedOrder)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange py-3 text-center text-xs font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 8.75v-4h10.5v4M6.75 17.75H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.75M7.5 14.75h9v5h-9v-5Z" />
+                                </svg>
+                                Print
+                            </button>
                             <template x-if="selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled'">
-                                <button type="button" @click="cancelOrder(selectedOrder.id)" class="flex-1 rounded-lg bg-danger/10 py-2 text-center text-[11px] font-bold text-danger transition-all hover:bg-danger/20">Cancel</button>
+                                <button type="button" @click="cancelOrder(selectedOrder.id)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger/10 py-3 text-center text-xs font-black text-danger transition hover:bg-danger/20">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 7.75h12M9.75 7.75v-2h4.5v2M10 11v6M14 11v6M7.5 7.75l.75 12h7.5l.75-12" />
+                                    </svg>
+                                    Cancel
+                                </button>
                             </template>
                         </div>
                     </div>
@@ -242,9 +324,9 @@
             </template>
 
             <template x-if="!selectedOrder">
-                <x-card class="flex h-36 flex-col items-center justify-center border border-dashed border-border p-3 text-center" variant="default">
-                    <h3 class="text-xs font-bold text-ink">No Order Selected</h3>
-                    <p class="mt-1 text-[10px] leading-normal text-muted">Select an order from the live database list.</p>
+                <x-card class="flex h-72 flex-col items-center justify-center border border-dashed border-border p-6 text-center" variant="default">
+                    <h3 class="text-lg font-black text-ink">No Order Selected</h3>
+                    <p class="mt-2 text-sm font-semibold leading-normal text-muted">Select an order from the list.</p>
                 </x-card>
             </template>
         </div>
@@ -380,10 +462,35 @@
             statuses: config.statuses || {},
             itemStatuses: config.itemStatuses || [],
             menuItems: config.menuItems || [],
+            statusImages: config.statusImages || {},
             liveStatuses: ['pending', 'confirmed', 'preparing', 'ready', 'served'],
             activeTab: 'all',
             searchQuery: '',
             statusFilter: 'all',
+            viewMode: 'grid',
+            sortMode: 'latest',
+            statusSteps: [
+                {
+                    status: 'confirmed',
+                    label: 'Received',
+                    icon: '<svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M7.75 7.75h8.5v8.5h-8.5v-8.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.25 4.75h11.5a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5H6.25a1.5 1.5 0 0 1-1.5-1.5V6.25a1.5 1.5 0 0 1 1.5-1.5Z" /></svg>'
+                },
+                {
+                    status: 'preparing',
+                    label: 'Preparing',
+                    icon: '<svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8.5h10M8.5 5.5h7M6.5 11.5h11L16.75 19h-9.5L6.5 11.5Z" /></svg>'
+                },
+                {
+                    status: 'ready',
+                    label: 'Ready',
+                    icon: '<svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M8 8.25V6.5a4.5 4.5 0 0 1 9 0v1.75M6.25 8.25h12.5l.8 10.5H5.45l.8-10.5Z" /></svg>'
+                },
+                {
+                    status: 'served',
+                    label: 'Served',
+                    icon: '<svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="m5.75 12.75 4 4 8.5-9.5" /></svg>'
+                }
+            ],
             refreshTimer: null,
             isUpdatingItemStatus: false,
             isUpdatingPayment: false,
@@ -485,10 +592,129 @@
                 });
             },
 
+            get sortedOrders() {
+                const list = [...this.filteredOrders];
+
+                return list.sort((a, b) => {
+                    if (this.sortMode === 'oldest') {
+                        return Number(a.sortKey || a.id || 0) - Number(b.sortKey || b.id || 0);
+                    }
+
+                    if (this.sortMode === 'amount-high') {
+                        return Number(b.rawTotal || 0) - Number(a.rawTotal || 0);
+                    }
+
+                    if (this.sortMode === 'amount-low') {
+                        return Number(a.rawTotal || 0) - Number(b.rawTotal || 0);
+                    }
+
+                    return Number(b.sortKey || b.id || 0) - Number(a.sortKey || a.id || 0);
+                });
+            },
+
+            channelCount(channel) {
+                return this.orders.filter((order) => order.channelType === channel).length;
+            },
+
             tabClass(tab) {
                 return this.activeTab === tab
-                    ? 'bg-white text-ink shadow-sm'
-                    : 'text-muted hover:text-ink';
+                    ? 'bg-white text-orange shadow-sm'
+                    : 'text-muted hover:bg-white/70 hover:text-ink';
+            },
+
+            orderStageIndex(status) {
+                if (status === 'pending' || status === 'confirmed') return 0;
+                if (status === 'preparing') return 1;
+                if (status === 'ready') return 2;
+                if (status === 'served' || status === 'completed') return 3;
+
+                return 0;
+            },
+
+            stepCircleClass(order, status) {
+                if (order.status === 'cancelled') {
+                    return status === 'confirmed'
+                        ? 'border-danger bg-danger text-white'
+                        : 'border-border bg-card-tint text-slate-300';
+                }
+
+                return this.orderStageIndex(order.status) >= this.orderStageIndex(status)
+                    ? 'border-orange bg-orange text-white'
+                    : 'border-border bg-card-tint text-slate-400';
+            },
+
+            stepTextClass(order, status) {
+                if (order.status === 'cancelled' && status === 'confirmed') {
+                    return 'text-danger';
+                }
+
+                return this.orderStageIndex(order.status) >= this.orderStageIndex(status)
+                    ? 'text-orange'
+                    : 'text-muted';
+            },
+
+            orderAccentClass(order) {
+                if (order.status === 'preparing') return 'border-orange/30 shadow-orange/10';
+                if (order.status === 'ready') return 'border-blue-200 shadow-blue-100/50';
+                if (order.status === 'served') return 'border-teal/30 shadow-teal/10';
+                if (order.channelType === 'takeaway') return 'border-blue-100 shadow-blue-50';
+
+                return 'border-orange/20 shadow-orange/5';
+            },
+
+            orderNumberClass(order) {
+                if (order.status === 'ready' || order.channelType === 'takeaway') return 'text-blue-500';
+                if (order.status === 'served') return 'text-teal';
+
+                return 'text-orange';
+            },
+
+            locationIcon(order) {
+                if (order.channelType === 'takeaway') {
+                    return '<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.5V7a4.5 4.5 0 0 1 9 0v1.5M5.75 8.5h12.5l.8 10.75H4.95L5.75 8.5Z" /></svg>';
+                }
+
+                return '<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10.75h14M6.25 10.75v7.5m11.5-7.5v7.5M8 7h8l1.75 3.75H6.25L8 7Z" /></svg>';
+            },
+
+            itemStatusVisual(order) {
+                if (order.status === 'cancelled') return 'cancelled';
+
+                const itemStatuses = (order.items || []).map((item) => item.status || order.status);
+                if (itemStatuses.includes('preparing')) return 'preparing';
+                if (itemStatuses.includes('ready')) return 'ready';
+                if (itemStatuses.includes('pending') || itemStatuses.includes('confirmed')) return 'confirmed';
+                if (itemStatuses.includes('served') || order.status === 'served' || order.status === 'completed') return 'served';
+
+                return order.status || 'confirmed';
+            },
+
+            itemStatusLabel(order) {
+                const status = this.itemStatusVisual(order);
+
+                return this.statuses?.[status] || {
+                    confirmed: 'Kitchen',
+                    preparing: 'Preparing',
+                    ready: 'Ready',
+                    served: 'Served',
+                    cancelled: 'Cancelled'
+                }[status] || 'Kitchen';
+            },
+
+            itemStatusImageClass(order) {
+                return {
+                    confirmed: 'border-blue-100',
+                    preparing: 'border-orange/20',
+                    ready: 'border-teal/20',
+                    served: 'border-success/20',
+                    cancelled: 'border-danger/20'
+                }[this.itemStatusVisual(order)] || 'border-border';
+            },
+
+            itemStatusImageUrl(order) {
+                const status = this.itemStatusVisual(order);
+
+                return this.statusImages[status] || this.statusImages.confirmed || '';
             },
 
             statusClass(status) {
