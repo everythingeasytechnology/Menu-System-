@@ -380,6 +380,7 @@
                                 </div>
                             </template>
                         </div>
+                        </div>
                     </div>
 
                     <!-- Custom Upload Field -->

@@ -9,6 +9,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\OrderOperationsController;
 use App\Http\Controllers\ServicePointController;
+use App\Http\Controllers\StaffController;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [BusinessOwnerLoginController::class, 'create'])->name('login');
@@ -59,9 +60,10 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
     Route::post('/categories/{id}/toggle-active', [CategoryController::class, 'toggleActive'])->name('categories.toggle-active');
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-    Route::get('/staff', function () {
-        return view('staff');
-    });
+    Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
+    Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+    Route::put('/staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+    Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
 
     Route::get('/reports', function () {
         return view('reports');
