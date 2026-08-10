@@ -61,7 +61,7 @@ class OrderService
                 'discount' => $discount,
                 'total' => $total,
                 'payment_status' => 'unpaid',
-                'order_status' => 'pending',
+                'order_status' => 'preparing',
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -388,7 +388,7 @@ class OrderService
                 'variant_label' => $variant?->label,
                 'price' => $price,
                 'quantity' => $quantity,
-                'status' => $itemData['status'] ?? 'pending',
+                'status' => $itemData['status'] ?? 'preparing',
                 'tax' => $lineTax,
                 'discount' => 0,
                 'total' => $lineTotal,
@@ -410,7 +410,7 @@ class OrderService
 
         $statuses = $order->items()
             ->get(['status'])
-            ->map(fn (OrderItem $item) => $item->status ?: $this->itemStatusForOrderStatus($order->order_status) ?: 'pending')
+            ->map(fn (OrderItem $item) => $item->status ?: $this->itemStatusForOrderStatus($order->order_status) ?: 'preparing')
             ->values();
 
         if ($statuses->isEmpty()) {
@@ -438,15 +438,7 @@ class OrderService
             return 'ready';
         }
 
-        if ($statuses->contains('preparing')) {
-            return 'preparing';
-        }
-
-        if ($statuses->contains('confirmed')) {
-            return 'confirmed';
-        }
-
-        return 'pending';
+        return 'preparing';
     }
 
     private function itemStatusForOrderStatus(string $status): ?string

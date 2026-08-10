@@ -22,7 +22,6 @@
             'pincode' => $settings->pincode ?? '',
         ]),
         statusImages: @js([
-            'confirmed' => asset('images/order-status/kitchen.png'),
             'preparing' => asset('images/order-status/preparing.png'),
             'ready' => asset('images/order-status/ready.png'),
             'served' => asset('images/order-status/served.png'),
@@ -463,18 +462,13 @@
             itemStatuses: config.itemStatuses || [],
             menuItems: config.menuItems || [],
             statusImages: config.statusImages || {},
-            liveStatuses: ['pending', 'confirmed', 'preparing', 'ready', 'served'],
+            liveStatuses: ['preparing', 'ready', 'served'],
             activeTab: 'all',
             searchQuery: '',
             statusFilter: 'all',
             viewMode: 'grid',
             sortMode: 'latest',
             statusSteps: [
-                {
-                    status: 'confirmed',
-                    label: 'Received',
-                    icon: '<svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M7.75 7.75h8.5v8.5h-8.5v-8.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.25 4.75h11.5a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5H6.25a1.5 1.5 0 0 1-1.5-1.5V6.25a1.5 1.5 0 0 1 1.5-1.5Z" /></svg>'
-                },
                 {
                     status: 'preparing',
                     label: 'Preparing',
@@ -623,17 +617,16 @@
             },
 
             orderStageIndex(status) {
-                if (status === 'pending' || status === 'confirmed') return 0;
-                if (status === 'preparing') return 1;
-                if (status === 'ready') return 2;
-                if (status === 'served' || status === 'completed') return 3;
+                if (status === 'preparing') return 0;
+                if (status === 'ready') return 1;
+                if (status === 'served' || status === 'completed') return 2;
 
                 return 0;
             },
 
             stepCircleClass(order, status) {
                 if (order.status === 'cancelled') {
-                    return status === 'confirmed'
+                    return status === 'preparing'
                         ? 'border-danger bg-danger text-white'
                         : 'border-border bg-card-tint text-slate-300';
                 }
@@ -644,7 +637,7 @@
             },
 
             stepTextClass(order, status) {
-                if (order.status === 'cancelled' && status === 'confirmed') {
+                if (order.status === 'cancelled' && status === 'preparing') {
                     return 'text-danger';
                 }
 
@@ -683,27 +676,24 @@
                 const itemStatuses = (order.items || []).map((item) => item.status || order.status);
                 if (itemStatuses.includes('preparing')) return 'preparing';
                 if (itemStatuses.includes('ready')) return 'ready';
-                if (itemStatuses.includes('pending') || itemStatuses.includes('confirmed')) return 'confirmed';
                 if (itemStatuses.includes('served') || order.status === 'served' || order.status === 'completed') return 'served';
 
-                return order.status || 'confirmed';
+                return order.status || 'preparing';
             },
 
             itemStatusLabel(order) {
                 const status = this.itemStatusVisual(order);
 
                 return this.statuses?.[status] || {
-                    confirmed: 'Kitchen',
                     preparing: 'Preparing',
                     ready: 'Ready',
                     served: 'Served',
                     cancelled: 'Cancelled'
-                }[status] || 'Kitchen';
+                }[status] || 'Preparing';
             },
 
             itemStatusImageClass(order) {
                 return {
-                    confirmed: 'border-blue-100',
                     preparing: 'border-orange/20',
                     ready: 'border-teal/20',
                     served: 'border-success/20',
@@ -714,13 +704,11 @@
             itemStatusImageUrl(order) {
                 const status = this.itemStatusVisual(order);
 
-                return this.statusImages[status] || this.statusImages.confirmed || '';
+                return this.statusImages[status] || this.statusImages.preparing || '';
             },
 
             statusClass(status) {
                 return {
-                    pending: 'bg-slate-100 text-slate-600 border border-slate-200',
-                    confirmed: 'bg-blue-50 text-blue-500 border border-blue-100',
                     preparing: 'bg-orange/10 text-orange border border-orange/10',
                     ready: 'bg-teal/10 text-teal border border-teal/10',
                     served: 'bg-success/10 text-success border border-success/10',

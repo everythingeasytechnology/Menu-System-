@@ -20,6 +20,7 @@ class OrderItemResource extends JsonResource
                 : null),
             'price' => (float) $this->price,
             'quantity' => $this->quantity,
+            'status' => $this->status,
             'tax' => (float) $this->tax,
             'discount' => (float) $this->discount,
             'total' => (float) $this->total,

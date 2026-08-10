@@ -13,8 +13,6 @@ use Illuminate\Support\Collection;
 class OwnerDashboardService
 {
     public const STATUS_LABELS = [
-        'pending' => 'Pending',
-        'confirmed' => 'Kitchen',
         'preparing' => 'Preparing',
         'ready' => 'Ready',
         'served' => 'Served',
@@ -80,7 +78,7 @@ class OwnerDashboardService
                 'sales' => $todaySales,
                 'average_order' => $todayOrderCount > 0 ? round($todaySales / $todayOrderCount, 2) : 0.0,
                 'completed' => (clone $todayOrders)->whereIn('order_status', ['served', 'completed'])->count(),
-                'pending' => (clone $todayOrders)->whereIn('order_status', ['pending', 'confirmed', 'preparing', 'ready'])->count(),
+                'pending' => (clone $todayOrders)->whereIn('order_status', ['preparing', 'ready'])->count(),
             ],
             'liveOrders' => $this->ordersFor($business, 100, true)->map(fn (Order $order) => $this->formatOrder($order))->values(),
             'statusOverview' => $this->statusOverview($business),

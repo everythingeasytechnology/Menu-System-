@@ -18,7 +18,7 @@ class KitchenController extends ApiController
     {
         $orders = Order::with('items.menuItem.presetImage')
             ->where('business_id', $this->businessId($request))
-            ->whereIn('order_status', ['pending', 'confirmed', 'preparing'])
+            ->where('order_status', 'preparing')
             ->oldest()
             ->paginate((int) $request->input('per_page', 25));
 
@@ -27,7 +27,7 @@ class KitchenController extends ApiController
 
     public function accept(Request $request, Order $order): JsonResponse
     {
-        return $this->transition($request, $order, 'confirmed');
+        return $this->transition($request, $order, 'preparing');
     }
 
     public function preparing(Request $request, Order $order): JsonResponse

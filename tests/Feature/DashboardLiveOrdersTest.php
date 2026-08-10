@@ -122,7 +122,7 @@ class DashboardLiveOrdersTest extends TestCase
     {
         $order = $this->createOrder([
             'order_number' => 'ORD-WEB-STATUS',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
         ]);
 
         $response = $this->postJson("/orders/{$order->id}/status", [
@@ -244,7 +244,7 @@ class DashboardLiveOrdersTest extends TestCase
     {
         $order = $this->createOrder([
             'order_number' => 'ORD-WEB-ITEM-STATUS',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
         ]);
         $firstItem = $order->items()->first();
         $secondItem = $order->items()->create([
@@ -252,7 +252,7 @@ class DashboardLiveOrdersTest extends TestCase
             'variant_label' => null,
             'price' => 180,
             'quantity' => 1,
-            'status' => 'pending',
+            'status' => 'preparing',
             'tax' => 9,
             'discount' => 0,
             'total' => 189,
@@ -268,7 +268,7 @@ class DashboardLiveOrdersTest extends TestCase
 
         $responseItems = collect($response->json('order.items'))->keyBy('id');
         $this->assertSame('preparing', $responseItems[$firstItem->id]['status']);
-        $this->assertSame('pending', $responseItems[$secondItem->id]['status']);
+        $this->assertSame('preparing', $responseItems[$secondItem->id]['status']);
 
         $this->assertDatabaseHas('order_items', [
             'id' => $firstItem->id,
@@ -380,7 +380,7 @@ class DashboardLiveOrdersTest extends TestCase
             'discount' => 0,
             'total' => 252,
             'payment_status' => 'unpaid',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'notes' => 'Less spicy',
         ], $overrides));
 
@@ -389,7 +389,7 @@ class DashboardLiveOrdersTest extends TestCase
             'variant_label' => null,
             'price' => 120,
             'quantity' => 2,
-            'status' => $overrides['order_status'] ?? 'pending',
+            'status' => $overrides['order_status'] ?? 'preparing',
             'tax' => 12,
             'discount' => 0,
             'total' => 252,

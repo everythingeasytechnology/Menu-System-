@@ -17,7 +17,7 @@ class OrderApiTest extends ApiTestCase
         $firstOrder = $this->createOrder($business, [
             'order_number' => 'ORD-1001',
             'customer_name' => 'Akhil',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'total' => 250,
         ]);
 
@@ -51,10 +51,10 @@ class OrderApiTest extends ApiTestCase
         [$business, $user] = $this->createBusinessUser('filtered-orders-owner@example.com');
 
         $this->createOrder($business, [
-            'order_number' => 'ORD-PENDING',
+            'order_number' => 'ORD-PREPARING',
             'customer_name' => 'Akhil',
             'customer_phone' => '9876543210',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'payment_status' => 'unpaid',
             'order_type' => 'dine_in',
         ]);
@@ -69,10 +69,10 @@ class OrderApiTest extends ApiTestCase
         ]);
 
         $this->withHeaders($this->authHeaders($user))
-            ->getJson('/api/v1/orders/all?status=pending&payment_status=unpaid&order_type=dine_in&search=Akhil')
+            ->getJson('/api/v1/orders/all?status=preparing&payment_status=unpaid&order_type=dine_in&search=Akhil')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.order_number', 'ORD-PENDING')
+            ->assertJsonPath('data.0.order_number', 'ORD-PREPARING')
             ->assertJsonMissing(['order_number' => 'ORD-COMPLETE']);
     }
 
@@ -173,7 +173,7 @@ class OrderApiTest extends ApiTestCase
             'discount' => 0,
             'total' => 100,
             'payment_status' => 'unpaid',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'notes' => null,
         ], $overrides));
     }

@@ -439,17 +439,18 @@ Server validates QR, business, menu item availability, and calculates all prices
 - `GET /orders/active`
 - `GET /orders/status/{status}`
 - `POST /orders/{id}/status`
+- `POST /orders/{id}/items/{itemId}/status`
 - `POST /orders/{id}/cancel`
 
 Statuses:
 
-- `pending`
-- `confirmed`
 - `preparing`
 - `ready`
 - `served`
 - `completed`
 - `cancelled`
+
+New orders start at `preparing`. `completed` is order-level only (set manually once payment/service is fully settled); item statuses only ever move through `preparing` → `ready` → `served` (or `cancelled`).
 
 Authenticated order body:
 
@@ -466,13 +467,33 @@ Authenticated order body:
 }
 ```
 
-Status update body:
+Status update body (`POST /orders/{id}/status`):
+
+```json
+{
+  "status": "preparing",
+  "items": [
+    { "id": 11, "status": "ready" },
+    { "id": 12, "status": "preparing" }
+  ]
+}
+```
+
+`status` and `items` are both optional but at least one is required. Send `status` alone to update the whole order (this also cascades that status to every item, same as before). Send `items` alone to update specific items without forcing the order status — the order's overall status is then recalculated automatically from all of its items. Send both to set the order status first and then override specific items afterward. Every `items[].id` must belong to the given order or the request is rejected with 404.
+
+Item status update body (`POST /orders/{id}/items/{itemId}/status`):
 
 ```json
 {
   "status": "preparing"
 }
 ```
+
+A focused single-item alternative to the combined endpoint above.
+
+Item statuses: `pending`, `confirmed`, `preparing`, `ready`, `served`, `cancelled`.
+
+Updating an item's status recalculates the parent order's overall status from all of its items (e.g. the order moves to `preparing` once any item is `preparing`, and to `ready`/`served` once all items reach that stage). Returns the full updated order. Rejected with a validation error if the order is already `completed` or `cancelled`, or if the item does not belong to the given order.
 
 Authorization rule: order must belong to authenticated user's business.
 

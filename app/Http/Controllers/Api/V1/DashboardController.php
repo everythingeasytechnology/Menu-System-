@@ -23,8 +23,7 @@ class DashboardController extends ApiController
             ->whereDate('created_at', $today)
             ->selectRaw('
                 COUNT(*) as todays_orders,
-                SUM(CASE WHEN order_status = "pending" THEN 1 ELSE 0 END) as pending_orders,
-                SUM(CASE WHEN order_status IN ("confirmed", "preparing") THEN 1 ELSE 0 END) as preparing_orders,
+                SUM(CASE WHEN order_status = "preparing" THEN 1 ELSE 0 END) as preparing_orders,
                 SUM(CASE WHEN order_status = "ready" THEN 1 ELSE 0 END) as ready_orders,
                 SUM(CASE WHEN order_status = "served" THEN 1 ELSE 0 END) as served_orders,
                 SUM(CASE WHEN order_status = "completed" THEN 1 ELSE 0 END) as completed_orders,
@@ -110,7 +109,6 @@ class DashboardController extends ApiController
 
         return $this->success([
             'todays_orders' => (int) $orderSummary->todays_orders,
-            'pending_orders' => (int) $orderSummary->pending_orders,
             'preparing_orders' => (int) $orderSummary->preparing_orders,
             'ready_orders' => (int) $orderSummary->ready_orders,
             'served_orders' => (int) $orderSummary->served_orders,

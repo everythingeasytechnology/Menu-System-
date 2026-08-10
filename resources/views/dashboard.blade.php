@@ -38,8 +38,6 @@
     ];
 
     $statusTones = [
-        'pending' => ['dot' => 'bg-slate-300 text-slate-500', 'bar' => 'bg-slate-400'],
-        'confirmed' => ['dot' => 'bg-blue-100 text-blue-600', 'bar' => 'bg-blue-500'],
         'preparing' => ['dot' => 'bg-orange/10 text-orange', 'bar' => 'bg-orange'],
         'ready' => ['dot' => 'bg-cyan-100 text-cyan-700', 'bar' => 'bg-cyan-500'],
         'served' => ['dot' => 'bg-teal/10 text-teal', 'bar' => 'bg-teal'],
@@ -125,8 +123,6 @@
 
             <div class="mt-4 flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card-tint p-1">
                 <button type="button" @click="activeTab = 'all'" :class="tabClass('all')" class="shrink-0 rounded-lg px-4 py-2 text-xs font-black transition">All (<span x-text="orders.length"></span>)</button>
-                <button type="button" @click="activeTab = 'pending'" :class="tabClass('pending')" class="shrink-0 rounded-lg px-4 py-2 text-xs font-black transition">Pending (<span x-text="countStatus('pending')"></span>)</button>
-                <button type="button" @click="activeTab = 'confirmed'" :class="tabClass('confirmed')" class="shrink-0 rounded-lg px-4 py-2 text-xs font-black transition">Kitchen (<span x-text="countStatus('confirmed')"></span>)</button>
                 <button type="button" @click="activeTab = 'preparing'" :class="tabClass('preparing')" class="shrink-0 rounded-lg px-4 py-2 text-xs font-black transition">Preparing (<span x-text="countStatus('preparing')"></span>)</button>
                 <button type="button" @click="activeTab = 'ready'" :class="tabClass('ready')" class="shrink-0 rounded-lg px-4 py-2 text-xs font-black transition">Ready (<span x-text="countStatus('ready')"></span>)</button>
             </div>
@@ -340,7 +336,7 @@
             activeTab: 'all',
             selectedOrder: null,
             refreshTimer: null,
-            liveStatuses: ['pending', 'confirmed', 'preparing', 'ready', 'served'],
+            liveStatuses: ['preparing', 'ready', 'served'],
 
             start() {
                 this.refreshTimer = setInterval(() => this.refreshOrders(), 20000);
@@ -370,8 +366,6 @@
 
             statusClass(status) {
                 return {
-                    pending: 'bg-slate-100 text-slate-600 border border-slate-200',
-                    confirmed: 'bg-blue-50 text-blue-600 border border-blue-100',
                     preparing: 'bg-orange/10 text-orange border border-orange/20',
                     ready: 'bg-cyan-50 text-cyan-700 border border-cyan-100',
                     served: 'bg-teal/10 text-teal border border-teal/20',

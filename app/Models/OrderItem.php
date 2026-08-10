@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
-    public const STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'served', 'cancelled'];
+    public const STATUSES = ['preparing', 'ready', 'served', 'cancelled'];
 
     protected $fillable = [
         'order_id',

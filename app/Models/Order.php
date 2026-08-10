@@ -12,9 +12,9 @@ class Order extends Model
 {
     use HasFactory;
 
-    public const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'served'];
+    public const ACTIVE_STATUSES = ['preparing', 'ready', 'served'];
 
-    public const STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'served', 'completed', 'cancelled'];
+    public const STATUSES = ['preparing', 'ready', 'served', 'completed', 'cancelled'];
 
     protected $fillable = [
         'business_id',

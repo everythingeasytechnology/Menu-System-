@@ -97,7 +97,7 @@ class OrderHistoryPageTest extends TestCase
             'order_number' => 'ORD-HIST-EXCLUDED',
             'customer_name' => 'Riya Pending',
             'order_type' => 'takeaway',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'payment_status' => 'unpaid',
             'total' => 250,
         ]);
@@ -138,7 +138,7 @@ class OrderHistoryPageTest extends TestCase
             'discount' => 0,
             'total' => 252,
             'payment_status' => 'unpaid',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'notes' => 'History note',
         ], $overrides));
 

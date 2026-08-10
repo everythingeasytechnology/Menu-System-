@@ -72,6 +72,7 @@ Route::prefix('v1')->group(function () {
         Route::post('orders/direct', [OrderController::class, 'directStore']);
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::post('orders/{order}/items/{item}/status', [OrderController::class, 'updateItemStatus']);
         Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
 
         Route::get('kitchen/orders', [KitchenController::class, 'active']);

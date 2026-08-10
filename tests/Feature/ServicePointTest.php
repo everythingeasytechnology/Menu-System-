@@ -231,7 +231,7 @@ class ServicePointTest extends TestCase
             'discount' => 0,
             'total' => 252,
             'payment_status' => 'unpaid',
-            'order_status' => 'pending',
+            'order_status' => 'preparing',
             'notes' => null,
         ], $overrides));
 

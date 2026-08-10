@@ -5,8 +5,6 @@
 @section('content')
 @php
     $statusClasses = [
-        'pending' => 'bg-slate-100 text-slate-600 border border-slate-200',
-        'confirmed' => 'bg-blue-50 text-blue-600 border border-blue-100',
         'preparing' => 'bg-orange/10 text-orange border border-orange/10',
         'ready' => 'bg-teal/10 text-teal border border-teal/10',
         'served' => 'bg-success/10 text-success border border-success/10',

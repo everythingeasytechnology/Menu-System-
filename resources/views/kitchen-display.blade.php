@@ -19,7 +19,6 @@
             feedUrl: '{{ route('dashboard.orders.feed') }}',
             csrf: '{{ csrf_token() }}',
             statusImages: @js([
-                'confirmed' => asset('images/order-status/kitchen.png'),
                 'preparing' => asset('images/order-status/preparing.png'),
                 'ready' => asset('images/order-status/ready.png'),
                 'served' => asset('images/order-status/served.png'),
@@ -161,7 +160,7 @@
                 statuses: config.statuses || {},
                 itemStatuses: config.itemStatuses || [],
                 statusImages: config.statusImages || {},
-                liveStatuses: ['pending', 'confirmed', 'preparing', 'ready', 'served'],
+                liveStatuses: ['preparing', 'ready', 'served'],
                 clock: '',
                 refreshTimer: null,
                 clockTimer: null,
@@ -213,32 +212,29 @@
                     const itemStatuses = (order.items || []).map((item) => item.status || order.status);
                     if (itemStatuses.includes('preparing')) return 'preparing';
                     if (itemStatuses.includes('ready')) return 'ready';
-                    if (itemStatuses.includes('pending') || itemStatuses.includes('confirmed')) return 'confirmed';
                     if (itemStatuses.includes('served') || order.status === 'served' || order.status === 'completed') return 'served';
 
-                    return order.status || 'confirmed';
+                    return order.status || 'preparing';
                 },
 
                 itemStatusLabel(order) {
                     const status = this.itemStatusVisual(order);
 
                     return this.statuses?.[status] || {
-                        confirmed: 'Kitchen',
                         preparing: 'Preparing',
                         ready: 'Ready',
                         served: 'Served',
                         cancelled: 'Cancelled'
-                    }[status] || 'Kitchen';
+                    }[status] || 'Preparing';
                 },
 
                 statusImage(order) {
                     const status = this.itemStatusVisual(order);
 
-                    return this.statusImages[status] || this.statusImages.confirmed || '';
+                    return this.statusImages[status] || this.statusImages.preparing || '';
                 },
 
                 nextItemStatus(item) {
-                    if (item.status === 'pending' || item.status === 'confirmed') return 'preparing';
                     if (item.status === 'preparing') return 'ready';
                     if (item.status === 'ready') return 'served';
 
@@ -247,7 +243,6 @@
 
                 nextItemLabel(item) {
                     return {
-                        preparing: 'Start',
                         ready: 'Ready',
                         served: 'Served'
                     }[this.nextItemStatus(item)] || '';
@@ -255,8 +250,6 @@
 
                 statusClass(status) {
                     return {
-                        pending: 'bg-slate-100 text-slate-600 border border-slate-200',
-                        confirmed: 'bg-blue-50 text-blue-600 border border-blue-100',
                         preparing: 'bg-orange/10 text-orange border border-orange/10',
                         ready: 'bg-blue-50 text-blue-600 border border-blue-100',
                         served: 'bg-teal/10 text-teal border border-teal/10',

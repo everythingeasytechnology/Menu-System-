@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\V1\Orders\DirectOrderRequest;
 use App\Http\Requests\Api\V1\Orders\StoreOrderRequest;
+use App\Http\Requests\Api\V1\Orders\UpdateOrderItemStatusRequest;
 use App\Http\Requests\Api\V1\Orders\UpdateOrderStatusRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,9 +81,38 @@ class OrderController extends ApiController
             return $this->error('Resource not found', 404);
         }
 
-        $order = $this->orderService->updateStatus($order, $request->validated('status'), $request->user());
+        $data = $request->validated();
+
+        if (! empty($data['status'])) {
+            $order = $this->orderService->updateStatus($order, $data['status'], $request->user());
+        }
+
+        if (! empty($data['items'])) {
+            $order->loadMissing('items');
+        }
+
+        foreach ($data['items'] ?? [] as $itemUpdate) {
+            $item = $order->items->firstWhere('id', $itemUpdate['id']);
+
+            if (! $item) {
+                return $this->error('Order item does not belong to this order', 404);
+            }
+
+            $order = $this->orderService->updateItemStatus($order, $item, $itemUpdate['status'], $request->user());
+        }
 
         return $this->success(new OrderResource($order), 'Order status updated');
+    }
+
+    public function updateItemStatus(UpdateOrderItemStatusRequest $request, Order $order, OrderItem $item): JsonResponse
+    {
+        if ($order->business_id !== $this->businessId($request) || $item->order_id !== $order->id) {
+            return $this->error('Resource not found', 404);
+        }
+
+        $order = $this->orderService->updateItemStatus($order, $item, $request->validated('status'), $request->user());
+
+        return $this->success(new OrderResource($order), 'Order item status updated');
     }
 
     public function active(Request $request): JsonResponse
