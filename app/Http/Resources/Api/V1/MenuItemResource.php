@@ -20,7 +20,7 @@ class MenuItemResource extends JsonResource
             'tax_rate' => (float) $this->tax_rate,
             'preparation_time_minutes' => $this->preparation_time_minutes,
             'cooking_time' => $this->cooking_time,
-            'image' => $this->presetImage?->image_path,
+            'image' => $this->presetImage?->image_path ? asset($this->presetImage->image_path) : null,
             'available' => (bool) ($this->stock && $this->availability && $this->status === 'active'),
             'sort_order' => $this->sort_order,
             'status' => $this->status,

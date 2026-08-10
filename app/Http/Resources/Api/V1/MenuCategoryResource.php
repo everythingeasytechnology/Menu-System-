@@ -14,7 +14,7 @@ class MenuCategoryResource extends JsonResource
             'name' => $this->name,
             'code' => $this->code,
             'description' => $this->description,
-            'image_path' => $this->image_path,
+            'image_path' => $this->image_path ? asset($this->image_path) : null,
             'sort_order' => $this->sort_order,
             'active' => $this->active,
             'status' => $this->status,
