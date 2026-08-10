@@ -32,7 +32,7 @@
     x-init="start()"
     class="space-y-4"
 >
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+    <div class="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
         <section class="space-y-3">
             <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
                 <div>
