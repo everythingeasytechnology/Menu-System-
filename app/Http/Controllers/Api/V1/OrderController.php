@@ -70,7 +70,7 @@ class OrderController extends ApiController
             return $this->error('Resource not found', 404);
         }
 
-        return $this->success(new OrderResource($order->load(['items', 'payments'])), 'Order details');
+        return $this->success(new OrderResource($order->load(['items.menuItem.presetImage', 'payments'])), 'Order details');
     }
 
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
@@ -125,7 +125,7 @@ class OrderController extends ApiController
 
     private function baseQuery(Request $request)
     {
-        return Order::with(['items', 'payments'])
+        return Order::with(['items.menuItem.presetImage', 'payments'])
             ->where('business_id', $this->businessId($request))
             ->when($request->filled('from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('from')))
             ->when($request->filled('to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('to')));

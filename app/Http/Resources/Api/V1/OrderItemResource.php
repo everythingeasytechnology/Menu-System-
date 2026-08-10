@@ -15,6 +15,9 @@ class OrderItemResource extends JsonResource
             'menu_item_variant_id' => $this->menu_item_variant_id,
             'item_name' => $this->item_name,
             'variant_label' => $this->variant_label,
+            'image' => $this->whenLoaded('menuItem', fn () => $this->menuItem?->presetImage?->image_path
+                ? asset($this->menuItem->presetImage->image_path)
+                : null),
             'price' => (float) $this->price,
             'quantity' => $this->quantity,
             'tax' => (float) $this->tax,

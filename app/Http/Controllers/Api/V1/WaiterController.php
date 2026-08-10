@@ -25,7 +25,7 @@ class WaiterController extends ApiController
                 RestaurantTable::where('business_id', $businessId)->where('is_active', true)->orderBy('name')->get()
             ),
             'active_orders' => OrderResource::collection(
-                Order::with('items')->where('business_id', $businessId)->whereIn('order_status', Order::ACTIVE_STATUSES)->latest()->limit(20)->get()
+                Order::with('items.menuItem.presetImage')->where('business_id', $businessId)->whereIn('order_status', Order::ACTIVE_STATUSES)->latest()->limit(20)->get()
             ),
         ], 'Waiter dashboard');
     }

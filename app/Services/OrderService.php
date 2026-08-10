@@ -97,7 +97,7 @@ class OrderService
                 'source' => $user ? 'authenticated_api' : 'public_qr',
             ]);
 
-            return $order->load(['items', 'payments']);
+            return $order->load(['items.menuItem.presetImage', 'payments']);
         });
     }
 
@@ -130,7 +130,7 @@ class OrderService
 
             $this->releaseLocationIfSettled($order);
 
-            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+            return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
     }
 
@@ -185,7 +185,7 @@ class OrderService
                 'total' => $lineItem->total,
             ]);
 
-            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+            return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
     }
 
@@ -223,7 +223,7 @@ class OrderService
                 'new_status' => $status,
             ]);
 
-            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+            return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
     }
 
@@ -279,7 +279,7 @@ class OrderService
 
             $this->releaseLocationIfSettled($order);
 
-            return $order->fresh(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+            return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
     }
 

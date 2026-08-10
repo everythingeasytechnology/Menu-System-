@@ -181,44 +181,44 @@
             @click.self="selectedOrderId = null"
         >
             <template x-if="selectedOrder">
-                <x-card class="w-full max-w-xl space-y-3 border border-border p-4 shadow-2xl xl:max-w-none xl:shadow-sm" variant="default">
-                    <div class="flex items-start justify-between border-b border-border pb-3">
+                <x-card class="w-full max-w-xl space-y-2 border border-border p-3 shadow-2xl xl:max-w-none xl:shadow-sm" variant="default">
+                    <div class="flex items-start justify-between border-b border-border pb-2">
                         <div class="min-w-0">
-                            <span class="text-[11px] font-black uppercase tracking-[0.18em] text-muted">Order Detail</span>
-                            <h3 class="mt-2 truncate text-xl font-black text-ink" x-text="selectedOrder.location"></h3>
-                            <p class="mt-1 text-sm font-semibold text-muted">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-muted">Order Detail</span>
+                            <h3 class="mt-1 truncate text-base font-black text-ink" x-text="selectedOrder.location"></h3>
+                            <p class="mt-0.5 text-xs font-semibold text-muted">
                                 <span x-text="selectedOrder.customer"></span>
                                 <span x-show="selectedOrder.phone !== 'N/A'" x-text="` (${selectedOrder.phone})`"></span>
                             </p>
-                            <p class="mt-1 flex items-center gap-2 text-xs font-bold text-muted">
+                            <p class="mt-0.5 flex items-center gap-2 text-[11px] font-bold text-muted">
                                 <span x-text="selectedOrder.time"></span>
                                 <span class="h-1 w-1 rounded-full bg-orange"></span>
                                 <span x-text="selectedOrder.date || ''"></span>
                             </p>
                         </div>
                         <div class="text-right">
-                            <span class="block text-xl font-black text-orange" x-text="selectedOrder.displayId"></span>
+                            <span class="block text-base font-black text-orange" x-text="selectedOrder.displayId"></span>
                             <button type="button" @click="selectedOrderId = null" class="mt-1 text-xs font-bold text-muted hover:text-ink xl:hidden">Close</button>
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <span class="block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Items</span>
-                        <div class="max-h-56 divide-y divide-border/70 overflow-auto">
+                    <div class="space-y-1.5">
+                        <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Items</span>
+                        <div class="max-h-48 divide-y divide-border/70 overflow-auto">
                             <template x-for="item in selectedOrder.items" :key="item.id">
-                                <div class="grid grid-cols-[minmax(0,1fr)_150px] items-center gap-3 py-2">
+                                <div class="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-2 py-1.5">
                                     <div class="min-w-0">
                                         <span class="block truncate text-sm font-black text-ink" x-text="item.name"></span>
-                                        <span class="mt-0.5 block text-xs font-bold text-muted" x-text="`Qty: ${item.qty}`"></span>
+                                        <span class="block text-xs font-bold text-muted" x-text="`Qty: ${item.qty} x Rs. ${(item.total / item.qty).toFixed(2)}`"></span>
                                     </div>
                                     <label class="block">
-                                        <span class="mb-1 block text-[10px] font-black uppercase tracking-wider text-muted">Item Status</span>
+                                        <span class="sr-only">Item Status</span>
                                         <select
                                             :value="item.status"
                                             @click.stop
                                             @change="updateOrderItemStatus(selectedOrder.id, item.id, $event.target.value)"
                                             :disabled="isUpdatingItemStatus || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
-                                            class="h-9 w-full rounded-lg border px-2 text-xs font-black uppercase tracking-wider outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                            class="h-8 w-full rounded-lg border px-2 text-[11px] font-black uppercase tracking-wider outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                             :class="statusClass(item.status)"
                                         >
                                             <template x-for="statusOption in itemStatuses" :key="statusOption.value">
@@ -235,20 +235,20 @@
                         type="button"
                         @click="openAddItemModal()"
                         :disabled="menuItems.length === 0 || !selectedOrder || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"
-                        class="w-full rounded-xl bg-orange px-4 py-3 text-sm font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
+                        class="w-full rounded-lg bg-orange px-4 py-2 text-xs font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Add Item
                     </button>
 
                     <template x-if="menuItems.length === 0">
-                        <p class="text-sm font-semibold text-muted">No active menu items available.</p>
+                        <p class="text-xs font-semibold text-muted">No active menu items available.</p>
                     </template>
 
                     <label class="block">
-                        <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Order Status</span>
+                        <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Order Status</span>
                         <select
                             @change="updateOrderStatus(selectedOrder.id, $event.target.value)"
-                            class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange"
+                            class="h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange"
                         >
                             @foreach($statuses as $status => $label)
                                 <option value="{{ $status }}" :selected="selectedOrder.status === '{{ $status }}'">{{ $label }}</option>
@@ -257,22 +257,22 @@
                     </label>
 
                     <template x-if="selectedOrder.note">
-                        <div class="rounded-xl border border-orange/15 bg-orange/5 p-3">
-                            <span class="block text-[11px] font-black uppercase tracking-wider text-orange">Instructions</span>
-                            <p class="mt-2 text-sm font-semibold italic leading-normal text-slate-700" x-text="selectedOrder.note"></p>
+                        <div class="rounded-lg border border-orange/15 bg-orange/5 p-2">
+                            <span class="block text-[10px] font-black uppercase tracking-wider text-orange">Instructions</span>
+                            <p class="mt-1 text-xs font-semibold italic leading-normal text-slate-700" x-text="selectedOrder.note"></p>
                         </div>
                     </template>
 
-                    <div class="border-t border-border pt-3">
+                    <div class="border-t border-border pt-2">
                         <div class="flex items-center justify-between gap-3 text-sm font-black">
                             <span class="min-w-0 truncate text-muted" x-text="`Payment: ${selectedOrder.paymentLabel}`"></span>
                             <span class="shrink-0 text-ink" x-text="selectedOrder.amount"></span>
                         </div>
 
-                        <div class="mt-3 grid grid-cols-2 gap-3">
+                        <div class="mt-2 grid grid-cols-2 gap-2">
                             <label class="block">
-                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
-                                <select x-model="paymentForm.status" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
+                                <select x-model="paymentForm.status" class="h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
                                     <option value="unpaid">Unpaid</option>
                                     <option value="pending">Pending</option>
                                     <option value="paid">Paid</option>
@@ -280,8 +280,8 @@
                             </label>
 
                             <label class="block">
-                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Method</span>
-                                <select x-model="paymentForm.method" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Method</span>
+                                <select x-model="paymentForm.method" class="h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
                                     <option value="cash">Cash</option>
                                     <option value="online">Online</option>
                                     <option value="razorpay">Razorpay</option>
@@ -289,29 +289,29 @@
                             </label>
                         </div>
 
-                        <div class="mt-3 grid grid-cols-[minmax(0,1fr)_108px] gap-3">
+                        <div class="mt-2 grid grid-cols-[minmax(0,1fr)_100px] gap-2">
                             <label class="block">
-                                <span class="mb-1 block text-[11px] font-black uppercase tracking-[0.18em] text-muted">Amount</span>
-                                <input type="number" min="0" step="0.01" x-model.number="paymentForm.amount" class="h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
+                                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Amount</span>
+                                <input type="number" min="0" step="0.01" x-model.number="paymentForm.amount" class="h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-black text-ink outline-none focus:border-orange">
                             </label>
 
-                            <button type="button" @click="markCashPaid()" :disabled="isUpdatingPayment" class="self-end rounded-lg bg-success/10 py-2.5 text-xs font-black text-success transition hover:bg-success/20 disabled:opacity-50">Cash Paid</button>
+                            <button type="button" @click="markCashPaid()" :disabled="isUpdatingPayment" class="self-end rounded-lg bg-success/10 py-2 text-xs font-black text-success transition hover:bg-success/20 disabled:opacity-50">Cash Paid</button>
                         </div>
 
                         <template x-if="paymentError">
-                            <p class="mt-3 rounded-xl border border-danger/10 bg-danger/5 px-3 py-2 text-xs font-bold text-danger" x-text="paymentError"></p>
+                            <p class="mt-2 rounded-lg border border-danger/10 bg-danger/5 px-3 py-1.5 text-xs font-bold text-danger" x-text="paymentError"></p>
                         </template>
 
-                        <div class="mt-4 grid grid-cols-3 gap-2">
-                            <button type="button" @click="updatePayment()" :disabled="isUpdatingPayment" class="rounded-lg bg-teal/10 py-3 text-center text-xs font-black text-teal transition hover:bg-teal/20 disabled:opacity-50" x-text="isUpdatingPayment ? 'Saving...' : 'Update Payment'"></button>
-                            <button type="button" @click="printReceipt(selectedOrder)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange py-3 text-center text-xs font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
+                        <div class="mt-3 grid grid-cols-3 gap-2">
+                            <button type="button" @click="updatePayment()" :disabled="isUpdatingPayment" class="rounded-lg bg-teal/10 py-2 text-center text-xs font-black text-teal transition hover:bg-teal/20 disabled:opacity-50" x-text="isUpdatingPayment ? 'Saving...' : 'Update Payment'"></button>
+                            <button type="button" @click="printReceipt(selectedOrder)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange py-2 text-center text-xs font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 8.75v-4h10.5v4M6.75 17.75H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1.75M7.5 14.75h9v5h-9v-5Z" />
                                 </svg>
                                 Print
                             </button>
                             <template x-if="selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled'">
-                                <button type="button" @click="cancelOrder(selectedOrder.id)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger/10 py-3 text-center text-xs font-black text-danger transition hover:bg-danger/20">
+                                <button type="button" @click="cancelOrder(selectedOrder.id)" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-danger/10 py-2 text-center text-xs font-black text-danger transition hover:bg-danger/20">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 7.75h12M9.75 7.75v-2h4.5v2M10 11v6M14 11v6M7.5 7.75l.75 12h7.5l.75-12" />
                                     </svg>

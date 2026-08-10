@@ -16,7 +16,7 @@ class KitchenController extends ApiController
 
     public function active(Request $request): JsonResponse
     {
-        $orders = Order::with('items')
+        $orders = Order::with('items.menuItem.presetImage')
             ->where('business_id', $this->businessId($request))
             ->whereIn('order_status', ['pending', 'confirmed', 'preparing'])
             ->oldest()
