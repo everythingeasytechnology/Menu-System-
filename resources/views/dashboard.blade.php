@@ -83,16 +83,16 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         @foreach($metricCards as $metric)
-            <x-card variant="default" class="min-h-[126px] p-5">
-                <div class="flex items-center gap-4">
-                    <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl {{ $metric['box'] }}">
+            <x-card variant="default" class="p-4">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $metric['box'] }}">
                         {!! $metric['icon'] !!}
                     </span>
                     <span class="min-w-0">
-                        <span class="block truncate text-[11px] font-black uppercase tracking-wider text-muted">{{ $metric['label'] }}</span>
-                        <span class="mt-3 block truncate text-2xl font-black tracking-tight text-ink">{{ $metric['value'] }}</span>
+                        <span class="block text-[10px] font-black uppercase leading-tight tracking-wider text-muted">{{ $metric['label'] }}</span>
+                        <span class="mt-1.5 block break-words text-lg font-black leading-tight tracking-tight text-ink">{{ $metric['value'] }}</span>
                     </span>
                 </div>
             </x-card>
