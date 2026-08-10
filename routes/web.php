@@ -7,6 +7,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderOperationsController;
 use App\Http\Controllers\ServicePointController;
 use App\Http\Controllers\StaffController;
@@ -64,6 +65,10 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
     Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
     Route::put('/staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
     Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('staff.destroy');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
     Route::get('/reports', function () {
         return view('reports');
