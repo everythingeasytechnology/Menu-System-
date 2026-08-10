@@ -6,8 +6,7 @@ use App\Models\AppNotification;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\RestaurantTable;
-use App\Models\Room;
+use App\Models\ServicePoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,20 +68,15 @@ class DashboardController extends ApiController
             ')
             ->first();
 
-        $tablesStatus = RestaurantTable::where('business_id', $businessId)
+        $servicePointsStatus = ServicePoint::where('business_id', $businessId)
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        $roomsStatus = Room::where('business_id', $businessId)
-            ->select('status', DB::raw('COUNT(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $tablesTotal = (int) RestaurantTable::where('business_id', $businessId)->count();
-        $tablesOccupied = (int) ($tablesStatus['occupied'] ?? 0);
-        $tablesAvailable = (int) ($tablesStatus['available'] ?? 0);
-        $tablesReserved = (int) ($tablesStatus['reserved'] ?? 0);
+        $servicePointsTotal = (int) ServicePoint::where('business_id', $businessId)->count();
+        $servicePointsOccupied = (int) ($servicePointsStatus['occupied'] ?? 0);
+        $servicePointsAvailable = (int) ($servicePointsStatus['available'] ?? 0);
+        $servicePointsBillPending = (int) ($servicePointsStatus['bill-pending'] ?? 0);
 
         $recentOrders = Order::with(['items', 'restaurantTable', 'room', 'servicePoint'])
             ->where('business_id', $businessId)
@@ -130,13 +124,12 @@ class DashboardController extends ApiController
             'avg_order_minutes' => (int) round((float) $orderSummary->avg_order_minutes),
             'active_menu_items' => (int) $menuSummary->active_menu_items,
             'unavailable_items' => (int) $menuSummary->unavailable_items,
-            'tables_status' => $tablesStatus,
-            'rooms_status' => $roomsStatus,
-            'tables_summary' => [
-                'total' => $tablesTotal,
-                'occupied' => $tablesOccupied,
-                'available' => $tablesAvailable,
-                'reserved' => $tablesReserved,
+            'service_points_status' => $servicePointsStatus,
+            'service_points_summary' => [
+                'total' => $servicePointsTotal,
+                'occupied' => $servicePointsOccupied,
+                'available' => $servicePointsAvailable,
+                'bill_pending' => $servicePointsBillPending,
             ],
             'recent_orders' => $recentOrders,
             'top_selling_items' => $topItems,

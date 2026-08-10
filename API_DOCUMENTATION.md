@@ -611,7 +611,7 @@ Returns:
 - last 5 days revenue trend (`revenue_trend`, one entry per day with orders)
 - average order value and average order fulfillment time in minutes (`avg_order_value`, `avg_order_minutes`)
 - active/unavailable item counts
-- table and room status summaries (`tables_status`, `rooms_status` keyed by status, plus a flattened `tables_summary` with `total`/`occupied`/`available`/`reserved`)
+- service point status summary (`service_points_status` keyed by status, plus a flattened `service_points_summary` with `total`/`occupied`/`available`/`bill_pending`)
 - `recent_orders`: last 10 orders pre-formatted for UI display (`table` location label, `items` as a "2x Paneer Tikka, 1x Cola" summary string, `total`, `status`, `payment_status`, `time`)
 - `top_selling_items`: top 5 items this month by quantity sold, with `sold` count and `percentage` relative to the top item
 - unread notifications count
