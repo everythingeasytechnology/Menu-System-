@@ -7,6 +7,7 @@ use App\Http\Resources\Api\V1\MenuItemResource;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Services\AuditLogService;
+use App\Services\MenuImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class MenuItemController extends ApiController
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly MenuImageService $menuImageService,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -49,10 +52,11 @@ class MenuItemController extends ApiController
         $businessId = $this->businessId($request);
         $data = $request->validated();
         $category = $this->categoryForBusiness($businessId, $data['category_id']);
+        $presetImageId = $this->menuImageService->resolvePresetImageId($request, $data['name'], $category->name);
 
-        $item = DB::transaction(function () use ($businessId, $data, $category, $request) {
+        $item = DB::transaction(function () use ($businessId, $data, $category, $presetImageId, $request) {
             $variants = $data['variants'] ?? [];
-            unset($data['variants'], $data['category_id']);
+            unset($data['variants'], $data['category_id'], $data['image'], $data['preset_image_id'], $data['remove_image']);
 
             $item = MenuItem::create([
                 ...$data,
@@ -63,6 +67,7 @@ class MenuItemController extends ApiController
                 'stock' => $data['stock'] ?? true,
                 'availability' => $data['availability'] ?? true,
                 'status' => $data['status'] ?? 'active',
+                'preset_food_image_id' => $presetImageId,
             ]);
 
             foreach ($variants as $variant) {
@@ -96,8 +101,16 @@ class MenuItemController extends ApiController
         }
 
         $data = $request->validated();
+        $itemName = $data['name'] ?? $menuItem->name;
+        $categoryName = $data['category'] ?? $menuItem->category;
+        $presetImageId = $this->menuImageService->resolvePresetImageId(
+            $request,
+            $itemName,
+            $categoryName,
+            $menuItem->preset_food_image_id,
+        );
 
-        $item = DB::transaction(function () use ($data, $menuItem, $request) {
+        $item = DB::transaction(function () use ($data, $menuItem, $presetImageId, $request) {
             $variants = $data['variants'] ?? null;
 
             if (isset($data['category_id'])) {
@@ -107,7 +120,8 @@ class MenuItemController extends ApiController
                 unset($data['category_id']);
             }
 
-            unset($data['variants']);
+            unset($data['variants'], $data['image'], $data['preset_image_id'], $data['remove_image']);
+            $data['preset_food_image_id'] = $presetImageId;
             $menuItem->update($data);
 
             if (is_array($variants)) {

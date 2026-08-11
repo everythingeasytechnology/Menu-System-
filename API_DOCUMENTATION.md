@@ -378,7 +378,7 @@ GET /api/v1/menu-items/filter?type=veg&category_id=1
 GET /api/v1/menu-items/filter?type=non-veg&category=Starters
 ```
 
-Create/update body:
+Create/update body (JSON):
 
 ```json
 {
@@ -391,12 +391,23 @@ Create/update body:
   "preparation_time_minutes": 15,
   "availability": true,
   "status": "active",
+  "preset_food_image_id": 12,
   "variants": [
     { "label": "Half", "price": 160 },
     { "label": "Full", "price": 280 }
   ]
 }
 ```
+
+Create/update body (`multipart/form-data`, for uploading a custom image):
+
+Send the same fields above as form fields (variants as `variants[0][label]`, `variants[0][price]`, etc.) plus one of:
+
+- `image` — an image file (`jpeg`, `png`, `jpg`, `gif`, `svg`, max 2MB). Uploading compresses and stores the file, adds it to the shared preset image library, and attaches it to the item.
+- `preset_image_id` — an existing `preset_food_images` id to attach instead of uploading.
+- `remove_image` — send `"1"` to clear the item's image.
+
+`PUT` does not support file uploads in most HTTP clients/browsers. For updates with an image, `POST` to `/menu-items/{id}` with a `_method=PUT` form field (Laravel method spoofing) instead of sending a real `PUT` request.
 
 Delete deactivates an item and marks it unavailable.
 

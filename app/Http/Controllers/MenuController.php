@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
+use App\Services\MenuImageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class MenuController extends Controller
 {
+    public function __construct(private readonly MenuImageService $menuImageService)
+    {
+    }
+
     /**
      * Display a listing of the menu items with filters.
      */
@@ -51,20 +55,11 @@ class MenuController extends Controller
             'variants.*.price' => 'required|numeric|min:0',
         ]);
 
-        $presetImageId = null;
-        if ($request->hasFile('image')) {
-            // Store and compress custom image
-            $path = $this->compressAndStoreImage($request->file('image'));
-            // Save in preset library so everyone can use it
-            $preset = \App\Models\PresetFoodImage::create([
-                'name' => $validated['name'],
-                'tags' => strtolower($validated['name'] . ', ' . $validated['category']),
-                'image_path' => 'storage/' . $path,
-            ]);
-            $presetImageId = $preset->id;
-        } elseif ($request->filled('preset_image_id')) {
-            $presetImageId = $request->input('preset_image_id');
-        }
+        $presetImageId = $this->menuImageService->resolvePresetImageId(
+            $request,
+            $validated['name'],
+            $validated['category'],
+        );
 
         $menuItem = MenuItem::create([
             'name' => $validated['name'],
@@ -105,22 +100,13 @@ class MenuController extends Controller
 
         $menuItem = MenuItem::findOrFail($id);
 
-        $presetImageId = $menuItem->preset_food_image_id;
+        $presetImageId = $this->menuImageService->resolvePresetImageId(
+            $request,
+            $validated['name'],
+            $validated['category'],
+            $menuItem->preset_food_image_id,
+        );
 
-        if ($request->hasFile('image')) {
-            $path = $this->compressAndStoreImage($request->file('image'));
-            $preset = \App\Models\PresetFoodImage::create([
-                'name' => $validated['name'],
-                'tags' => strtolower($validated['name'] . ', ' . $validated['category']),
-                'image_path' => 'storage/' . $path,
-            ]);
-            $presetImageId = $preset->id;
-        } elseif ($request->filled('preset_image_id')) {
-            $presetImageId = $request->input('preset_image_id');
-        } elseif ($request->input('remove_image') === '1') {
-            $presetImageId = null;
-        }
-        
         $menuItem->update([
             'name' => $validated['name'],
             'category' => $validated['category'],
@@ -186,64 +172,5 @@ class MenuController extends Controller
         $presets = $query->take(15)->get();
 
         return response()->json($presets);
-    }
-
-    /**
-     * Compress uploaded image using GD library to optimize size without quality loss.
-     */
-    private function compressAndStoreImage($file)
-    {
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $directory = storage_path('app/public/menu_items');
-        
-        if (!file_exists($directory)) {
-            mkdir($directory, 0755, true);
-        }
-
-        $destinationPath = $directory . '/' . $filename;
-        $sourcePath = $file->getRealPath();
-
-        $info = @getimagesize($sourcePath);
-        if (!$info) {
-            return $file->store('menu_items', 'public');
-        }
-
-        $mime = $info['mime'];
-
-        try {
-            if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
-                $image = @imagecreatefromjpeg($sourcePath);
-                if ($image) {
-                    @imagejpeg($image, $destinationPath, 80); // Compress with 80% quality (no human-visible quality loss)
-                    @imagedestroy($image);
-                } else {
-                    copy($sourcePath, $destinationPath);
-                }
-            } elseif ($mime === 'image/png') {
-                $image = @imagecreatefrompng($sourcePath);
-                if ($image) {
-                    @imagealphablending($image, false);
-                    @imagesavealpha($image, true);
-                    @imagepng($image, $destinationPath, 6); // Compress PNG losslessly
-                    @imagedestroy($image);
-                } else {
-                    copy($sourcePath, $destinationPath);
-                }
-            } elseif ($mime === 'image/gif') {
-                $image = @imagecreatefromgif($sourcePath);
-                if ($image) {
-                    @imagegif($image, $destinationPath);
-                    @imagedestroy($image);
-                } else {
-                    copy($sourcePath, $destinationPath);
-                }
-            } else {
-                copy($sourcePath, $destinationPath);
-            }
-        } catch (\Exception $e) {
-            copy($sourcePath, $destinationPath);
-        }
-
-        return 'menu_items/' . $filename;
     }
 }
