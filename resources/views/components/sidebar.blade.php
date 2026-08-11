@@ -55,27 +55,33 @@
 ></div>
 
 <aside
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-    class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/5 bg-[#121c28] text-white shadow-2xl shadow-navy/20 transition-transform duration-300 ease-in-out lg:static lg:z-auto"
+    :class="[
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        sidebarCompact ? 'lg:w-56' : 'lg:w-64'
+    ]"
+    class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/5 bg-[#121c28] text-white shadow-2xl shadow-navy/20 transition-all duration-300 ease-in-out lg:static lg:z-auto"
 >
-    <div class="flex h-24 items-center justify-between border-b border-white/5 px-5">
+    <div
+        class="flex h-20 items-center justify-between border-b border-white/5 px-4 transition-all duration-300"
+        :class="sidebarCompact ? 'lg:px-3' : 'lg:px-4'"
+    >
         <a href="/" class="flex min-w-0 items-center gap-3">
             @if($logoUrl)
-                <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 shadow-lg">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 shadow-lg">
                     <img src="{{ $logoUrl }}" alt="{{ $brandName }}" class="h-full w-full object-contain">
                 </span>
             @else
-                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30">
-                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 4.5v15M6 4.5v4.75a2 2 0 0 0 4 0V4.5M16.5 4.5v15M16.5 4.5c2 1 3 2.65 3 5.25 0 2.2-1.1 3.75-3 4" />
                     </svg>
                 </span>
             @endif
             <span class="min-w-0">
-                <span class="block truncate text-lg font-black leading-5 tracking-tight">
+                <span class="block truncate text-base font-black leading-5 tracking-tight">
                     {{ $brandName === 'SmartMenu' ? 'Smart' : $brandName }}@if($brandName === 'SmartMenu')<span class="text-orange">Menu</span>@endif
                 </span>
-                <span class="mt-0.5 block text-xs font-semibold text-slate-300">System</span>
+                <span class="mt-0.5 block text-[11px] font-semibold text-slate-300">System</span>
             </span>
         </a>
 
@@ -90,21 +96,27 @@
             </svg>
         </button>
 
-        <button type="button" class="hidden rounded-lg p-2 text-slate-300 transition hover:bg-white/5 hover:text-white lg:inline-flex" aria-label="Navigation">
+        <button
+            type="button"
+            @click="sidebarCompact = !sidebarCompact"
+            class="hidden rounded-lg p-2 text-slate-300 transition hover:bg-white/5 hover:text-white lg:inline-flex"
+            :aria-label="sidebarCompact ? 'Regular sidebar' : 'Compact sidebar'"
+            :title="sidebarCompact ? 'Regular sidebar' : 'Compact sidebar'"
+        >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M5 12h14M5 17h14" />
             </svg>
         </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-4 py-5">
+    <div class="flex-1 overflow-y-auto px-3 py-4">
         @php $currentGroup = null; @endphp
 
         <nav class="space-y-1">
             @foreach($menuItems as $item)
                 @if(isset($item['group']) && $item['group'] !== $currentGroup)
                     @php $currentGroup = $item['group']; @endphp
-                    <div class="px-3 pb-2 pt-6 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    <div class="px-3 pb-1.5 pt-4 text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">
                         {{ $currentGroup }}
                     </div>
                 @endif
@@ -121,9 +133,11 @@
 
                 <a
                     href="{{ $linkHref }}"
-                    class="group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold transition {{ $isActive ? 'bg-orange text-white shadow-lg shadow-orange/25' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"
+                    class="group flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold transition {{ $isActive ? 'bg-orange text-white shadow-lg shadow-orange/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"
+                    :class="sidebarCompact ? 'lg:px-2.5' : ''"
+                    title="{{ $item['label'] }}"
                 >
-                    <span class="flex min-w-0 items-center gap-3">
+                    <span class="flex min-w-0 items-center gap-2.5">
                         <span class="{{ $isActive ? 'text-white' : 'text-slate-400 group-hover:text-orange' }}">
                             {!! $item['icon'] !!}
                         </span>
@@ -140,8 +154,8 @@
         </nav>
     </div>
 
-    <div class="p-4">
-        <div class="overflow-hidden rounded-xl border border-white/5 bg-white/[0.04] p-4">
+    <div class="p-3">
+        <div class="overflow-hidden rounded-xl border border-white/5 bg-white/[0.04] p-3">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex min-w-0 items-center gap-2.5">
                     <span class="relative flex h-3 w-3 shrink-0">
@@ -149,13 +163,13 @@
                         <span class="relative inline-flex h-3 w-3 rounded-full bg-success"></span>
                     </span>
                     <span class="min-w-0">
-                        <span class="block truncate text-sm font-black text-white">System Status</span>
-                        <span class="block truncate text-xs font-semibold text-slate-400">All Systems Operational</span>
+                        <span class="block truncate text-xs font-black text-white">System Status</span>
+                        <span class="block truncate text-[11px] font-semibold text-slate-400">Operational</span>
                     </span>
                 </div>
                 <span class="rounded-lg bg-white/10 px-2 py-1 text-[10px] font-black text-slate-300">v1.2.0</span>
             </div>
-            <div class="mt-4 h-8 rounded-lg bg-gradient-to-r from-transparent via-orange/20 to-orange/45"></div>
+            <div class="mt-3 h-6 rounded-lg bg-gradient-to-r from-transparent via-orange/20 to-orange/45"></div>
         </div>
     </div>
 </aside>

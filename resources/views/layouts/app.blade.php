@@ -19,6 +19,7 @@
     <!-- Main Alpine-driven App Container -->
     <div x-data="{ 
         sidebarOpen: false, 
+        sidebarCompact: false,
         quickActionsOpen: false,
         toggleQuickActions() { this.quickActionsOpen = !this.quickActionsOpen }
     }" 
