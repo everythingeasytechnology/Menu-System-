@@ -171,4 +171,31 @@ class SettingsTest extends TestCase
             'sgst' => 3.50,
         ]);
     }
+
+    public function test_can_disable_gst_settings_when_gstin_is_present(): void
+    {
+        BusinessSetting::create([
+            'gst_no' => '07BBBBB2222B2Z2',
+            'gst_enabled' => true,
+            'cgst' => 2.50,
+            'sgst' => 2.50,
+        ]);
+
+        $response = $this->post('/settings/gst', [
+            'gst_no' => '07BBBBB2222B2Z2',
+            'gst_enabled' => '0',
+            'cgst' => '2.50',
+            'sgst' => '2.50',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'GST settings updated successfully!');
+
+        $this->assertDatabaseHas('business_settings', [
+            'gst_no' => '07BBBBB2222B2Z2',
+            'gst_enabled' => false,
+            'cgst' => 2.50,
+            'sgst' => 2.50,
+        ]);
+    }
 }

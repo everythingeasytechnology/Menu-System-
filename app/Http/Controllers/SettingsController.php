@@ -189,7 +189,7 @@ class SettingsController extends Controller
         $business = BusinessSetting::firstOrCreate([]);
         $business->update([
             'gst_no' => $request->input('gst_no'),
-            'gst_enabled' => $request->has('gst_enabled') && $request->filled('gst_no'),
+            'gst_enabled' => $request->boolean('gst_enabled') && $request->filled('gst_no'),
             'cgst' => floatval($request->input('cgst')),
             'sgst' => floatval($request->input('sgst')),
         ]);

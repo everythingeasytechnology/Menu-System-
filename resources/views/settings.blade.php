@@ -654,7 +654,7 @@
                                 </div>
                                 <button 
                                     type="button"
-                                    @click="if (gstNo.trim() !== '') { gstEnabled = !gstEnabled } else { alert('Please enter a GSTIN first to enable tax billing.') }"
+                                    @click="if (gstEnabled) { gstEnabled = false } else if (gstNo.trim() !== '') { gstEnabled = true } else { alert('Please enter a GSTIN first to enable tax billing.') }"
                                     class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
                                     :class="gstEnabled && gstNo.trim() !== '' ? 'bg-orange' : 'bg-slate-300'"
                                 >
