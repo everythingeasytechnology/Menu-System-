@@ -28,7 +28,9 @@ class SuperAdminPanelTest extends TestCase
 
         $this->get('/admin')
             ->assertOk()
+            ->assertSee('ServiceOS Admin')
             ->assertSee('Business Control Center')
+            ->assertSee('Business Owners')
             ->assertSee('Create Business');
     }
 
