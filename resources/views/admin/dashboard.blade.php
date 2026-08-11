@@ -16,7 +16,7 @@
                 <div>
                     <p class="text-[10px] font-black uppercase tracking-[0.18em] text-orange">Super Admin</p>
                     <h1 class="mt-0.5 text-2xl font-black tracking-tight text-ink">Business Control Center</h1>
-                    <p class="mt-0.5 text-xs font-semibold text-muted">Manage business accounts, owners, staff access, and platform status.</p>
+                    <p class="mt-0.5 text-xs font-semibold text-muted">Manage business accounts and business owner access.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <form method="POST" action="{{ route('logout') }}">
@@ -62,8 +62,8 @@
                     <strong class="mt-1 block text-2xl font-black text-danger">{{ number_format($stats['suspended_businesses']) }}</strong>
                 </div>
                 <div class="rounded-lg border border-border bg-card p-3 shadow-sm">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-muted">Users</span>
-                    <strong class="mt-1 block text-2xl font-black text-ink">{{ number_format($stats['users']) }}</strong>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-muted">Active Owners</span>
+                    <strong class="mt-1 block text-2xl font-black text-success">{{ number_format($stats['active_owners']) }}</strong>
                 </div>
                 <div class="rounded-lg border border-border bg-card p-3 shadow-sm">
                     <span class="text-[10px] font-black uppercase tracking-wider text-muted">Owners</span>
@@ -165,7 +165,7 @@
                             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                 <div>
                                     <h2 class="text-base font-black text-ink">Businesses</h2>
-                                    <p class="mt-0.5 text-xs font-semibold text-muted">Suspend, reactivate, and update business account details.</p>
+                                    <p class="mt-0.5 text-xs font-semibold text-muted">Suspend, reactivate, and update business owner account details.</p>
                                 </div>
                                 <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-col gap-2 sm:flex-row">
                                     <input name="business_search" value="{{ $filters['business_search'] ?? '' }}" placeholder="Search business" class="h-9 rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
@@ -189,7 +189,7 @@
                                         <th class="px-3 py-2">Contact</th>
                                         <th class="px-3 py-2">Location</th>
                                         <th class="px-3 py-2">Status</th>
-                                        <th class="px-3 py-2">Usage</th>
+                                        <th class="px-3 py-2">Orders</th>
                                         <th class="px-3 py-2 text-right">Action</th>
                                     </tr>
                                 </thead>
@@ -201,8 +201,16 @@
                                                 <input form="business-form-{{ $business->id }}" name="type" value="{{ $business->type }}" required class="mt-1 h-8 w-48 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-muted outline-none focus:border-orange">
                                             </td>
                                             <td class="px-3 py-2">
-                                                <span class="block font-black text-ink">{{ $business->owner?->name ?? 'No owner' }}</span>
-                                                <span class="mt-0.5 block text-muted">{{ $business->owner?->email ?? 'Not assigned' }}</span>
+                                                <input form="business-form-{{ $business->id }}" name="owner_name" value="{{ $business->owner?->name }}" placeholder="Owner name" class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
+                                                <input form="business-form-{{ $business->id }}" type="email" name="owner_email" value="{{ $business->owner?->email }}" placeholder="Owner email" class="mt-1 h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-muted outline-none focus:border-orange" @disabled(! $business->owner)>
+                                                <div class="mt-1 flex gap-1">
+                                                    <input form="business-form-{{ $business->id }}" name="owner_phone" value="{{ $business->owner?->phone }}" placeholder="Phone" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
+                                                    <select form="business-form-{{ $business->id }}" name="owner_status" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
+                                                        @foreach($ownerStatuses as $value => $label)
+                                                            <option value="{{ $value }}" @selected($business->owner?->status === $value)>{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </td>
                                             <td class="px-3 py-2">
                                                 <input form="business-form-{{ $business->id }}" type="email" name="email" value="{{ $business->email }}" placeholder="Email" class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
@@ -223,8 +231,8 @@
                                                 </select>
                                             </td>
                                             <td class="px-3 py-2">
-                                                <span class="block font-black text-ink">{{ $business->users_count }} users</span>
-                                                <span class="mt-0.5 block text-muted">{{ $business->orders_count }} orders</span>
+                                                <span class="block font-black text-ink">{{ $business->orders_count }} orders</span>
+                                                <span class="mt-0.5 block text-muted">{{ $business->created_at?->format('d M Y') }}</span>
                                             </td>
                                             <td class="px-3 py-2 text-right">
                                                 <form id="business-form-{{ $business->id }}" method="POST" action="{{ route('admin.businesses.update', $business) }}">
@@ -246,96 +254,6 @@
                         </div>
                     </section>
 
-                    <section class="rounded-lg border border-border bg-card shadow-sm">
-                        <div class="border-b border-border p-4">
-                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                <div>
-                                    <h2 class="text-base font-black text-ink">Users</h2>
-                                    <p class="mt-0.5 text-xs font-semibold text-muted">Control platform users, roles, passwords, and business assignment.</p>
-                                </div>
-                                <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-col gap-2 sm:flex-row">
-                                    <input type="hidden" name="business_search" value="{{ $filters['business_search'] ?? '' }}">
-                                    <input type="hidden" name="business_status" value="{{ $filters['business_status'] ?? 'all' }}">
-                                    <input name="user_search" value="{{ $filters['user_search'] ?? '' }}" placeholder="Search user" class="h-9 rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                                    <select name="user_role" class="h-9 rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                                        <option value="all">All roles</option>
-                                        @foreach($userRoles as $value => $label)
-                                            <option value="{{ $value }}" @selected(($filters['user_role'] ?? 'all') === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="h-9 rounded-lg bg-navy px-3 text-xs font-black text-white">Filter</button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="min-w-[1080px] w-full text-left text-xs">
-                                <thead class="border-b border-border bg-card-tint text-[10px] font-black uppercase tracking-wider text-muted">
-                                    <tr>
-                                        <th class="px-3 py-2">User</th>
-                                        <th class="px-3 py-2">Phone</th>
-                                        <th class="px-3 py-2">Role</th>
-                                        <th class="px-3 py-2">Business</th>
-                                        <th class="px-3 py-2">Status</th>
-                                        <th class="px-3 py-2">Password</th>
-                                        <th class="px-3 py-2 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-border">
-                                    @forelse($users as $user)
-                                        <tr class="align-top">
-                                            <td class="px-3 py-2">
-                                                <input form="user-form-{{ $user->id }}" name="name" value="{{ $user->name }}" required class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange">
-                                                <input form="user-form-{{ $user->id }}" type="email" name="email" value="{{ $user->email }}" required class="mt-1 h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-muted outline-none focus:border-orange">
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <input form="user-form-{{ $user->id }}" name="phone" value="{{ $user->phone }}" class="h-8 w-32 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <select form="user-form-{{ $user->id }}" name="role" class="h-8 w-36 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange">
-                                                    @foreach($userRoles as $value => $label)
-                                                        <option value="{{ $value }}" @selected($user->role === $value)>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <select form="user-form-{{ $user->id }}" name="business_id" class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                                    <option value="">No business</option>
-                                                    @foreach($businessOptions as $businessOption)
-                                                        <option value="{{ $businessOption->id }}" @selected((int) $user->business_id === (int) $businessOption->id)>{{ $businessOption->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <select form="user-form-{{ $user->id }}" name="status" class="h-8 w-28 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange">
-                                                    @foreach($userStatuses as $value => $label)
-                                                        <option value="{{ $value }}" @selected($user->status === $value)>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <input form="user-form-{{ $user->id }}" type="password" name="password" placeholder="New password" class="h-8 w-36 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                                <input form="user-form-{{ $user->id }}" type="password" name="password_confirmation" placeholder="Confirm" class="mt-1 h-8 w-36 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                            </td>
-                                            <td class="px-3 py-2 text-right">
-                                                <form id="user-form-{{ $user->id }}" method="POST" action="{{ route('admin.users.update', $user) }}">
-                                                    @csrf
-                                                    @method('PUT')
-                                                </form>
-                                                <button form="user-form-{{ $user->id }}" type="submit" class="h-8 rounded-lg bg-orange px-3 text-[10px] font-black uppercase tracking-wider text-white">
-                                                    Save
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="px-3 py-8 text-center font-bold text-muted">No users found.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
                 </div>
             </section>
         </main>

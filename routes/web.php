@@ -27,7 +27,6 @@ Route::prefix('admin')
         Route::get('/', [SuperAdminController::class, 'index'])->name('dashboard');
         Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');
         Route::put('/businesses/{business}', [SuperAdminController::class, 'updateBusiness'])->name('businesses.update');
-        Route::put('/users/{user}', [SuperAdminController::class, 'updateUser'])->name('users.update');
     });
 
 Route::middleware(['auth', 'business.owner'])->group(function () {

@@ -40,6 +40,54 @@ class SuperAdminPanelTest extends TestCase
             ->assertRedirect(route('dashboard'));
     }
 
+    public function test_admin_dashboard_shows_business_owners_not_staff_users(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'owners-only-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $owner = User::create([
+            'name' => 'Visible Owner',
+            'email' => 'visible-owner@example.com',
+            'password' => 'password123',
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+
+        $business = Business::create([
+            'owner_user_id' => $owner->id,
+            'name' => 'Owner Only Cafe',
+            'type' => 'restaurant',
+            'country' => 'India',
+            'timezone' => 'Asia/Kolkata',
+            'status' => 'active',
+        ]);
+
+        $owner->update(['business_id' => $business->id]);
+
+        User::create([
+            'business_id' => $business->id,
+            'name' => 'Hidden Waiter',
+            'email' => 'hidden-waiter@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('Owner Only Cafe')
+            ->assertSee('Visible Owner')
+            ->assertDontSee('Hidden Waiter')
+            ->assertDontSee('hidden-waiter@example.com')
+            ->assertDontSee('Control platform users');
+    }
+
     public function test_superadmin_can_create_business_with_owner_login(): void
     {
         $superadmin = User::create([

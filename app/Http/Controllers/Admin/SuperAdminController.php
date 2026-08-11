@@ -21,27 +21,17 @@ class SuperAdminController extends Controller
         'suspended' => 'Suspended',
     ];
 
-    public const USER_STATUSES = [
+    public const OWNER_STATUSES = [
         'active' => 'Active',
         'inactive' => 'Inactive',
         'suspended' => 'Suspended',
-    ];
-
-    public const USER_ROLES = [
-        'superadmin' => 'Super Admin',
-        'owner' => 'Owner',
-        'admin' => 'Business Admin',
-        'manager' => 'Manager',
-        'waiter' => 'Waiter',
-        'kitchen_staff' => 'Kitchen Staff',
-        'cashier' => 'Cashier',
     ];
 
     public function index(Request $request)
     {
         $businessQuery = Business::query()
             ->with('owner')
-            ->withCount(['users', 'orders'])
+            ->withCount(['orders'])
             ->latest();
 
         if ($request->filled('business_search')) {
@@ -51,7 +41,8 @@ class SuperAdminController extends Controller
                     ->orWhere('email', 'like', '%'.$search.'%')
                     ->orWhere('phone', 'like', '%'.$search.'%')
                     ->orWhereHas('owner', fn ($owner) => $owner->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%'));
+                        ->orWhere('email', 'like', '%'.$search.'%')
+                        ->orWhere('phone', 'like', '%'.$search.'%'));
             });
         }
 
@@ -59,32 +50,12 @@ class SuperAdminController extends Controller
             $businessQuery->where('status', $request->input('business_status'));
         }
 
-        $userQuery = User::query()
-            ->with('business')
-            ->latest();
-
-        if ($request->filled('user_search')) {
-            $search = trim((string) $request->input('user_search'));
-            $userQuery->where(function ($query) use ($search) {
-                $query->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%')
-                    ->orWhere('phone', 'like', '%'.$search.'%');
-            });
-        }
-
-        if ($request->filled('user_role') && $request->input('user_role') !== 'all') {
-            $userQuery->where('role', $request->input('user_role'));
-        }
-
         return view('admin.dashboard', [
             'stats' => $this->stats(),
             'businesses' => $businessQuery->limit(60)->get(),
-            'users' => $userQuery->limit(100)->get(),
-            'businessOptions' => Business::orderBy('name')->get(['id', 'name']),
             'businessStatuses' => self::BUSINESS_STATUSES,
-            'userStatuses' => self::USER_STATUSES,
-            'userRoles' => self::USER_ROLES,
-            'filters' => $request->only(['business_search', 'business_status', 'user_search', 'user_role']),
+            'ownerStatuses' => self::OWNER_STATUSES,
+            'filters' => $request->only(['business_search', 'business_status']),
         ]);
     }
 
@@ -109,7 +80,7 @@ class SuperAdminController extends Controller
             $owner = User::create([
                 'name' => $data['owner_name'],
                 'email' => $data['owner_email'],
-                'phone' => $data['owner_phone'] ?? null,
+                'phone' => array_key_exists('owner_phone', $data) ? $data['owner_phone'] : $owner->phone,
                 'password' => Hash::make($data['owner_password']),
                 'role' => 'owner',
                 'status' => 'active',
@@ -160,9 +131,31 @@ class SuperAdminController extends Controller
             'city' => ['nullable', 'string', 'max:120'],
             'state' => ['nullable', 'string', 'max:120'],
             'country' => ['nullable', 'string', 'max:120'],
+            'owner_name' => ['nullable', 'string', 'max:255'],
+            'owner_email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($business->owner_user_id)],
+            'owner_phone' => ['nullable', 'string', 'max:30'],
+            'owner_status' => ['nullable', 'string', Rule::in(array_keys(self::OWNER_STATUSES))],
         ]);
 
-        $business->update($data);
+        $businessData = collect($data)
+            ->only(['name', 'type', 'status', 'email', 'phone', 'city', 'state', 'country'])
+            ->all();
+
+        $business->update($businessData);
+
+        $owner = $business->owner()->first();
+        if ($owner) {
+            $owner->update([
+                'name' => ($data['owner_name'] ?? null) ?: $owner->name,
+                'email' => ($data['owner_email'] ?? null) ?: $owner->email,
+                'phone' => $data['owner_phone'] ?? null,
+                'status' => $data['owner_status'] ?? $owner->status,
+            ]);
+
+            if ($owner->status !== 'active') {
+                $owner->accessTokens()->update(['revoked_at' => now()]);
+            }
+        }
 
         BusinessSetting::where('business_id', $business->id)->update([
             'brand_name' => $business->name,
@@ -176,59 +169,14 @@ class SuperAdminController extends Controller
             ->with('success', 'Business updated.');
     }
 
-    public function updateUser(Request $request, User $user): RedirectResponse
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'role' => ['required', 'string', Rule::in(array_keys(self::USER_ROLES))],
-            'status' => ['required', 'string', Rule::in(array_keys(self::USER_STATUSES))],
-            'business_id' => ['nullable', 'integer', 'exists:businesses,id'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        if ($user->is($request->user()) && ($data['role'] !== 'superadmin' || $data['status'] !== 'active')) {
-            return back()->withErrors(['user' => 'You cannot remove your own active super admin access.']);
-        }
-
-        if ($data['role'] !== 'superadmin' && empty($data['business_id'])) {
-            return back()->withErrors(['business_id' => 'Business is required for non-superadmin users.']);
-        }
-
-        if ($data['role'] === 'superadmin') {
-            $data['business_id'] = null;
-        }
-
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        $user->update($data);
-
-        if ($user->status !== 'active') {
-            $user->accessTokens()->update(['revoked_at' => now()]);
-        }
-
-        if ($user->role === 'owner' && $user->business_id) {
-            Business::whereKey($user->business_id)->update(['owner_user_id' => $user->id]);
-        }
-
-        return redirect()
-            ->route('admin.dashboard')
-            ->with('success', 'User updated.');
-    }
-
     private function stats(): array
     {
         return [
             'businesses' => Business::count(),
             'active_businesses' => Business::where('status', 'active')->count(),
             'suspended_businesses' => Business::where('status', 'suspended')->count(),
-            'users' => User::count(),
             'owners' => User::where('role', 'owner')->count(),
+            'active_owners' => User::where('role', 'owner')->where('status', 'active')->count(),
             'orders' => Order::count(),
             'gross_sales' => (float) Order::where('order_status', '!=', 'cancelled')->sum('total'),
         ];
