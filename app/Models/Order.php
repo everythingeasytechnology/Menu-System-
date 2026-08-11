@@ -75,13 +75,7 @@ class Order extends Model
 
     public function scopeLive(Builder $query): Builder
     {
-        return $query->where(function (Builder $query) {
-            $query->whereIn('order_status', self::ACTIVE_STATUSES)
-                ->orWhere(function (Builder $query) {
-                    $query->where('order_status', 'completed')
-                        ->where('payment_status', '!=', 'paid');
-                });
-        });
+        return $query->whereIn('order_status', self::ACTIVE_STATUSES);
     }
 
     public function items(): HasMany

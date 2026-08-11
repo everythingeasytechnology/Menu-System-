@@ -206,15 +206,10 @@ class DashboardLiveOrdersTest extends TestCase
             ->assertJsonPath('order.status', 'completed')
             ->assertJsonPath('order.paymentStatus', 'pending');
 
-        $this->assertDatabaseHas('service_points', [
-            'id' => $servicePoint->id,
-            'status' => 'occupied',
-            'order_number' => 'ORD-WEB-SP-RELEASE',
-            'amount' => 252,
-        ]);
+        // Completed orders leave the live feed immediately, regardless of payment status.
         $this->getJson('/orders/live-feed?active_only=1')
             ->assertOk()
-            ->assertJsonFragment(['orderNumber' => 'ORD-WEB-SP-RELEASE']);
+            ->assertJsonMissing(['orderNumber' => 'ORD-WEB-SP-RELEASE']);
 
         $paymentResponse = $this->postJson("/orders/{$order->id}/payment", [
             'payment_status' => 'paid',
