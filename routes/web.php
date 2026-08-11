@@ -30,6 +30,10 @@ Route::prefix('admin')
         Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');
         Route::get('/businesses/{business}/edit', [SuperAdminController::class, 'editBusiness'])->name('businesses.edit');
         Route::put('/businesses/{business}', [SuperAdminController::class, 'updateBusiness'])->name('businesses.update');
+        Route::get('/menu-images', [SuperAdminController::class, 'menuImages'])->name('menu-images.index');
+        Route::post('/menu-images', [SuperAdminController::class, 'storeMenuImage'])->name('menu-images.store');
+        Route::put('/menu-images/{presetFoodImage}', [SuperAdminController::class, 'updateMenuImage'])->name('menu-images.update');
+        Route::delete('/menu-images/{presetFoodImage}', [SuperAdminController::class, 'destroyMenuImage'])->name('menu-images.destroy');
     });
 
 Route::middleware(['auth', 'business.owner'])->group(function () {

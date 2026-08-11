@@ -112,6 +112,20 @@
                             </svg>
                             <span x-show="!adminSidebarCompact" x-transition class="truncate">Create Business</span>
                         </a>
+                        <a
+                            href="{{ route('admin.menu-images.index') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.menu-images.*'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.menu-images.*'),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                                <path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke-linejoin="round" />
+                                <path d="m4 15 4-4 4 4 2-2 6 6M9 8.5h.01" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span x-show="!adminSidebarCompact" x-transition class="truncate">Menu Images</span>
+                        </a>
                     </div>
                 </div>
 

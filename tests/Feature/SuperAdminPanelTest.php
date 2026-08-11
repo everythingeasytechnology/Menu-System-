@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\PresetFoodImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class SuperAdminPanelTest extends TestCase
@@ -32,7 +34,8 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('Business Overview')
             ->assertSee('Orders and Sales')
             ->assertSee('View Businesses')
-            ->assertSee('Create Business');
+            ->assertSee('Create Business')
+            ->assertSee('Menu Images');
     }
 
     public function test_owner_cannot_open_superadmin_section(): void
@@ -203,5 +206,55 @@ class SuperAdminPanelTest extends TestCase
             ->assertRedirect(route('login'));
 
         $this->assertGuest();
+    }
+
+    public function test_superadmin_can_manage_menu_image_library(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'menu-images-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->get(route('admin.menu-images.index'))
+            ->assertOk()
+            ->assertSee('Menu Item Images')
+            ->assertSee('Upload Image');
+
+        $this->post(route('admin.menu-images.store'), [
+            'name' => 'Paneer Tikka',
+            'tags' => 'paneer, starter, veg',
+            'image' => UploadedFile::fake()->image('paneer.jpg', 320, 240),
+        ])->assertRedirect(route('admin.menu-images.index'));
+
+        $image = PresetFoodImage::where('name', 'Paneer Tikka')->firstOrFail();
+
+        $this->assertStringStartsWith('storage/menu_items/', $image->image_path);
+        $this->assertDatabaseHas('preset_food_images', [
+            'name' => 'Paneer Tikka',
+            'tags' => 'paneer, starter, veg',
+        ]);
+
+        $this->put(route('admin.menu-images.update', $image), [
+            'name' => 'Paneer Malai Tikka',
+            'tags' => 'paneer, creamy, starter',
+        ])->assertRedirect(route('admin.menu-images.index'));
+
+        $this->assertDatabaseHas('preset_food_images', [
+            'id' => $image->id,
+            'name' => 'Paneer Malai Tikka',
+            'tags' => 'paneer, creamy, starter',
+        ]);
+
+        $this->delete(route('admin.menu-images.destroy', $image))
+            ->assertRedirect(route('admin.menu-images.index'));
+
+        $this->assertDatabaseMissing('preset_food_images', [
+            'id' => $image->id,
+        ]);
     }
 }

@@ -6,15 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\BusinessSetting;
 use App\Models\Order;
+use App\Models\PresetFoodImage;
 use App\Models\User;
+use App\Services\MenuImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SuperAdminController extends Controller
 {
+    public function __construct(private readonly MenuImageService $menuImageService)
+    {
+    }
+
     public const BUSINESS_STATUSES = [
         'active' => 'Active',
         'inactive' => 'Inactive',
@@ -193,6 +200,79 @@ class SuperAdminController extends Controller
             ->with('success', 'Business updated.');
     }
 
+    public function menuImages(Request $request)
+    {
+        $query = PresetFoodImage::query()->latest();
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($preset) use ($search) {
+                $preset->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('tags', 'like', '%'.$search.'%');
+            });
+        }
+
+        return view('admin.menu-images.index', [
+            'images' => $query->paginate(24)->withQueryString(),
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    public function storeMenuImage(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'tags' => ['nullable', 'string', 'max:500'],
+            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+        ]);
+
+        $path = $this->menuImageService->compressAndStoreImage($request->file('image'));
+
+        PresetFoodImage::create([
+            'name' => $data['name'],
+            'tags' => $data['tags'] ?? strtolower($data['name']),
+            'image_path' => 'storage/'.$path,
+        ]);
+
+        return redirect()
+            ->route('admin.menu-images.index')
+            ->with('success', 'Menu image uploaded.');
+    }
+
+    public function updateMenuImage(Request $request, PresetFoodImage $presetFoodImage): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'tags' => ['nullable', 'string', 'max:500'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+        ]);
+
+        if ($request->hasFile('image')) {
+            $this->deleteUploadedPresetFile($presetFoodImage->image_path);
+            $data['image_path'] = 'storage/'.$this->menuImageService->compressAndStoreImage($request->file('image'));
+        }
+
+        $presetFoodImage->update([
+            'name' => $data['name'],
+            'tags' => $data['tags'] ?? strtolower($data['name']),
+            'image_path' => $data['image_path'] ?? $presetFoodImage->image_path,
+        ]);
+
+        return redirect()
+            ->route('admin.menu-images.index')
+            ->with('success', 'Menu image updated.');
+    }
+
+    public function destroyMenuImage(PresetFoodImage $presetFoodImage): RedirectResponse
+    {
+        $this->deleteUploadedPresetFile($presetFoodImage->image_path);
+        $presetFoodImage->delete();
+
+        return redirect()
+            ->route('admin.menu-images.index')
+            ->with('success', 'Menu image deleted.');
+    }
+
     private function stats(): array
     {
         return [
@@ -268,5 +348,14 @@ class SuperAdminController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function deleteUploadedPresetFile(?string $imagePath): void
+    {
+        if (! $imagePath || ! str_starts_with($imagePath, 'storage/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(substr($imagePath, strlen('storage/')));
     }
 }
