@@ -7,6 +7,7 @@ use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ServicePoint;
 
 class OrderApiTest extends ApiTestCase
 {
@@ -90,6 +91,64 @@ class OrderApiTest extends ApiTestCase
         $response->assertOk()
             ->assertJsonPath('message', 'Orders')
             ->assertJsonCount(1, 'data');
+    }
+
+    public function test_can_get_orders_for_service_point(): void
+    {
+        [$business, $user] = $this->createBusinessUser('service-point-orders-owner@example.com');
+        $servicePoint = ServicePoint::create([
+            'business_id' => $business->id,
+            'code' => 'SP-ORDERS',
+            'name' => 'Table 10',
+            'seats' => 4,
+            'category' => 'Dining',
+            'point_type' => 'table',
+            'status' => 'occupied',
+            'is_active' => true,
+        ]);
+
+        $matchingOrder = $this->createOrder($business, [
+            'order_number' => 'ORD-SP-10',
+            'service_point_id' => $servicePoint->id,
+            'order_status' => 'preparing',
+            'payment_status' => 'unpaid',
+            'order_type' => 'dine_in',
+        ]);
+
+        $this->createOrder($business, [
+            'order_number' => 'ORD-OTHER-SP',
+            'order_status' => 'preparing',
+        ]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson("/api/v1/orders/service-point/{$servicePoint->id}?status=preparing&payment_status=unpaid&order_type=dine_in")
+            ->assertOk()
+            ->assertJsonPath('message', 'Service point orders')
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matchingOrder->id)
+            ->assertJsonPath('data.0.service_point_id', $servicePoint->id)
+            ->assertJsonMissing(['order_number' => 'ORD-OTHER-SP']);
+    }
+
+    public function test_service_point_orders_endpoint_is_business_scoped(): void
+    {
+        [, $user] = $this->createBusinessUser('service-point-isolation-owner@example.com');
+        [$otherBusiness] = $this->createBusinessUser('service-point-other-owner@example.com');
+        $otherServicePoint = ServicePoint::create([
+            'business_id' => $otherBusiness->id,
+            'code' => 'SP-OTHER',
+            'name' => 'Other Table',
+            'seats' => 4,
+            'category' => 'Dining',
+            'point_type' => 'table',
+            'status' => 'occupied',
+            'is_active' => true,
+        ]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson("/api/v1/orders/service-point/{$otherServicePoint->id}")
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Resource not found');
     }
 
     public function test_business_can_create_direct_order_without_qr_or_service_point(): void

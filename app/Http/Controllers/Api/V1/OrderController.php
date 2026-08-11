@@ -161,7 +161,7 @@ class OrderController extends ApiController
             return $this->error('Resource not found', 404);
         }
 
-        $orders = $this->baseQuery($request)
+        $orders = $this->filteredQuery($request)
             ->where('service_point_id', $servicePoint->id)
             ->latest()
             ->paginate((int) $request->input('per_page', 25));
