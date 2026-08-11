@@ -223,7 +223,8 @@ class SuperAdminPanelTest extends TestCase
         $this->get(route('admin.menu-images.index'))
             ->assertOk()
             ->assertSee('Menu Item Images')
-            ->assertSee('Upload Image');
+            ->assertSee('Image Library')
+            ->assertSee('Upload');
 
         $this->post(route('admin.menu-images.store'), [
             'name' => 'Paneer Tikka',
