@@ -19,7 +19,6 @@
     <!-- Main Alpine-driven App Container -->
     <div x-data="{ 
         sidebarOpen: false, 
-        activeBranch: 'Restaurant Branch',
         quickActionsOpen: false,
         toggleQuickActions() { this.quickActionsOpen = !this.quickActionsOpen }
     }" 
