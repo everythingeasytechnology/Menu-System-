@@ -208,7 +208,7 @@
                                 <div class="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-2 py-1.5">
                                     <div class="min-w-0">
                                         <span class="block truncate text-sm font-black text-ink" x-text="item.name"></span>
-                                        <span class="block text-xs font-bold text-muted" x-text="`Qty: ${item.qty} x Rs. ${(item.total / item.qty).toFixed(2)}`"></span>
+                                        <span class="block text-xs font-bold text-muted" x-text="`${moneyValue(item.unitPrice)} x ${item.qty} = ${moneyValue(item.lineSubtotal)}`"></span>
                                     </div>
                                     <label class="block">
                                         <span class="sr-only">Item Status</span>
@@ -725,6 +725,10 @@
                 }[status] || 'bg-card-tint text-muted border border-border';
             },
 
+            moneyValue(value) {
+                return 'Rs. ' + Number(value || 0).toFixed(2);
+            },
+
             syncSelectedCategory() {
                 if (!this.addItemForm.category && this.menuCategories.length > 0) {
                     this.addItemForm.category = this.menuCategories[0].value;
@@ -1011,11 +1015,18 @@
                 if (!order) return;
 
                 const gst = config.gstSettings || {};
+                const subtotal = Number(order.rawSubtotal ?? (order.items || []).reduce((sum, item) => sum + Number(item.lineSubtotal || 0), 0));
+                const discount = Number(order.rawDiscount || 0);
+                const tax = Number(order.rawTax || 0);
                 const total = Number(order.rawTotal || 0);
-                const totalTaxRate = gst.enabled ? Number(gst.cgstRate || 0) + Number(gst.sgstRate || 0) : 0;
-                const subtotal = totalTaxRate > 0 ? total / (1 + totalTaxRate / 100) : total;
-                const cgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.cgstRate || 0) / 100) : 0;
-                const sgstAmount = totalTaxRate > 0 ? subtotal * (Number(gst.sgstRate || 0) / 100) : 0;
+                const taxableAfterDiscount = Math.max(0, subtotal - discount);
+                const cgstRate = Number(gst.cgstRate || 0);
+                const sgstRate = Number(gst.sgstRate || 0);
+                const totalTaxRate = cgstRate + sgstRate;
+                const hasGst = Boolean(gst.enabled) && tax > 0;
+                const cgstAmount = hasGst && totalTaxRate > 0 ? tax * (cgstRate / totalTaxRate) : (hasGst ? tax / 2 : 0);
+                const sgstAmount = hasGst && totalTaxRate > 0 ? tax * (sgstRate / totalTaxRate) : (hasGst ? tax / 2 : 0);
+                const money = (value) => 'Rs. ' + Number(value || 0).toFixed(2);
                 const printWindow = window.open('', '_blank', 'width=380,height=600');
                 if (!printWindow) return;
                 const doc = printWindow.document;
@@ -1023,28 +1034,29 @@
                 doc.body.innerHTML = '';
 
                 const style = doc.createElement('style');
-                style.textContent = 'body{font-family:Courier,monospace;width:74mm;margin:0 auto;padding:10px 5px;font-size:10px;color:#000}.center{text-align:center}.divider{border-top:1px dashed #000;margin:6px 0}.bold{font-weight:bold}.row{display:flex;justify-content:space-between;margin-bottom:5px}.total{font-size:12px}';
+                style.textContent = 'body{font-family:Courier,monospace;width:76mm;margin:0 auto;padding:10px 5px;font-size:10.5px;line-height:1.35;color:#000}.center{text-align:center}.divider{border-top:1px dashed #000;margin:7px 0}.bold{font-weight:bold}.muted{font-size:9.5px}.section{margin:7px 0 4px;font-weight:bold;text-align:center}.row{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}.row span:first-child{max-width:48mm}.row span:last-child{text-align:right;white-space:nowrap}.item{margin:6px 0}.item-name{font-weight:bold;white-space:pre-wrap}.total{font-size:13px;border-top:1px solid #000;padding-top:5px;margin-top:5px}';
                 doc.head.appendChild(style);
 
                 const addDiv = (text, className = '') => {
                     const div = doc.createElement('div');
                     if (className) div.className = className;
-                    div.textContent = String(text || '');
+                    div.textContent = String(text ?? '');
                     doc.body.appendChild(div);
                     return div;
                 };
 
                 const addDivider = () => addDiv('', 'divider');
+                const addSection = (label) => addDiv(label, 'section');
                 const addRow = (label, value, className = '') => {
                     const row = doc.createElement('div');
                     row.className = 'row' + (className ? ' ' + className : '');
 
                     const labelEl = doc.createElement('span');
-                    labelEl.textContent = String(label || '');
+                    labelEl.textContent = String(label ?? '');
                     row.appendChild(labelEl);
 
                     const valueEl = doc.createElement('span');
-                    valueEl.textContent = String(value || '');
+                    valueEl.textContent = String(value ?? '');
                     row.appendChild(valueEl);
 
                     doc.body.appendChild(row);
@@ -1069,22 +1081,71 @@
                     });
 
                 addDivider();
-                addRow('Order:', order.displayId);
+                addRow('Bill No:', order.displayId);
+                addRow('Order No:', order.orderNumber || order.displayId);
+                addRow('Date:', [order.date, order.time].filter(Boolean).join(' '));
                 addRow('Channel:', order.channel);
                 addRow('Location:', order.location);
+                addRow('Customer:', order.customer || 'Walk-in Customer');
+                if (order.phone && order.phone !== 'N/A') {
+                    addRow('Phone:', order.phone);
+                }
                 addDivider();
 
-                order.items.forEach((item) => {
-                    addRow(item.name, 'x' + String(item.qty || 0));
+                addSection('ITEM DETAILS');
+                (order.items || []).forEach((item, index) => {
+                    const qty = Number(item.qty || 0);
+                    const unitPrice = Number(item.unitPrice ?? (qty > 0 ? Number(item.lineSubtotal || item.total || 0) / qty : 0));
+                    const lineSubtotal = Number(item.lineSubtotal ?? unitPrice * qty);
+                    const itemDiscount = Number(item.discount || 0);
+                    const itemTax = Number(item.tax || 0);
+                    const lineTotal = Number(item.total ?? (lineSubtotal + itemTax - itemDiscount));
+
+                    addDiv(String(index + 1) + '. ' + String(item.name || 'Item') + (item.variantLabel ? ' (' + item.variantLabel + ')' : ''), 'item-name');
+                    addRow('   ' + money(unitPrice) + ' x ' + String(qty), money(lineSubtotal));
+
+                    if (itemDiscount > 0) {
+                        addRow('   Item discount', '- ' + money(itemDiscount));
+                    }
+
+                    if (itemTax > 0) {
+                        addRow('   GST on item', money(itemTax));
+                    }
+
+                    addRow('   Item total', money(lineTotal), 'bold');
+
+                    if (item.specialInstructions) {
+                        addDiv('   Note: ' + item.specialInstructions, 'muted');
+                    }
                 });
 
                 addDivider();
-                if (gst.enabled) {
-                    addRow('CGST (' + String(gst.cgstRate || 0) + '%):', 'Rs. ' + cgstAmount.toFixed(2));
-                    addRow('SGST (' + String(gst.sgstRate || 0) + '%):', 'Rs. ' + sgstAmount.toFixed(2));
+                addSection('BILL SUMMARY');
+                addRow('Before GST:', money(subtotal));
+
+                if (discount > 0) {
+                    addRow(order.couponCode ? 'Coupon (' + order.couponCode + '):' : 'Discount:', '- ' + money(discount));
+                    addRow('Before GST after discount:', money(taxableAfterDiscount));
                 }
-                addRow('Total:', order.amount, 'bold total');
+
+                if (hasGst) {
+                    addRow('CGST (' + String(cgstRate || 0) + '%):', money(cgstAmount));
+                    addRow('SGST (' + String(sgstRate || 0) + '%):', money(sgstAmount));
+                    addRow('Total GST:', money(tax));
+                } else if (tax > 0) {
+                    addRow('Tax:', money(tax));
+                }
+
+                addRow('Total after GST:', money(total), 'bold total');
+                addRow('Payment:', order.paymentLabel || order.payment || '');
+                addRow('Order status:', order.statusLabel || order.status || '');
                 addDivider();
+
+                if (order.note) {
+                    addDiv('Instructions: ' + order.note, 'muted');
+                    addDivider();
+                }
+
                 addDiv('Thank you', 'center');
 
                 printWindow.focus();

@@ -154,7 +154,7 @@ class OwnerDashboardService
 
     public function ordersFor(Business $business, int $limit = 50, bool $activeOnly = false): Collection
     {
-        return Order::with(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user'])
+        return Order::with(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user', 'coupon'])
             ->where('business_id', $business->id)
             ->when($activeOnly, fn ($query) => $query->live())
             ->latest()
@@ -164,7 +164,7 @@ class OwnerDashboardService
 
     public function formatOrder(Order $order): array
     {
-        $order->loadMissing(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
+        $order->loadMissing(['items', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user', 'coupon']);
 
         $payment = $order->payments->sortByDesc('created_at')->first();
         $method = $payment?->payment_method;
@@ -182,11 +182,17 @@ class OwnerDashboardService
             return [
                 'id' => $item->id,
                 'name' => $item->item_name,
+                'variantLabel' => $item->variant_label,
                 'qty' => $item->quantity,
                 'status' => $itemStatus,
                 'statusLabel' => self::STATUS_LABELS[$itemStatus] ?? ucfirst($itemStatus),
                 'label' => $label,
+                'unitPrice' => (float) $item->price,
+                'lineSubtotal' => round((float) $item->price * (int) $item->quantity, 2),
+                'tax' => (float) $item->tax,
+                'discount' => (float) $item->discount,
                 'total' => (float) $item->total,
+                'specialInstructions' => $item->special_instructions,
             ];
         })->values();
 
@@ -202,7 +208,16 @@ class OwnerDashboardService
             'phone' => $order->customer_phone ?: 'N/A',
             'email' => $order->user?->email,
             'amount' => 'Rs. '.number_format((float) $order->total, 2),
+            'subtotal' => 'Rs. '.number_format((float) $order->subtotal, 2),
+            'tax' => 'Rs. '.number_format((float) $order->tax, 2),
+            'discount' => 'Rs. '.number_format((float) $order->discount, 2),
+            'rawSubtotal' => (float) $order->subtotal,
+            'rawTax' => (float) $order->tax,
+            'rawDiscount' => (float) $order->discount,
             'rawTotal' => (float) $order->total,
+            'couponCode' => $order->coupon?->code,
+            'couponType' => $order->coupon?->type,
+            'couponValue' => $order->coupon?->value,
             'payment' => $method ? ucfirst($method) : ucfirst($order->payment_status),
             'paymentMethod' => $method ?: 'cash',
             'paymentStatus' => $order->payment_status,

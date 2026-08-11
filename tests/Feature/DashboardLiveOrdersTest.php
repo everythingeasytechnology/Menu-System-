@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\Coupon;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -116,6 +117,41 @@ class DashboardLiveOrdersTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('orders.0.orderNumber', 'ORD-WEB-FEED')
             ->assertJsonPath('orders.0.customer', 'Feed Customer');
+    }
+
+    public function test_live_orders_feed_includes_detailed_receipt_billing_data(): void
+    {
+        $coupon = Coupon::create([
+            'business_id' => $this->business->id,
+            'code' => 'SAVE10',
+            'type' => 'percentage',
+            'value' => 10,
+            'minimum_order' => 0,
+            'is_active' => true,
+        ]);
+
+        $this->createOrder([
+            'order_number' => 'ORD-WEB-BILL',
+            'coupon_id' => $coupon->id,
+            'subtotal' => 240,
+            'tax' => 12,
+            'discount' => 24,
+            'total' => 228,
+        ]);
+
+        $response = $this->getJson('/orders/live-feed');
+
+        $response->assertOk()
+            ->assertJsonPath('orders.0.orderNumber', 'ORD-WEB-BILL')
+            ->assertJsonPath('orders.0.rawSubtotal', 240)
+            ->assertJsonPath('orders.0.rawTax', 12)
+            ->assertJsonPath('orders.0.rawDiscount', 24)
+            ->assertJsonPath('orders.0.rawTotal', 228)
+            ->assertJsonPath('orders.0.couponCode', 'SAVE10')
+            ->assertJsonPath('orders.0.items.0.unitPrice', 120)
+            ->assertJsonPath('orders.0.items.0.lineSubtotal', 240)
+            ->assertJsonPath('orders.0.items.0.tax', 12)
+            ->assertJsonPath('orders.0.items.0.total', 252);
     }
 
     public function test_order_status_update_persists_from_live_orders(): void
