@@ -125,11 +125,27 @@
         </x-card>
     </div>
 
-    @if($errors->any())
+    @php
+        $couponErrorMessages = [];
+        if (isset($errors)) {
+            if ($errors instanceof \Illuminate\Support\ViewErrorBag) {
+                $defaultErrorBag = $errors->getBag('default');
+                $couponErrorMessages = $defaultErrorBag instanceof \Illuminate\Support\MessageBag
+                    ? $defaultErrorBag->all()
+                    : collect((array) $defaultErrorBag)->flatten()->all();
+            } elseif ($errors instanceof \Illuminate\Support\MessageBag) {
+                $couponErrorMessages = $errors->all();
+            } elseif (is_array($errors)) {
+                $couponErrorMessages = collect($errors)->flatten()->all();
+            }
+        }
+    @endphp
+
+    @if(count($couponErrorMessages) > 0)
         <div class="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
             <p class="font-bold">Please fix the coupon form.</p>
             <ul class="mt-2 list-disc space-y-1 pl-5 text-xs">
-                @foreach($errors->all() as $error)
+                @foreach($couponErrorMessages as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>

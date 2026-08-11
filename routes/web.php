@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Auth\BusinessOwnerLoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SettingsController;
@@ -18,6 +19,16 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [BusinessOwnerLoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'super.admin'])
+    ->group(function () {
+        Route::get('/', [SuperAdminController::class, 'index'])->name('dashboard');
+        Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');
+        Route::put('/businesses/{business}', [SuperAdminController::class, 'updateBusiness'])->name('businesses.update');
+        Route::put('/users/{user}', [SuperAdminController::class, 'updateUser'])->name('users.update');
+    });
 
 Route::middleware(['auth', 'business.owner'])->group(function () {
     // Executive Dashboard

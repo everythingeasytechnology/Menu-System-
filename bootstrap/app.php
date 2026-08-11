@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,
             'business.owner' => \App\Http\Middleware\EnsureBusinessOwner::class,
+            'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         ]);
 
         $middleware->throttleApi();

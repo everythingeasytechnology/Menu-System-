@@ -14,6 +14,10 @@ class BusinessOwnerLoginController extends Controller
 {
     public function create(): View|RedirectResponse
     {
+        if (Auth::check() && Auth::user()->role === 'superadmin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         if (Auth::check() && in_array(Auth::user()->role, ['owner', 'admin'], true)) {
             return redirect()->route('dashboard');
         }
@@ -34,17 +38,17 @@ class BusinessOwnerLoginController extends Controller
             ! $user
             || ! Hash::check($credentials['password'], $user->password)
             || $user->status !== 'active'
-            || ! in_array($user->role, ['owner', 'admin'], true)
+            || ! in_array($user->role, ['owner', 'admin', 'superadmin'], true)
         ) {
             return back()
-                ->withErrors(['email' => 'These credentials do not match an active business owner account.'])
+                ->withErrors(['email' => 'These credentials do not match an active admin account.'])
                 ->onlyInput('email');
         }
 
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended($user->role === 'superadmin' ? route('admin.dashboard') : route('dashboard'));
     }
 
     public function destroy(Request $request): RedirectResponse

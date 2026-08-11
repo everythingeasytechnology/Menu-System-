@@ -20,7 +20,7 @@ class EnsureBusinessOwner
             return redirect()->guest(route('login'));
         }
 
-        if ($user->status !== 'active' || ! in_array($user->role, ['owner', 'admin'], true)) {
+        if ($user->status !== 'active') {
             Auth::logout();
 
             $request->session()->invalidate();
@@ -29,6 +29,33 @@ class EnsureBusinessOwner
             return redirect()
                 ->route('login')
                 ->withErrors(['email' => 'Only active business owners can access the dashboard.']);
+        }
+
+        if ($user->role === 'superadmin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if (! in_array($user->role, ['owner', 'admin'], true)) {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => 'Only active business owners can access the dashboard.']);
+        }
+
+        $business = $user->business_id ? $user->business()->first() : null;
+        if ($user->business_id && (! $business || $business->status !== 'active')) {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => 'This business account is not active.']);
         }
 
         return $next($request);

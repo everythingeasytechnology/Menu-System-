@@ -26,7 +26,17 @@ class AuthenticateApiToken
 
         $accessToken = PersonalAccessToken::findByPlainTextToken($plainTextToken);
 
-        if (! $accessToken || ! $accessToken->isUsable() || ! $accessToken->user || $accessToken->user->status !== 'active') {
+        $user = $accessToken?->user;
+
+        if (! $accessToken || ! $accessToken->isUsable() || ! $user || $user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+            ], 401);
+        }
+
+        $business = $user->business_id ? $user->business()->first() : null;
+        if ($user->business_id && (! $business || $business->status !== 'active')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthenticated',
@@ -35,7 +45,7 @@ class AuthenticateApiToken
 
         $accessToken->forceFill(['last_used_at' => now()])->save();
 
-        Auth::setUser($accessToken->user);
+        Auth::setUser($user);
         $request->attributes->set('access_token', $accessToken);
 
         return $next($request);
