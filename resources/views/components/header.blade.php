@@ -136,6 +136,18 @@
             notifications: [],
             unreadCount: 0,
             pollTimer: null,
+            hasLoaded: false,
+
+            shouldPlaySound(nextNotifications, previousNotifications = this.notifications) {
+                const previousIds = new Set(previousNotifications.map((notification) => notification.id));
+                const newUnread = (nextNotifications || []).filter((notification) => !notification.read && !previousIds.has(notification.id));
+
+                if (newUnread.length === 0) {
+                    return true;
+                }
+
+                return !(window.orderFeedSoundActive && newUnread.every((notification) => notification.type === 'order_created'));
+            },
 
             async load() {
                 this.loading = true;
@@ -146,8 +158,17 @@
                     });
                     const payload = await response.json();
                     if (payload.success) {
-                        this.notifications = payload.notifications;
+                        const previousUnreadCount = this.unreadCount;
+                        const nextNotifications = payload.notifications;
+                        const shouldPlaySound = this.shouldPlaySound(nextNotifications);
+                        this.notifications = nextNotifications;
                         this.unreadCount = payload.unread_count;
+
+                        if (this.hasLoaded && this.unreadCount > previousUnreadCount && shouldPlaySound) {
+                            window.notificationSound?.play();
+                        }
+
+                        this.hasLoaded = true;
                     }
                 } catch (e) {
                     // silent fail, keep previous state

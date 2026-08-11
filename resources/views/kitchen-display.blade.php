@@ -29,106 +29,110 @@
         x-init="start()"
         class="flex h-screen flex-col overflow-hidden"
     >
-        <header class="shrink-0 border-b border-white/10 bg-[#101827] px-3 py-2 shadow-2xl shadow-black/20">
-            <div class="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+        <header class="shrink-0 border-b border-white/10 bg-[#101827] px-3 py-1.5 shadow-2xl shadow-black/20">
+            <div class="flex flex-col gap-1.5 xl:flex-row xl:items-center xl:justify-between">
                 <div class="flex min-w-0 items-center gap-2.5">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange shadow-lg shadow-orange/25">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange shadow-lg shadow-orange/25">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5v9.5H4.75v-9.5Z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 19.25h7.5M12 16.25v3M8.25 10h3.5M8.25 13h7.5" />
                         </svg>
                     </span>
                     <div class="min-w-0">
-                        <h1 class="truncate text-xl font-black tracking-tight">Kitchen Display</h1>
-                        <p class="truncate text-xs font-semibold text-slate-300">{{ $business->name }} live orders</p>
+                        <h1 class="truncate text-lg font-black tracking-tight">Kitchen Display</h1>
+                        <p class="truncate text-[11px] font-semibold text-slate-300">{{ $business->name }} live orders</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2 sm:flex sm:items-center">
                     <template x-for="summary in summaries" :key="summary.key">
-                        <div class="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-center">
+                        <div class="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-center">
                             <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400" x-text="summary.label"></span>
-                            <strong class="block text-lg font-black leading-tight" :class="summary.textClass" x-text="summary.count"></strong>
+                            <strong class="block text-base font-black leading-tight" :class="summary.textClass" x-text="summary.count"></strong>
                         </div>
                     </template>
                 </div>
 
                 <div class="flex shrink-0 items-center justify-between gap-2 xl:justify-end">
-                    <div class="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-right">
-                        <span class="block font-mono text-lg font-black tracking-wide leading-tight" x-text="clock"></span>
+                    <div class="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-right">
+                        <span class="block font-mono text-base font-black tracking-wide leading-tight" x-text="clock"></span>
                         <span class="block text-[9px] font-black uppercase tracking-wider text-slate-400">Auto refresh 10s</span>
                     </div>
                     <button
                         type="button"
                         @click="toggleFullscreen()"
-                        class="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] px-3 text-[10px] font-black uppercase tracking-wider text-slate-100 transition hover:bg-white/[0.1]"
+                        class="inline-flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] px-2.5 text-[9px] font-black uppercase tracking-wider text-slate-100 transition hover:bg-white/[0.1]"
                     >
                         Full Screen
                     </button>
-                    <a href="{{ route('dashboard.orders.index') }}" class="inline-flex h-10 items-center justify-center rounded-lg bg-orange px-3 text-[10px] font-black uppercase tracking-wider text-white shadow-lg shadow-orange/20">
+                    <a href="{{ route('dashboard.orders.index') }}" class="inline-flex h-8 items-center justify-center rounded-lg bg-orange px-2.5 text-[9px] font-black uppercase tracking-wider text-white shadow-lg shadow-orange/20">
                         Orders
                     </a>
                 </div>
             </div>
         </header>
 
-        <main class="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden p-2 lg:grid-cols-4">
+        <main class="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden p-2 lg:grid-cols-3">
             <template x-for="column in columns" :key="column.key">
-                <section class="flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.04]">
+                <section class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
                     <div class="flex shrink-0 items-center justify-between border-b border-white/10 px-2.5 py-1.5" :class="column.headerClass">
                         <div>
-                            <h2 class="text-xs font-black uppercase tracking-wider" x-text="column.label"></h2>
+                            <h2 class="text-[11px] font-black uppercase tracking-wider" x-text="column.label"></h2>
                             <p class="text-[9px] font-bold uppercase tracking-wider text-white/70" x-text="column.subtitle"></p>
                         </div>
-                        <strong class="rounded-lg bg-black/20 px-2.5 py-0.5 text-base font-black" x-text="columnOrders(column.key).length"></strong>
+                        <strong class="rounded-md bg-black/20 px-2 py-0.5 text-sm font-black" x-text="columnOrders(column.key).length"></strong>
                     </div>
 
                     <div class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-1.5">
                         <template x-for="order in columnOrders(column.key)" :key="order.id">
-                            <article class="rounded-lg border border-white/10 bg-[#f8fafc] p-2 text-slate-900 shadow-lg shadow-black/10">
+                            <article class="rounded-lg border border-white/10 bg-[#f8fafc] p-1.5 text-slate-900 shadow-lg shadow-black/10">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
                                         <div class="flex items-center gap-1.5">
-                                            <span class="text-xl font-black text-orange" x-text="order.displayId"></span>
-                                            <span class="rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider" :class="statusClass(order.status)" x-text="order.statusLabel"></span>
+                                            <span class="text-lg font-black leading-tight text-orange" x-text="order.displayId"></span>
+                                            <span class="rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider" :class="statusClass(order.status)" x-text="order.statusLabel"></span>
                                         </div>
-                                        <p class="truncate text-xs font-black" x-text="order.location"></p>
+                                        <p class="truncate text-[11px] font-black" x-text="order.location"></p>
                                         <p class="truncate text-[10px] font-bold text-slate-500">
                                             <span x-text="order.customer"></span>
                                             <span x-show="order.phone !== 'N/A'" x-text="` - ${order.phone}`"></span>
                                         </p>
                                     </div>
                                     <div class="shrink-0 text-right">
-                                        <img :src="statusImage(order)" :alt="itemStatusLabel(order)" class="mb-0.5 h-10 w-14 rounded-md border border-slate-200 object-cover">
-                                        <span class="block text-xs font-black text-slate-700" x-text="order.time"></span>
-                                        <span class="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-500" x-text="order.elapsed"></span>
+                                        <img :src="statusImage(order)" :alt="orderStatusLabel(order)" class="mb-0.5 h-8 w-11 rounded-md border border-slate-200 object-cover">
+                                        <span class="block text-[11px] font-black leading-tight text-slate-700" x-text="order.time"></span>
+                                        <span class="inline-flex rounded-md bg-slate-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-slate-500" x-text="order.elapsed"></span>
                                     </div>
                                 </div>
 
                                 <template x-if="order.note">
-                                    <div class="mt-1.5 rounded-md border border-orange/15 bg-orange/5 px-2 py-1">
-                                        <span class="text-[9px] font-black uppercase tracking-wider text-orange">Instructions</span>
+                                    <div class="mt-1 rounded-md border border-orange/15 bg-orange/5 px-2 py-1">
+                                        <span class="text-[8px] font-black uppercase tracking-wider text-orange">Instructions</span>
                                         <p class="text-[10px] font-semibold italic text-slate-700" x-text="order.note"></p>
                                     </div>
                                 </template>
 
-                                <div class="mt-2 space-y-1">
+                                <div class="mt-1.5 space-y-1">
                                     <template x-for="item in order.items" :key="item.id">
-                                        <div class="rounded-md border border-slate-200 bg-white p-1.5">
+                                        <div class="rounded-md border border-slate-200 bg-white px-1.5 py-1">
                                             <div class="flex items-start justify-between gap-2">
                                                 <div class="min-w-0">
-                                                    <p class="truncate text-xs font-black">
+                                                    <p class="truncate text-[11px] font-black">
                                                         <span x-text="`${item.qty}x`"></span>
                                                         <span x-text="item.name"></span>
                                                     </p>
-                                                    <span class="mt-0.5 inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider" :class="statusClass(item.status)" x-text="item.statusLabel"></span>
+                                                    <div class="mt-0.5 flex flex-wrap items-center gap-1">
+                                                        <span class="inline-flex rounded-md px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider" :class="statusClass(item.status)" x-text="item.statusLabel"></span>
+                                                        <span x-show="item.variantLabel" class="truncate text-[9px] font-bold text-slate-500" x-text="item.variantLabel"></span>
+                                                    </div>
+                                                    <p x-show="item.specialInstructions" class="mt-0.5 truncate text-[9px] font-semibold italic text-orange" x-text="item.specialInstructions"></p>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     x-show="nextItemStatus(item)"
                                                     @click="updateItem(order, item, nextItemStatus(item))"
                                                     :disabled="isUpdating"
-                                                    class="shrink-0 rounded-md bg-slate-900 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-white transition hover:bg-orange disabled:opacity-50"
+                                                    class="shrink-0 rounded-md bg-slate-900 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white transition hover:bg-orange disabled:opacity-50"
                                                     x-text="nextItemLabel(item)"
                                                 ></button>
                                             </div>
@@ -136,16 +140,16 @@
                                     </template>
                                 </div>
 
-                                <div class="mt-2 grid grid-cols-3 gap-1">
-                                    <button type="button" @click="bulkMove(order, 'preparing')" :disabled="isUpdating || order.status === 'preparing'" class="rounded-md bg-orange px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Start</button>
-                                    <button type="button" @click="bulkMove(order, 'ready')" :disabled="isUpdating || order.status === 'ready'" class="rounded-md bg-blue-500 px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Ready</button>
-                                    <button type="button" @click="bulkMove(order, 'served')" :disabled="isUpdating || order.status === 'served'" class="rounded-md bg-teal px-2 py-1.5 text-[9px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Served</button>
+                                <div class="mt-1.5 grid grid-cols-3 gap-1">
+                                    <button type="button" @click="bulkMove(order, 'preparing')" :disabled="isUpdating || order.status === 'preparing'" class="rounded-md bg-orange px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Start</button>
+                                    <button type="button" @click="bulkMove(order, 'ready')" :disabled="isUpdating || order.status === 'ready'" class="rounded-md bg-blue-500 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Ready</button>
+                                    <button type="button" @click="bulkMove(order, 'served')" :disabled="isUpdating || order.status === 'served'" class="rounded-md bg-teal px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white transition disabled:cursor-not-allowed disabled:opacity-40">Served</button>
                                 </div>
                             </article>
                         </template>
 
-                        <div x-show="columnOrders(column.key).length === 0" class="flex h-32 items-center justify-center rounded-lg border border-dashed border-white/10 text-center">
-                            <p class="text-xs font-bold text-slate-400">No orders</p>
+                        <div x-show="columnOrders(column.key).length === 0" class="flex h-28 items-center justify-center rounded-lg border border-dashed border-white/10 text-center">
+                            <p class="text-xs font-bold text-slate-400">No <span x-text="column.label.toLowerCase()"></span> orders</p>
                         </div>
                     </div>
                 </section>
@@ -161,18 +165,20 @@
                 itemStatuses: config.itemStatuses || [],
                 statusImages: config.statusImages || {},
                 liveStatuses: ['preparing', 'ready', 'served'],
+                displayStatuses: ['preparing', 'ready', 'served'],
                 clock: '',
                 refreshTimer: null,
                 clockTimer: null,
                 isUpdating: false,
                 columns: [
-                    { key: 'received', label: 'Received', subtitle: 'New kitchen tickets', textClass: 'text-blue-300', headerClass: 'bg-blue-500/20 text-blue-100' },
                     { key: 'preparing', label: 'Preparing', subtitle: 'Cooking now', textClass: 'text-orange', headerClass: 'bg-orange/20 text-orange' },
-                    { key: 'ready', label: 'Ready', subtitle: 'Waiting pickup', textClass: 'text-teal', headerClass: 'bg-teal/20 text-teal' },
+                    { key: 'ready', label: 'Ready', subtitle: 'Waiting pickup', textClass: 'text-blue-300', headerClass: 'bg-blue-500/20 text-blue-100' },
                     { key: 'served', label: 'Served', subtitle: 'Sent to guest', textClass: 'text-success', headerClass: 'bg-success/20 text-success' }
                 ],
 
                 start() {
+                    window.orderFeedSoundActive = true;
+                    window.notificationSound?.prime();
                     this.tickClock();
                     this.clockTimer = setInterval(() => this.tickClock(), 1000);
                     this.refreshTimer = setInterval(() => this.refreshOrders(), 10000);
@@ -185,9 +191,9 @@
                 get summaries() {
                     return [
                         { key: 'total', label: 'Total', count: this.orders.length, textClass: 'text-white' },
-                        { key: 'received', label: 'Received', count: this.columnOrders('received').length, textClass: 'text-blue-300' },
                         { key: 'preparing', label: 'Preparing', count: this.columnOrders('preparing').length, textClass: 'text-orange' },
-                        { key: 'ready', label: 'Ready', count: this.columnOrders('ready').length, textClass: 'text-teal' }
+                        { key: 'ready', label: 'Ready', count: this.columnOrders('ready').length, textClass: 'text-blue-300' },
+                        { key: 'served', label: 'Served', count: this.columnOrders('served').length, textClass: 'text-success' }
                     ];
                 },
 
@@ -198,27 +204,19 @@
                 },
 
                 orderStage(order) {
-                    const visual = this.itemStatusVisual(order);
-                    if (visual === 'preparing') return 'preparing';
-                    if (visual === 'ready') return 'ready';
-                    if (visual === 'served') return 'served';
+                    const status = order.status === 'completed' ? 'served' : order.status;
 
-                    return 'received';
+                    return this.displayStatuses.includes(status) ? status : 'preparing';
                 },
 
-                itemStatusVisual(order) {
+                orderStatusVisual(order) {
                     if (order.status === 'cancelled') return 'cancelled';
 
-                    const itemStatuses = (order.items || []).map((item) => item.status || order.status);
-                    if (itemStatuses.includes('preparing')) return 'preparing';
-                    if (itemStatuses.includes('ready')) return 'ready';
-                    if (itemStatuses.includes('served') || order.status === 'served' || order.status === 'completed') return 'served';
-
-                    return order.status || 'preparing';
+                    return this.orderStage(order);
                 },
 
-                itemStatusLabel(order) {
-                    const status = this.itemStatusVisual(order);
+                orderStatusLabel(order) {
+                    const status = this.orderStatusVisual(order);
 
                     return this.statuses?.[status] || {
                         preparing: 'Preparing',
@@ -229,7 +227,7 @@
                 },
 
                 statusImage(order) {
-                    const status = this.itemStatusVisual(order);
+                    const status = this.orderStatusVisual(order);
 
                     return this.statusImages[status] || this.statusImages.preparing || '';
                 },
@@ -254,13 +252,23 @@
                         ready: 'bg-blue-50 text-blue-600 border border-blue-100',
                         served: 'bg-teal/10 text-teal border border-teal/10',
                         completed: 'bg-success/10 text-success border border-success/10',
-                        cancelled: 'bg-danger/10 text-danger border border-danger/10'
+                        cancelled: 'bg-danger/10 text-danger border border-danger/10',
+                        pending: 'bg-slate-100 text-slate-500 border border-slate-200'
                     }[status] || 'bg-slate-100 text-slate-500 border border-slate-200';
                 },
 
                 isLiveOrder(order) {
                     return this.liveStatuses.includes(order.status)
                         || (order.status === 'completed' && order.paymentStatus !== 'paid');
+                },
+
+                notifyNewOrders(nextOrders) {
+                    const currentIds = new Set(this.orders.map((order) => order.id));
+                    const hasNewOrder = (nextOrders || []).some((order) => !currentIds.has(order.id));
+
+                    if (hasNewOrder) {
+                        window.notificationSound?.play();
+                    }
                 },
 
                 replaceOrder(updatedOrder) {
@@ -344,7 +352,9 @@
                     if (!response.ok) return;
                     const payload = await response.json();
                     if (payload.success) {
-                        this.orders = payload.orders || [];
+                        const nextOrders = payload.orders || [];
+                        this.notifyNewOrders(nextOrders);
+                        this.orders = nextOrders;
                     }
                 },
 

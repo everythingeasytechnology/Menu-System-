@@ -508,6 +508,8 @@
             },
 
             start() {
+                window.orderFeedSoundActive = true;
+                window.notificationSound?.prime();
                 this.syncSelectedCategory();
                 this.syncPaymentForm();
                 this.refreshTimer = setInterval(() => this.refreshOrders(), 20000);
@@ -805,6 +807,15 @@
                     || (order.status === 'completed' && order.paymentStatus !== 'paid');
             },
 
+            notifyNewOrders(nextOrders) {
+                const currentIds = new Set(this.orders.map((order) => order.id));
+                const hasNewOrder = (nextOrders || []).some((order) => !currentIds.has(order.id));
+
+                if (hasNewOrder) {
+                    window.notificationSound?.play();
+                }
+            },
+
             replaceOrder(updatedOrder) {
                 const index = this.orders.findIndex((order) => order.id === updatedOrder.id);
 
@@ -1004,7 +1015,9 @@
                 if (!response.ok) return;
                 const payload = await response.json();
                 if (payload.success) {
-                    this.orders = payload.orders || [];
+                    const nextOrders = payload.orders || [];
+                    this.notifyNewOrders(nextOrders);
+                    this.orders = nextOrders;
                     if (this.selectedOrderId && !this.orders.some((order) => order.id === this.selectedOrderId)) {
                         this.selectedOrderId = this.orders[0]?.id || null;
                     }

@@ -339,6 +339,8 @@
             liveStatuses: ['preparing', 'ready', 'served'],
 
             start() {
+                window.orderFeedSoundActive = true;
+                window.notificationSound?.prime();
                 this.refreshTimer = setInterval(() => this.refreshOrders(), 20000);
             },
 
@@ -401,6 +403,15 @@
                     || (order.status === 'completed' && order.paymentStatus !== 'paid');
             },
 
+            notifyNewOrders(nextOrders) {
+                const currentIds = new Set(this.orders.map((order) => order.id));
+                const hasNewOrder = (nextOrders || []).some((order) => !currentIds.has(order.id));
+
+                if (hasNewOrder) {
+                    window.notificationSound?.play();
+                }
+            },
+
             replaceOrder(updatedOrder) {
                 const index = this.orders.findIndex((order) => order.id === updatedOrder.id);
 
@@ -438,7 +449,9 @@
 
                     const payload = await response.json();
                     if (payload.success) {
-                        this.orders = payload.orders || [];
+                        const nextOrders = payload.orders || [];
+                        this.notifyNewOrders(nextOrders);
+                        this.orders = nextOrders;
                         if (this.selectedOrder) {
                             this.selectedOrder = this.orders.find((order) => order.id === this.selectedOrder.id) || null;
                         }
