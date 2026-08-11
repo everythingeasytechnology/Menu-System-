@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\Orders\UpdateOrderStatusRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ServicePoint;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -137,6 +138,20 @@ class OrderController extends ApiController
             ->paginate((int) $request->input('per_page', 25));
 
         return $this->success(OrderResource::collection($orders), ucfirst($status).' orders');
+    }
+
+    public function byServicePoint(Request $request, ServicePoint $servicePoint): JsonResponse
+    {
+        if ($servicePoint->business_id !== $this->businessId($request)) {
+            return $this->error('Resource not found', 404);
+        }
+
+        $orders = $this->baseQuery($request)
+            ->where('service_point_id', $servicePoint->id)
+            ->latest()
+            ->paginate((int) $request->input('per_page', 25));
+
+        return $this->success(OrderResource::collection($orders), 'Service point orders');
     }
 
     public function cancel(Request $request, Order $order): JsonResponse

@@ -69,6 +69,7 @@ Route::prefix('v1')->group(function () {
         Route::get('orders/all', [OrderController::class, 'all']);
         Route::get('orders/active', [OrderController::class, 'active']);
         Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
+        Route::get('orders/service-point/{servicePoint}', [OrderController::class, 'byServicePoint']);
         Route::post('orders/direct', [OrderController::class, 'directStore']);
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus']);

@@ -449,6 +449,7 @@ Server validates QR, business, menu item availability, and calculates all prices
 - `GET /orders/{id}`
 - `GET /orders/active`
 - `GET /orders/status/{status}`
+- `GET /orders/service-point/{servicePointId}`
 - `POST /orders/{id}/status`
 - `POST /orders/{id}/items/{itemId}/status`
 - `POST /orders/{id}/cancel`
@@ -462,6 +463,8 @@ Statuses:
 - `cancelled`
 
 New orders start at `preparing`. `completed` is order-level only (set manually once payment/service is fully settled); item statuses only ever move through `preparing` → `ready` → `served` (or `cancelled`).
+
+`GET /orders/service-point/{servicePointId}` returns paginated orders placed against that table/room/counter, newest first, with the same `from`/`to`/`status`/`payment_status`/`order_type`/`search`/`per_page` filters as `/orders`. 404s if the service point does not belong to the authenticated user's business.
 
 Authenticated order body:
 
