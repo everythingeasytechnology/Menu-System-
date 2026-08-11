@@ -1017,13 +1017,13 @@
                 const gst = config.gstSettings || {};
                 const subtotal = Number(order.rawSubtotal ?? (order.items || []).reduce((sum, item) => sum + Number(item.lineSubtotal || 0), 0));
                 const discount = Number(order.rawDiscount || 0);
-                const tax = Number(order.rawTax || 0);
-                const total = Number(order.rawTotal || 0);
+                const hasGst = Boolean(gst.enabled);
+                const tax = hasGst ? Number(order.rawTax || 0) : 0;
                 const taxableAfterDiscount = Math.max(0, subtotal - discount);
+                const total = hasGst ? Number(order.rawTotal || 0) : taxableAfterDiscount;
                 const cgstRate = Number(gst.cgstRate || 0);
                 const sgstRate = Number(gst.sgstRate || 0);
                 const totalTaxRate = cgstRate + sgstRate;
-                const hasGst = Boolean(gst.enabled) && tax > 0;
                 const cgstAmount = hasGst && totalTaxRate > 0 ? tax * (cgstRate / totalTaxRate) : (hasGst ? tax / 2 : 0);
                 const sgstAmount = hasGst && totalTaxRate > 0 ? tax * (sgstRate / totalTaxRate) : (hasGst ? tax / 2 : 0);
                 const money = (value) => 'Rs. ' + Number(value || 0).toFixed(2);
@@ -1072,7 +1072,7 @@
                 brand.textContent = String(gst.brandName || 'Business');
                 header.appendChild(brand);
 
-                [gst.address || '', gst.pincode ? 'PIN: ' + gst.pincode : '', gst.gstNo ? 'GSTIN: ' + gst.gstNo : '']
+                [gst.address || '', gst.pincode ? 'PIN: ' + gst.pincode : '', hasGst && gst.gstNo ? 'GSTIN: ' + gst.gstNo : '']
                     .filter(Boolean)
                     .forEach((line) => {
                         const lineEl = doc.createElement('div');
@@ -1098,8 +1098,9 @@
                     const unitPrice = Number(item.unitPrice ?? (qty > 0 ? Number(item.lineSubtotal || item.total || 0) / qty : 0));
                     const lineSubtotal = Number(item.lineSubtotal ?? unitPrice * qty);
                     const itemDiscount = Number(item.discount || 0);
-                    const itemTax = Number(item.tax || 0);
+                    const itemTax = hasGst ? Number(item.tax || 0) : 0;
                     const lineTotal = Number(item.total ?? (lineSubtotal + itemTax - itemDiscount));
+                    const printedLineTotal = hasGst ? lineTotal : Math.max(0, lineSubtotal - itemDiscount);
 
                     addDiv(String(index + 1) + '. ' + String(item.name || 'Item') + (item.variantLabel ? ' (' + item.variantLabel + ')' : ''), 'item-name');
                     addRow('   ' + money(unitPrice) + ' x ' + String(qty), money(lineSubtotal));
@@ -1112,7 +1113,7 @@
                         addRow('   GST on item', money(itemTax));
                     }
 
-                    addRow('   Item total', money(lineTotal), 'bold');
+                    addRow('   Item total', money(printedLineTotal), 'bold');
 
                     if (item.specialInstructions) {
                         addDiv('   Note: ' + item.specialInstructions, 'muted');
@@ -1120,23 +1121,30 @@
                 });
 
                 addDivider();
-                addSection('BILL SUMMARY');
-                addRow('Before GST:', money(subtotal));
-
-                if (discount > 0) {
-                    addRow(order.couponCode ? 'Coupon (' + order.couponCode + '):' : 'Discount:', '- ' + money(discount));
-                    addRow('Before GST after discount:', money(taxableAfterDiscount));
-                }
-
                 if (hasGst) {
+                    addSection('GST BILL SUMMARY');
+                    addRow('Before GST:', money(subtotal));
+
+                    if (discount > 0) {
+                        addRow(order.couponCode ? 'Coupon (' + order.couponCode + '):' : 'Discount:', '- ' + money(discount));
+                        addRow('Before GST after discount:', money(taxableAfterDiscount));
+                    }
+
                     addRow('CGST (' + String(cgstRate || 0) + '%):', money(cgstAmount));
                     addRow('SGST (' + String(sgstRate || 0) + '%):', money(sgstAmount));
                     addRow('Total GST:', money(tax));
-                } else if (tax > 0) {
-                    addRow('Tax:', money(tax));
+                    addRow('Total after GST:', money(total), 'bold total');
+                } else {
+                    addSection('BILL SUMMARY');
+                    addRow('Subtotal:', money(subtotal));
+
+                    if (discount > 0) {
+                        addRow(order.couponCode ? 'Coupon (' + order.couponCode + '):' : 'Discount:', '- ' + money(discount));
+                    }
+
+                    addRow('Total:', money(total), 'bold total');
                 }
 
-                addRow('Total after GST:', money(total), 'bold total');
                 addRow('Payment:', order.paymentLabel || order.payment || '');
                 addRow('Order status:', order.statusLabel || order.status || '');
                 addDivider();
