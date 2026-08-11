@@ -450,6 +450,7 @@ Server validates QR, business, menu item availability, and calculates all prices
 - `GET /orders/active`
 - `GET /orders/status/{status}`
 - `GET /orders/service-point/{servicePointId}`
+- `POST /orders/direct`
 - `POST /orders/{id}/status`
 - `POST /orders/{id}/items/{itemId}/status`
 - `POST /orders/{id}/cancel`
@@ -480,6 +481,21 @@ Authenticated order body:
   ]
 }
 ```
+
+Direct order body (`POST /orders/direct`):
+
+```json
+{
+  "order_id": 1,
+  "customer_name": "Walk-in Customer",
+  "payment_method": "cash",
+  "items": [
+    { "menu_item_id": 1, "variant_id": 2, "quantity": 1 }
+  ]
+}
+```
+
+Omit `order_id` to create a new direct takeaway order. Send `order_id` to add the supplied `items` to that existing order instead; the order must belong to the authenticated user's business and must not be `completed` or `cancelled`.
 
 Status update body (`POST /orders/{id}/status`):
 

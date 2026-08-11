@@ -9,6 +9,7 @@ class DirectOrderRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'order_id' => ['nullable', 'integer', 'min:1'],
             'table_id' => ['nullable', 'integer', 'exists:restaurant_tables,id'],
             'room_id' => ['nullable', 'integer', 'exists:rooms,id'],
             'service_point_id' => ['nullable', 'integer', 'exists:service_points,id'],

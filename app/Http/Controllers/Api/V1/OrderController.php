@@ -60,6 +60,21 @@ class OrderController extends ApiController
         }
 
         $data = $request->validated();
+
+        if (! empty($data['order_id'])) {
+            $order = Order::where('business_id', $business->id)
+                ->whereKey($data['order_id'])
+                ->first();
+
+            if (! $order) {
+                return $this->error('Order not found', 404);
+            }
+
+            $order = $this->orderService->addItems($order, $data['items'], $request->user());
+
+            return $this->success(new OrderResource($order), 'Items added to direct order');
+        }
+
         $data['order_type'] ??= 'takeaway';
 
         $order = $this->orderService->create($business, $data, $request->user());

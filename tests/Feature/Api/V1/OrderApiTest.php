@@ -6,6 +6,7 @@ use App\Models\Business;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
+use App\Models\OrderItem;
 
 class OrderApiTest extends ApiTestCase
 {
@@ -141,6 +142,102 @@ class OrderApiTest extends ApiTestCase
         ]);
     }
 
+    public function test_direct_order_with_order_id_adds_items_to_existing_order(): void
+    {
+        [$business, $user] = $this->createBusinessUser('direct-existing-order-owner@example.com');
+        $existingMenuItem = $this->createMenuItem($business, [
+            'category' => 'Breakfast',
+            'name' => 'Plain Dosa',
+            'price' => 100,
+            'tax_rate' => 0,
+        ]);
+        $newMenuItem = $this->createMenuItem($business, [
+            'category' => 'Beverages',
+            'name' => 'Masala Chai',
+            'price' => 80,
+            'tax_rate' => 10,
+        ]);
+        $order = $this->createOrder($business, [
+            'subtotal' => 100,
+            'tax' => 0,
+            'total' => 100,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'menu_item_id' => $existingMenuItem->id,
+            'item_name' => 'Plain Dosa',
+            'price' => 100,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 100,
+        ]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/orders/direct', [
+                'order_id' => $order->id,
+                'items' => [
+                    [
+                        'menu_item_id' => $newMenuItem->id,
+                        'quantity' => 2,
+                    ],
+                ],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Items added to direct order')
+            ->assertJsonPath('data.id', $order->id)
+            ->assertJsonPath('data.subtotal', 260)
+            ->assertJsonPath('data.tax', 16)
+            ->assertJsonPath('data.total', 276)
+            ->assertJsonCount(2, 'data.items')
+            ->assertJsonFragment([
+                'item_name' => 'Masala Chai',
+                'quantity' => 2,
+            ]);
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('order_items', 2);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'business_id' => $business->id,
+            'subtotal' => 260,
+            'tax' => 16,
+            'total' => 276,
+        ]);
+        $this->assertDatabaseHas('order_items', [
+            'order_id' => $order->id,
+            'menu_item_id' => $newMenuItem->id,
+            'quantity' => 2,
+            'total' => 176,
+        ]);
+    }
+
+    public function test_direct_order_with_foreign_order_id_is_not_updated(): void
+    {
+        [$business, $user] = $this->createBusinessUser('direct-foreign-order-owner@example.com');
+        [$otherBusiness] = $this->createBusinessUser('direct-foreign-other-owner@example.com');
+        $menuItem = $this->createMenuItem($business, ['name' => 'Filter Coffee']);
+        $otherOrder = $this->createOrder($otherBusiness);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/orders/direct', [
+                'order_id' => $otherOrder->id,
+                'items' => [
+                    ['menu_item_id' => $menuItem->id, 'quantity' => 1],
+                ],
+            ]);
+
+        $response->assertNotFound()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Order not found');
+
+        $this->assertDatabaseCount('order_items', 0);
+    }
+
     public function test_direct_order_rejects_menu_items_from_another_business(): void
     {
         [, $user] = $this->createBusinessUser('direct-isolation-owner@example.com');
@@ -183,7 +280,7 @@ class OrderApiTest extends ApiTestCase
         $category = MenuCategory::create([
             'business_id' => $business->id,
             'name' => $overrides['category'] ?? 'Direct Orders',
-            'code' => strtoupper(substr(uniqid('D'), 0, 6)),
+            'code' => strtoupper(str_replace('.', '', uniqid('D', true))),
             'active' => true,
             'status' => 'active',
         ]);

@@ -136,8 +136,16 @@ class OrderService
 
     public function addItem(Order $order, array $data, ?User $user = null, bool $includeGlobalMenuItems = false): Order
     {
-        return DB::transaction(function () use ($order, $data, $user, $includeGlobalMenuItems) {
-            $order = $order->fresh(['coupon', 'payments']);
+        return $this->addItems($order, [$data], $user, $includeGlobalMenuItems);
+    }
+
+    public function addItems(Order $order, array $items, ?User $user = null, bool $includeGlobalMenuItems = false): Order
+    {
+        return DB::transaction(function () use ($order, $items, $user, $includeGlobalMenuItems) {
+            $order = Order::with(['coupon', 'payments'])
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if (in_array($order->order_status, ['completed', 'cancelled'], true)) {
                 throw ValidationException::withMessages([
@@ -145,8 +153,12 @@ class OrderService
                 ]);
             }
 
-            [$lineItems, $addedSubtotal, $addedTax] = $this->buildLineItems($order->business_id, [$data], $includeGlobalMenuItems);
-            $lineItem = $order->items()->create($lineItems[0]);
+            [$lineItems, $addedSubtotal, $addedTax] = $this->buildLineItems($order->business_id, $items, $includeGlobalMenuItems);
+            $createdItems = collect();
+
+            foreach ($lineItems as $lineItem) {
+                $createdItems->push($order->items()->create($lineItem));
+            }
 
             $subtotal = round((float) $order->subtotal + $addedSubtotal, 2);
             $tax = round((float) $order->tax + $addedTax, 2);
@@ -170,20 +182,39 @@ class OrderService
                     ->update(['amount' => $total]);
             }
 
-            $this->notificationService->notifyBusiness(
-                $order->business_id,
-                'order_item_added',
-                'Order item added',
-                "{$lineItem->quantity} x {$lineItem->item_name} was added to {$order->order_number}.",
-                ['order_id' => $order->id, 'order_item_id' => $lineItem->id],
-            );
+            if ($createdItems->count() === 1) {
+                $lineItem = $createdItems->first();
 
-            $this->auditLogService->record($user, $order->business_id, 'order.item_added', $order, [
-                'order_item_id' => $lineItem->id,
-                'item_name' => $lineItem->item_name,
-                'quantity' => $lineItem->quantity,
-                'total' => $lineItem->total,
-            ]);
+                $this->notificationService->notifyBusiness(
+                    $order->business_id,
+                    'order_item_added',
+                    'Order item added',
+                    "{$lineItem->quantity} x {$lineItem->item_name} was added to {$order->order_number}.",
+                    ['order_id' => $order->id, 'order_item_id' => $lineItem->id],
+                );
+
+                $this->auditLogService->record($user, $order->business_id, 'order.item_added', $order, [
+                    'order_item_id' => $lineItem->id,
+                    'item_name' => $lineItem->item_name,
+                    'quantity' => $lineItem->quantity,
+                    'total' => $lineItem->total,
+                ]);
+            } else {
+                $this->notificationService->notifyBusiness(
+                    $order->business_id,
+                    'order_items_added',
+                    'Order items added',
+                    "{$createdItems->sum('quantity')} items were added to {$order->order_number}.",
+                    ['order_id' => $order->id, 'order_item_ids' => $createdItems->pluck('id')->all()],
+                );
+
+                $this->auditLogService->record($user, $order->business_id, 'order.items_added', $order, [
+                    'order_item_ids' => $createdItems->pluck('id')->all(),
+                    'item_count' => $createdItems->count(),
+                    'quantity' => $createdItems->sum('quantity'),
+                    'total' => $createdItems->sum('total'),
+                ]);
+            }
 
             return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
