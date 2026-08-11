@@ -29,8 +29,9 @@ class SuperAdminPanelTest extends TestCase
         $this->get('/admin')
             ->assertOk()
             ->assertSee('ServiceOS Admin')
-            ->assertSee('Business Control Center')
-            ->assertSee('Business Owners')
+            ->assertSee('Business Overview')
+            ->assertSee('Orders and Sales')
+            ->assertSee('View Businesses')
             ->assertSee('Create Business');
     }
 
@@ -80,14 +81,29 @@ class SuperAdminPanelTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($superadmin)
-            ->get('/admin')
+        $this->actingAs($superadmin);
+
+        $this->get('/admin')
+            ->assertOk()
+            ->assertSee('Business Overview')
+            ->assertDontSee('Owner Only Cafe')
+            ->assertDontSee('Visible Owner')
+            ->assertDontSee('Hidden Waiter');
+
+        $this->get(route('admin.businesses.index'))
             ->assertOk()
             ->assertSee('Owner Only Cafe')
             ->assertSee('Visible Owner')
+            ->assertSee('Edit')
             ->assertDontSee('Hidden Waiter')
             ->assertDontSee('hidden-waiter@example.com')
             ->assertDontSee('Control platform users');
+
+        $this->get(route('admin.businesses.edit', $business))
+            ->assertOk()
+            ->assertSee('Edit Business Details')
+            ->assertSee('Owner Only Cafe')
+            ->assertSee('Visible Owner');
     }
 
     public function test_superadmin_can_create_business_with_owner_login(): void
@@ -116,7 +132,7 @@ class SuperAdminPanelTest extends TestCase
             'owner_phone' => '8888888888',
             'owner_password' => 'password123',
             'owner_password_confirmation' => 'password123',
-        ])->assertRedirect(route('admin.dashboard'));
+        ])->assertRedirect(route('admin.businesses.index'));
 
         $this->assertDatabaseHas('businesses', [
             'name' => 'Admin Created Cafe',
@@ -128,6 +144,11 @@ class SuperAdminPanelTest extends TestCase
             'role' => 'owner',
             'status' => 'active',
         ]);
+
+        $this->get(route('admin.businesses.create'))
+            ->assertOk()
+            ->assertSee('Business Details')
+            ->assertSee('Owner Login');
     }
 
     public function test_superadmin_can_suspend_business_and_owner_access_is_blocked(): void
@@ -170,7 +191,7 @@ class SuperAdminPanelTest extends TestCase
                 'state' => null,
                 'country' => 'India',
             ])
-            ->assertRedirect(route('admin.dashboard'));
+            ->assertRedirect(route('admin.businesses.edit', $business));
 
         $this->assertDatabaseHas('businesses', [
             'id' => $business->id,

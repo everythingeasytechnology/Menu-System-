@@ -25,7 +25,10 @@ Route::prefix('admin')
     ->middleware(['auth', 'super.admin'])
     ->group(function () {
         Route::get('/', [SuperAdminController::class, 'index'])->name('dashboard');
+        Route::get('/businesses', [SuperAdminController::class, 'businesses'])->name('businesses.index');
+        Route::get('/businesses/create', [SuperAdminController::class, 'createBusiness'])->name('businesses.create');
         Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');
+        Route::get('/businesses/{business}/edit', [SuperAdminController::class, 'editBusiness'])->name('businesses.edit');
         Route::put('/businesses/{business}', [SuperAdminController::class, 'updateBusiness'])->name('businesses.update');
     });
 

@@ -73,20 +73,41 @@
                 <div>
                     <p x-show="!adminSidebarCompact" class="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Control</p>
                     <div class="mt-2 space-y-1">
-                        <a href="{{ route('admin.dashboard') }}#overview" class="group flex h-11 items-center gap-3 rounded-lg bg-orange px-3 text-sm font-black text-white shadow-lg shadow-orange/20">
+                        <a
+                            href="{{ route('admin.dashboard') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.dashboard'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.dashboard'),
+                            ])
+                        >
                             <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                                 <path d="M4 13h6V4H4v9Zm10 7h6V4h-6v16ZM4 20h6v-3H4v3Z" stroke-linejoin="round" />
                             </svg>
                             <span x-show="!adminSidebarCompact" x-transition class="truncate">Overview</span>
                         </a>
-                        <a href="{{ route('admin.dashboard') }}#businesses" class="group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-white/75 transition hover:bg-white/10 hover:text-white">
-                            <svg class="h-5 w-5 shrink-0 text-white/60 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <a
+                            href="{{ route('admin.businesses.index') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.businesses.index') || request()->routeIs('admin.businesses.edit'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! (request()->routeIs('admin.businesses.index') || request()->routeIs('admin.businesses.edit')),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                                 <path d="M8 21V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v14M4 21V11a2 2 0 0 1 2-2h2m4 12v-4h4v4M3 21h18" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                            <span x-show="!adminSidebarCompact" x-transition class="truncate">Business Owners</span>
+                            <span x-show="!adminSidebarCompact" x-transition class="truncate">View Businesses</span>
                         </a>
-                        <a href="{{ route('admin.dashboard') }}#create-business" class="group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-bold text-white/75 transition hover:bg-white/10 hover:text-white">
-                            <svg class="h-5 w-5 shrink-0 text-white/60 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                        <a
+                            href="{{ route('admin.businesses.create') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.businesses.create'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.businesses.create'),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                                 <path d="M12 5v14M5 12h14" stroke-linecap="round" />
                             </svg>
                             <span x-show="!adminSidebarCompact" x-transition class="truncate">Create Business</span>

@@ -1,28 +1,12 @@
 @extends('admin.layout')
 
-@section('title', 'Business Control Center')
+@section('title', 'Business Overview')
 @section('eyebrow', 'Super Admin')
-@section('page-title', 'Business Control Center')
-@section('page-subtitle', 'Manage business accounts and business owner access.')
+@section('page-title', 'Business Overview')
+@section('page-subtitle', 'Platform overview and charts only.')
 
 @section('content')
-    @if(session('success'))
-        <div class="rounded-lg border border-success/20 bg-success/10 px-4 py-3 text-sm font-bold text-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="rounded-lg border border-danger/20 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-lg border border-danger/20 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
-            {{ $errors->first() }}
-        </div>
-    @endif
+    @include('admin.partials.alerts')
 
     <section id="overview" class="scroll-mt-20 grid grid-cols-2 gap-3 lg:grid-cols-7">
         <div class="rounded-lg border border-border bg-card p-3 shadow-sm">
@@ -42,8 +26,8 @@
             <strong class="mt-1 block text-2xl font-black text-success">{{ number_format($stats['active_owners']) }}</strong>
         </div>
         <div class="rounded-lg border border-border bg-card p-3 shadow-sm">
-            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Owners</span>
-            <strong class="mt-1 block text-2xl font-black text-orange">{{ number_format($stats['owners']) }}</strong>
+            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Live Orders</span>
+            <strong class="mt-1 block text-2xl font-black text-orange">{{ number_format($stats['live_orders']) }}</strong>
         </div>
         <div class="rounded-lg border border-border bg-card p-3 shadow-sm">
             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Orders</span>
@@ -55,178 +39,101 @@
         </div>
     </section>
 
-    <section class="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <div id="create-business" class="scroll-mt-20 rounded-lg border border-border bg-card p-4 shadow-sm">
-            <div class="border-b border-border pb-3">
-                <h2 class="text-base font-black text-ink">Create Business</h2>
-                <p class="mt-0.5 text-xs font-semibold text-muted">Business owner account will use the same login system.</p>
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.8fr)]">
+        <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-base font-black text-ink">Orders and Sales</h2>
+                    <p class="mt-0.5 text-xs font-semibold text-muted">Last 6 months platform movement.</p>
+                </div>
+                <div class="flex items-center gap-3 text-[11px] font-black text-muted">
+                    <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-orange"></span>Orders</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-teal"></span>Sales</span>
+                </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.businesses.store') }}" class="mt-4 space-y-3">
-                @csrf
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Business Name</span>
-                        <input name="business_name" value="{{ old('business_name') }}" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Type</span>
-                        <input name="business_type" value="{{ old('business_type', 'restaurant') }}" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Status</span>
-                        <select name="business_status" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                            @foreach($businessStatuses as $value => $label)
-                                <option value="{{ $value }}" @selected(old('business_status', 'active') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Business Email</span>
-                        <input type="email" name="business_email" value="{{ old('business_email') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Phone</span>
-                        <input name="business_phone" value="{{ old('business_phone') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">City</span>
-                        <input name="city" value="{{ old('city') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">State</span>
-                        <input name="state" value="{{ old('state') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                    <label class="block">
-                        <span class="text-[10px] font-black uppercase tracking-wider text-muted">Country</span>
-                        <input name="country" value="{{ old('country', 'India') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                    </label>
-                </div>
-
-                <div class="border-t border-border pt-3">
-                    <h3 class="text-xs font-black uppercase tracking-wider text-ink">Owner Login</h3>
-                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                        <label class="block">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Owner Name</span>
-                            <input name="owner_name" value="{{ old('owner_name') }}" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        </label>
-                        <label class="block">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Owner Email</span>
-                            <input type="email" name="owner_email" value="{{ old('owner_email') }}" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        </label>
-                        <label class="block">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Owner Phone</span>
-                            <input name="owner_phone" value="{{ old('owner_phone') }}" class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        </label>
-                        <label class="block">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Password</span>
-                            <input type="password" name="owner_password" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        </label>
-                        <label class="block sm:col-span-2">
-                            <span class="text-[10px] font-black uppercase tracking-wider text-muted">Confirm Password</span>
-                            <input type="password" name="owner_password_confirmation" required class="mt-1 h-9 w-full rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        </label>
+            <div class="mt-5 flex h-64 items-end gap-3 border-b border-border px-2 pb-3">
+                @foreach($charts['monthly'] as $month)
+                    <div class="flex h-full min-w-0 flex-1 flex-col justify-end gap-2">
+                        <div class="flex min-h-0 flex-1 items-end justify-center gap-1 rounded-t-lg bg-card-tint px-1.5 pt-2">
+                            <span
+                                class="block w-3 rounded-t bg-orange shadow-sm sm:w-4"
+                                style="height: {{ $month['order_height'] }}%"
+                                title="{{ $month['orders'] }} orders"
+                            ></span>
+                            <span
+                                class="block w-3 rounded-t bg-teal shadow-sm sm:w-4"
+                                style="height: {{ $month['sales_height'] }}%"
+                                title="Rs. {{ number_format($month['sales'], 2) }}"
+                            ></span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-[10px] font-black uppercase tracking-wider text-muted">{{ $month['label'] }}</span>
+                            <span class="mt-0.5 block truncate text-[10px] font-bold text-ink">Rs. {{ number_format($month['sales'], 0) }}</span>
+                        </div>
                     </div>
-                </div>
-
-                <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-lg bg-orange px-4 text-xs font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
-                    Create Business
-                </button>
-            </form>
+                @endforeach
+            </div>
         </div>
 
-        <section id="businesses" class="scroll-mt-20 rounded-lg border border-border bg-card shadow-sm">
-            <div class="border-b border-border p-4">
-                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h2 class="text-base font-black text-ink">Businesses</h2>
-                        <p class="mt-0.5 text-xs font-semibold text-muted">Suspend, reactivate, and update business owner account details.</p>
-                    </div>
-                    <form method="GET" action="{{ route('admin.dashboard') }}" class="flex flex-col gap-2 sm:flex-row">
-                        <input name="business_search" value="{{ $filters['business_search'] ?? '' }}" placeholder="Search business" class="h-9 rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                        <select name="business_status" class="h-9 rounded-lg border border-border bg-card-tint px-3 text-xs font-bold text-ink outline-none focus:border-orange">
-                            <option value="all">All status</option>
-                            @foreach($businessStatuses as $value => $label)
-                                <option value="{{ $value }}" @selected(($filters['business_status'] ?? 'all') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="h-9 rounded-lg bg-navy px-3 text-xs font-black text-white">Filter</button>
-                    </form>
+        <div class="grid gap-5">
+            <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <div class="border-b border-border pb-3">
+                    <h2 class="text-base font-black text-ink">Business Status</h2>
+                    <p class="mt-0.5 text-xs font-semibold text-muted">Current business account distribution.</p>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                    @foreach($charts['business_statuses'] as $status)
+                        <div>
+                            <div class="flex items-center justify-between gap-3 text-xs font-black">
+                                <span class="text-ink">{{ $status['label'] }}</span>
+                                <span class="text-muted">{{ number_format($status['count']) }} ({{ $status['percent'] }}%)</span>
+                            </div>
+                            <div class="mt-1.5 h-2 rounded-full bg-card-tint">
+                                <div
+                                    @class([
+                                        'h-2 rounded-full',
+                                        'bg-success' => $status['label'] === 'Active',
+                                        'bg-warning' => $status['label'] === 'Inactive',
+                                        'bg-danger' => $status['label'] === 'Suspended',
+                                    ])
+                                    style="width: {{ $status['percent'] }}%"
+                                ></div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-[1050px] w-full text-left text-xs">
-                    <thead class="border-b border-border bg-card-tint text-[10px] font-black uppercase tracking-wider text-muted">
-                        <tr>
-                            <th class="px-3 py-2">Business</th>
-                            <th class="px-3 py-2">Owner</th>
-                            <th class="px-3 py-2">Contact</th>
-                            <th class="px-3 py-2">Location</th>
-                            <th class="px-3 py-2">Status</th>
-                            <th class="px-3 py-2">Orders</th>
-                            <th class="px-3 py-2 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                        @forelse($businesses as $business)
-                            <tr class="align-top">
-                                <td class="px-3 py-2">
-                                    <input form="business-form-{{ $business->id }}" name="name" value="{{ $business->name }}" required class="h-8 w-48 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange">
-                                    <input form="business-form-{{ $business->id }}" name="type" value="{{ $business->type }}" required class="mt-1 h-8 w-48 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-muted outline-none focus:border-orange">
-                                </td>
-                                <td class="px-3 py-2">
-                                    <input form="business-form-{{ $business->id }}" name="owner_name" value="{{ $business->owner?->name }}" placeholder="Owner name" class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
-                                    <input form="business-form-{{ $business->id }}" type="email" name="owner_email" value="{{ $business->owner?->email }}" placeholder="Owner email" class="mt-1 h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-muted outline-none focus:border-orange" @disabled(! $business->owner)>
-                                    <div class="mt-1 flex gap-1">
-                                        <input form="business-form-{{ $business->id }}" name="owner_phone" value="{{ $business->owner?->phone }}" placeholder="Phone" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
-                                        <select form="business-form-{{ $business->id }}" name="owner_status" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange" @disabled(! $business->owner)>
-                                            @foreach($ownerStatuses as $value => $label)
-                                                <option value="{{ $value }}" @selected($business->owner?->status === $value)>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </td>
-                                <td class="px-3 py-2">
-                                    <input form="business-form-{{ $business->id }}" type="email" name="email" value="{{ $business->email }}" placeholder="Email" class="h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                    <input form="business-form-{{ $business->id }}" name="phone" value="{{ $business->phone }}" placeholder="Phone" class="mt-1 h-8 w-44 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                </td>
-                                <td class="px-3 py-2">
-                                    <input form="business-form-{{ $business->id }}" name="city" value="{{ $business->city }}" placeholder="City" class="h-8 w-36 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                    <div class="mt-1 flex gap-1">
-                                        <input form="business-form-{{ $business->id }}" name="state" value="{{ $business->state }}" placeholder="State" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                        <input form="business-form-{{ $business->id }}" name="country" value="{{ $business->country }}" placeholder="Country" class="h-8 w-24 rounded-lg border border-border bg-card-tint px-2 text-xs font-bold text-ink outline-none focus:border-orange">
-                                    </div>
-                                </td>
-                                <td class="px-3 py-2">
-                                    <select form="business-form-{{ $business->id }}" name="status" class="h-8 rounded-lg border border-border bg-card-tint px-2 text-xs font-black text-ink outline-none focus:border-orange">
-                                        @foreach($businessStatuses as $value => $label)
-                                            <option value="{{ $value }}" @selected($business->status === $value)>{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="px-3 py-2">
-                                    <span class="block font-black text-ink">{{ $business->orders_count }} orders</span>
-                                    <span class="mt-0.5 block text-muted">{{ $business->created_at?->format('d M Y') }}</span>
-                                </td>
-                                <td class="px-3 py-2 text-right">
-                                    <form id="business-form-{{ $business->id }}" method="POST" action="{{ route('admin.businesses.update', $business) }}">
-                                        @csrf
-                                        @method('PUT')
-                                    </form>
-                                    <button form="business-form-{{ $business->id }}" type="submit" class="h-8 rounded-lg bg-orange px-3 text-[10px] font-black uppercase tracking-wider text-white">
-                                        Save
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-3 py-8 text-center font-bold text-muted">No businesses found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <div class="border-b border-border pb-3">
+                    <h2 class="text-base font-black text-ink">Owner Access</h2>
+                    <p class="mt-0.5 text-xs font-semibold text-muted">Owner login status overview.</p>
+                </div>
+
+                <div class="mt-4 space-y-3">
+                    @foreach($charts['owner_statuses'] as $status)
+                        <div>
+                            <div class="flex items-center justify-between gap-3 text-xs font-black">
+                                <span class="text-ink">{{ $status['label'] }}</span>
+                                <span class="text-muted">{{ number_format($status['count']) }} ({{ $status['percent'] }}%)</span>
+                            </div>
+                            <div class="mt-1.5 h-2 rounded-full bg-card-tint">
+                                <div
+                                    @class([
+                                        'h-2 rounded-full',
+                                        'bg-success' => $status['label'] === 'Active',
+                                        'bg-warning' => $status['label'] === 'Inactive',
+                                        'bg-danger' => $status['label'] === 'Suspended',
+                                    ])
+                                    style="width: {{ $status['percent'] }}%"
+                                ></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </section>
+        </div>
     </section>
 @endsection

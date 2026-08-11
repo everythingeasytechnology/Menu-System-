@@ -29,6 +29,14 @@ class SuperAdminController extends Controller
 
     public function index(Request $request)
     {
+        return view('admin.dashboard', [
+            'stats' => $this->stats(),
+            'charts' => $this->charts(),
+        ]);
+    }
+
+    public function businesses(Request $request)
+    {
         $businessQuery = Business::query()
             ->with('owner')
             ->withCount(['orders'])
@@ -50,12 +58,28 @@ class SuperAdminController extends Controller
             $businessQuery->where('status', $request->input('business_status'));
         }
 
-        return view('admin.dashboard', [
+        return view('admin.businesses.index', [
             'stats' => $this->stats(),
-            'businesses' => $businessQuery->limit(60)->get(),
+            'businesses' => $businessQuery->paginate(30)->withQueryString(),
             'businessStatuses' => self::BUSINESS_STATUSES,
             'ownerStatuses' => self::OWNER_STATUSES,
             'filters' => $request->only(['business_search', 'business_status']),
+        ]);
+    }
+
+    public function createBusiness()
+    {
+        return view('admin.businesses.create', [
+            'businessStatuses' => self::BUSINESS_STATUSES,
+        ]);
+    }
+
+    public function editBusiness(Business $business)
+    {
+        return view('admin.businesses.edit', [
+            'business' => $business->load('owner')->loadCount('orders'),
+            'businessStatuses' => self::BUSINESS_STATUSES,
+            'ownerStatuses' => self::OWNER_STATUSES,
         ]);
     }
 
@@ -80,7 +104,7 @@ class SuperAdminController extends Controller
             $owner = User::create([
                 'name' => $data['owner_name'],
                 'email' => $data['owner_email'],
-                'phone' => array_key_exists('owner_phone', $data) ? $data['owner_phone'] : $owner->phone,
+                'phone' => $data['owner_phone'] ?? null,
                 'password' => Hash::make($data['owner_password']),
                 'role' => 'owner',
                 'status' => 'active',
@@ -116,7 +140,7 @@ class SuperAdminController extends Controller
         });
 
         return redirect()
-            ->route('admin.dashboard')
+            ->route('admin.businesses.index')
             ->with('success', 'Business and owner account created.');
     }
 
@@ -165,7 +189,7 @@ class SuperAdminController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.dashboard')
+            ->route('admin.businesses.edit', $business)
             ->with('success', 'Business updated.');
     }
 
@@ -174,11 +198,75 @@ class SuperAdminController extends Controller
         return [
             'businesses' => Business::count(),
             'active_businesses' => Business::where('status', 'active')->count(),
+            'inactive_businesses' => Business::where('status', 'inactive')->count(),
             'suspended_businesses' => Business::where('status', 'suspended')->count(),
             'owners' => User::where('role', 'owner')->count(),
             'active_owners' => User::where('role', 'owner')->where('status', 'active')->count(),
+            'inactive_owners' => User::where('role', 'owner')->where('status', 'inactive')->count(),
+            'suspended_owners' => User::where('role', 'owner')->where('status', 'suspended')->count(),
             'orders' => Order::count(),
+            'live_orders' => Order::whereIn('order_status', Order::ACTIVE_STATUSES)->count(),
             'gross_sales' => (float) Order::where('order_status', '!=', 'cancelled')->sum('total'),
         ];
+    }
+
+    private function charts(): array
+    {
+        $from = now()->startOfMonth()->subMonths(5);
+        $orders = Order::query()
+            ->where('created_at', '>=', $from)
+            ->where('order_status', '!=', 'cancelled')
+            ->get(['created_at', 'total']);
+
+        $monthly = collect(range(5, 0))
+            ->map(function (int $offset) use ($orders) {
+                $month = now()->startOfMonth()->subMonths($offset);
+                $monthOrders = $orders->filter(fn (Order $order) => $order->created_at?->format('Y-m') === $month->format('Y-m'));
+
+                return [
+                    'label' => $month->format('M'),
+                    'orders' => $monthOrders->count(),
+                    'sales' => (float) $monthOrders->sum('total'),
+                ];
+            });
+
+        $maxOrders = max(1, (int) $monthly->max('orders'));
+        $maxSales = max(1, (float) $monthly->max('sales'));
+
+        return [
+            'monthly' => $monthly
+                ->map(function (array $month) use ($maxOrders, $maxSales) {
+                    return [
+                        ...$month,
+                        'order_height' => $month['orders'] > 0 ? max(8, round(($month['orders'] / $maxOrders) * 100)) : 4,
+                        'sales_height' => $month['sales'] > 0 ? max(8, round(($month['sales'] / $maxSales) * 100)) : 4,
+                    ];
+                })
+                ->values(),
+            'business_statuses' => $this->statusDistribution([
+                'Active' => Business::where('status', 'active')->count(),
+                'Inactive' => Business::where('status', 'inactive')->count(),
+                'Suspended' => Business::where('status', 'suspended')->count(),
+            ]),
+            'owner_statuses' => $this->statusDistribution([
+                'Active' => User::where('role', 'owner')->where('status', 'active')->count(),
+                'Inactive' => User::where('role', 'owner')->where('status', 'inactive')->count(),
+                'Suspended' => User::where('role', 'owner')->where('status', 'suspended')->count(),
+            ]),
+        ];
+    }
+
+    private function statusDistribution(array $counts): array
+    {
+        $total = max(1, array_sum($counts));
+
+        return collect($counts)
+            ->map(fn (int $count, string $label) => [
+                'label' => $label,
+                'count' => $count,
+                'percent' => round(($count / $total) * 100),
+            ])
+            ->values()
+            ->all();
     }
 }
