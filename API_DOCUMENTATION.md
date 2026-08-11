@@ -63,13 +63,13 @@ Body:
 
 ```json
 {
-  "email": "owner@example.com",
+  "email": "owner-or-staff@example.com",
   "password": "password123",
   "device_name": "iPhone"
 }
 ```
 
-Returns bearer token, user, and business.
+Returns bearer token, user, and business for active owner or staff accounts. Use `data.user.role` to identify permissions such as `owner`, `manager`, `waiter`, `kitchen_staff`, or `cashier`.
 
 ### Logout
 

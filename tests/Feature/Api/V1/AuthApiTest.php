@@ -46,4 +46,60 @@ class AuthApiTest extends ApiTestCase
             ->assertOk()
             ->assertJsonPath('data.user.id', $user->id);
     }
+
+    public function test_auth_login_returns_token_for_active_staff(): void
+    {
+        [$business] = $this->createBusinessUser('staff-login-owner@example.com');
+        $staff = User::create([
+            'business_id' => $business->id,
+            'name' => 'Rahul Waiter',
+            'email' => 'staff-login@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'active',
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'staff-login@example.com',
+            'password' => 'password123',
+            'device_name' => 'Waiter App',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Logged in successfully')
+            ->assertJsonPath('data.token_type', 'Bearer')
+            ->assertJsonPath('data.user.id', $staff->id)
+            ->assertJsonPath('data.user.role', 'waiter')
+            ->assertJsonPath('data.business.id', $business->id)
+            ->assertJsonStructure(['data' => ['access_token']]);
+
+        $token = $response->json('data.access_token');
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.user.id', $staff->id);
+    }
+
+    public function test_auth_login_rejects_inactive_staff(): void
+    {
+        [$business] = $this->createBusinessUser('inactive-staff-owner@example.com');
+        User::create([
+            'business_id' => $business->id,
+            'name' => 'Inactive Waiter',
+            'email' => 'inactive-staff-login@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'inactive',
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'inactive-staff-login@example.com',
+            'password' => 'password123',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Invalid credentials');
+    }
 }
