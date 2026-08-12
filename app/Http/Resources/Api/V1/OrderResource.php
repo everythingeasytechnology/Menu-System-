@@ -17,6 +17,7 @@ class OrderResource extends JsonResource
             'table_id' => $this->table_id,
             'room_id' => $this->room_id,
             'service_point_id' => $this->service_point_id,
+            'service_point' => $this->whenLoaded('servicePoint', fn () => new ServicePointResource($this->servicePoint)),
             'customer_name' => $this->customer_name,
             'customer_phone' => $this->customer_phone,
             'subtotal' => (float) $this->subtotal,

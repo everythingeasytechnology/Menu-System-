@@ -186,7 +186,7 @@ class OrderController extends ApiController
 
     private function baseQuery(Request $request)
     {
-        return Order::with(['items.menuItem.presetImage', 'payments'])
+        return Order::with(['items.menuItem.presetImage', 'payments', 'servicePoint'])
             ->where('business_id', $this->businessId($request))
             ->when($request->filled('from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('from')))
             ->when($request->filled('to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('to')));

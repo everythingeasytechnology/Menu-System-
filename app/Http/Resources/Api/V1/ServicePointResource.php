@@ -20,7 +20,7 @@ class ServicePointResource extends JsonResource
             'point_type' => $this->point_type,
             'status' => $this->status,
             'is_active' => $this->is_active,
-            'scan_url' => ScanUrlService::forQr($this->qr_identifier),
+            'scan_url' => $this->qr_identifier ? ScanUrlService::forQr($this->qr_identifier) : null,
             'scanner_download_url' => url('/api/v1/service-points/'.$this->id.'/scanner'),
             'order_number' => $this->order_number,
             'amount' => (float) $this->amount,

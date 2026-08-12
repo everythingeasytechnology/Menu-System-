@@ -467,6 +467,8 @@ New orders start at `preparing`. `completed` is order-level only (set manually o
 
 `GET /orders/service-point/{servicePointId}` returns paginated orders placed against that table/room/counter, newest first, with the same `from`/`to`/`status`/`payment_status`/`order_type`/`search`/`per_page` filters as `/orders`. 404s if the service point does not belong to the authenticated user's business.
 
+`GET /orders/active` returns active orders with `service_point_id` and a nested `service_point` object when the order belongs to a service point.
+
 Authenticated order body:
 
 ```json

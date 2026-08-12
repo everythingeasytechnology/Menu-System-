@@ -93,6 +93,47 @@ class OrderApiTest extends ApiTestCase
             ->assertJsonCount(1, 'data');
     }
 
+    public function test_active_orders_include_service_point_details(): void
+    {
+        [$business, $user] = $this->createBusinessUser('active-service-point-orders-owner@example.com');
+        $servicePoint = ServicePoint::create([
+            'business_id' => $business->id,
+            'code' => 'SP-ACTIVE',
+            'name' => 'Garden Table',
+            'seats' => 4,
+            'category' => 'Outdoor',
+            'point_type' => 'table',
+            'status' => 'occupied',
+            'is_active' => true,
+        ]);
+
+        $activeOrder = $this->createOrder($business, [
+            'order_number' => 'ORD-ACTIVE-SP',
+            'service_point_id' => $servicePoint->id,
+            'order_status' => 'preparing',
+        ]);
+
+        $this->createOrder($business, [
+            'order_number' => 'ORD-COMPLETED-SP',
+            'service_point_id' => $servicePoint->id,
+            'order_status' => 'completed',
+        ]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/orders/active')
+            ->assertOk()
+            ->assertJsonPath('message', 'Active orders')
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $activeOrder->id)
+            ->assertJsonPath('data.0.service_point_id', $servicePoint->id)
+            ->assertJsonPath('data.0.service_point.id', $servicePoint->id)
+            ->assertJsonPath('data.0.service_point.code', 'SP-ACTIVE')
+            ->assertJsonPath('data.0.service_point.name', 'Garden Table')
+            ->assertJsonPath('data.0.service_point.category', 'Outdoor')
+            ->assertJsonPath('data.0.service_point.point_type', 'table')
+            ->assertJsonMissing(['order_number' => 'ORD-COMPLETED-SP']);
+    }
+
     public function test_can_get_orders_for_service_point(): void
     {
         [$business, $user] = $this->createBusinessUser('service-point-orders-owner@example.com');
