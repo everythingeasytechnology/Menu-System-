@@ -207,7 +207,7 @@
                             <template x-for="item in selectedOrder.items" :key="item.id">
                                 <div class="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-2 py-1.5">
                                     <div class="min-w-0">
-                                        <span class="block truncate text-sm font-black text-ink" x-text="item.name"></span>
+                                        <span class="block truncate text-sm font-black text-ink" x-text="item.displayName || item.name"></span>
                                         <span class="block text-xs font-bold text-muted" x-text="`${moneyValue(item.unitPrice)} x ${item.qty} = ${moneyValue(item.lineSubtotal)}`"></span>
                                     </div>
                                     <label class="block">
@@ -1115,7 +1115,7 @@
                     const lineTotal = Number(item.total ?? (lineSubtotal + itemTax - itemDiscount));
                     const printedLineTotal = hasGst ? lineTotal : Math.max(0, lineSubtotal - itemDiscount);
 
-                    addDiv(String(index + 1) + '. ' + String(item.name || 'Item') + (item.variantLabel ? ' (' + item.variantLabel + ')' : ''), 'item-name');
+                    addDiv(String(index + 1) + '. ' + String(item.displayName || item.name || 'Item'), 'item-name');
                     addRow('   ' + money(unitPrice) + ' x ' + String(qty), money(lineSubtotal));
 
                     if (itemDiscount > 0) {

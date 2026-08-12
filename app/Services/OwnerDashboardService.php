@@ -169,10 +169,10 @@ class OwnerDashboardService
         $payment = $order->payments->sortByDesc('created_at')->first();
         $method = $payment?->payment_method;
         $items = $order->items->map(function (OrderItem $item) use ($order) {
-            $label = $item->quantity.' x '.$item->item_name;
-            if ($item->variant_label) {
-                $label .= ' ('.$item->variant_label.')';
-            }
+            $displayName = $item->variant_label
+                ? trim($item->variant_label.' '.$item->item_name)
+                : $item->item_name;
+            $label = $item->quantity.' x '.$displayName;
 
             $itemStatus = $item->status ?: ($order->order_status === 'completed' ? 'served' : $order->order_status);
             if (! in_array($itemStatus, OrderItem::STATUSES, true)) {
@@ -182,6 +182,7 @@ class OwnerDashboardService
             return [
                 'id' => $item->id,
                 'name' => $item->item_name,
+                'displayName' => $displayName,
                 'variantLabel' => $item->variant_label,
                 'qty' => $item->quantity,
                 'status' => $itemStatus,

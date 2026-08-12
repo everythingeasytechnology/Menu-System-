@@ -79,6 +79,28 @@ class DashboardLiveOrdersTest extends TestCase
         $response->assertSee('Cash Paid');
     }
 
+    public function test_live_orders_page_shows_variant_before_item_name(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => 'ORD-WEB-VARIANT',
+            'customer_name' => 'Variant Guest',
+            'total' => 320,
+        ]);
+
+        $order->items()->update([
+            'item_name' => 'Paneer Tikka Special',
+            'variant_label' => 'Large',
+        ]);
+
+        $this->get('/orders')
+            ->assertOk()
+            ->assertSee('Large Paneer Tikka Special');
+
+        $this->getJson('/orders/live-feed')
+            ->assertOk()
+            ->assertJsonPath('orders.0.items.0.displayName', 'Large Paneer Tikka Special');
+    }
+
     public function test_kitchen_display_screen_uses_live_database_orders(): void
     {
         $this->createOrder([
