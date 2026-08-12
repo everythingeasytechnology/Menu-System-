@@ -40,7 +40,7 @@ class CouponNotificationApiTest extends ApiTestCase
             ->assertUnprocessable();
     }
 
-    public function test_device_token_and_notification_read_flow(): void
+    public function test_expo_push_token_and_notification_read_flow(): void
     {
         [$business, $user] = $this->createBusinessUser();
 
@@ -53,7 +53,13 @@ class CouponNotificationApiTest extends ApiTestCase
             ]);
 
         $tokenResponse->assertCreated()
-            ->assertJsonPath('data.platform', 'expo');
+            ->assertJsonPath('message', 'Expo push token registered');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'expo_push_token' => 'ExponentPushToken[test]',
+        ]);
+        $this->assertDatabaseCount('device_tokens', 0);
 
         $notification = AppNotification::create([
             'user_id' => $user->id,
@@ -72,5 +78,12 @@ class CouponNotificationApiTest extends ApiTestCase
             ->postJson("/api/v1/notifications/{$notification->id}/read")
             ->assertOk()
             ->assertJsonPath('data.read_at', fn ($value) => $value !== null);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->deleteJson('/api/v1/device-tokens')
+            ->assertOk()
+            ->assertJsonPath('message', 'Expo push token removed');
+
+        $this->assertNull($user->fresh()->expo_push_token);
     }
 }

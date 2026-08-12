@@ -20,6 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'expo_push_token',
         'password',
         'role',
         'status',
@@ -28,6 +29,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'expo_push_token',
     ];
 
     public function business(): BelongsTo
@@ -43,11 +45,6 @@ class User extends Authenticatable
     public function accessTokens(): HasMany
     {
         return $this->hasMany(PersonalAccessToken::class);
-    }
-
-    public function deviceTokens(): HasMany
-    {
-        return $this->hasMany(DeviceToken::class);
     }
 
     public function createApiToken(string $name = 'mobile', ?\DateTimeInterface $expiresAt = null): string

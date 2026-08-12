@@ -93,7 +93,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('coupons', CouponController::class);
 
         Route::post('device-tokens', [NotificationController::class, 'storeDeviceToken']);
-        Route::delete('device-tokens/{deviceToken}', [NotificationController::class, 'deleteDeviceToken']);
+        Route::delete('device-tokens/{deviceToken?}', [NotificationController::class, 'deleteDeviceToken']);
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);

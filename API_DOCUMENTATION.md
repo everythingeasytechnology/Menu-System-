@@ -636,7 +636,7 @@ Coupon validation is server-side.
 ## Notifications
 
 - `POST /device-tokens`
-- `DELETE /device-tokens/{id}`
+- `DELETE /device-tokens`
 - `GET /notifications`
 - `GET /notifications/unread-count`
 - `POST /notifications/{id}/read`
@@ -647,11 +647,14 @@ Device token body:
 ```json
 {
   "device_token": "ExponentPushToken[...]",
+  "expo_push_token": "ExponentPushToken[...]",
   "platform": "expo",
   "app_version": "1.0.0",
   "device_id": "device-id"
 }
 ```
+
+`device_token` and `expo_push_token` are both accepted; the backend stores the token on `users.expo_push_token`.
 
 Notification data supports future order/payment/offer/coupon/system payloads.
 

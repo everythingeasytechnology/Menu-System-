@@ -17,20 +17,16 @@ class SendExpoPushNotification implements ShouldQueue
 
     public function handle(): void
     {
-        $notification = AppNotification::with(['user.deviceTokens' => function ($query) {
-            $query->where('is_active', true);
-        }])->find($this->notificationId);
+        $notification = AppNotification::with('user')->find($this->notificationId);
 
-        if (! $notification || ! $notification->user) {
+        if (! $notification || ! $notification->user || ! $notification->user->expo_push_token) {
             return;
         }
 
-        foreach ($notification->user->deviceTokens as $deviceToken) {
-            Log::info('Expo push notification queued for provider delivery.', [
-                'notification_id' => $notification->id,
-                'device_token_id' => $deviceToken->id,
-                'platform' => $deviceToken->platform,
-            ]);
-        }
+        Log::info('Expo push notification queued for provider delivery.', [
+            'notification_id' => $notification->id,
+            'user_id' => $notification->user->id,
+            'has_expo_push_token' => true,
+        ]);
     }
 }

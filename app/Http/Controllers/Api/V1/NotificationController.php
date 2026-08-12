@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\V1\Notifications\DeviceTokenRequest;
-use App\Http\Resources\Api\V1\DeviceTokenResource;
 use App\Http\Resources\Api\V1\NotificationResource;
 use App\Models\AppNotification;
-use App\Models\DeviceToken;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class NotificationController extends ApiController
 {
@@ -52,30 +52,27 @@ class NotificationController extends ApiController
 
     public function storeDeviceToken(DeviceTokenRequest $request): JsonResponse
     {
-        $deviceToken = DeviceToken::updateOrCreate(
-            ['device_token' => $request->validated('device_token')],
-            [
-                'user_id' => $request->user()->id,
-                'business_id' => $request->user()->business_id,
-                'platform' => $request->validated('platform'),
-                'app_version' => $request->validated('app_version'),
-                'device_id' => $request->validated('device_id'),
-                'is_active' => true,
-                'last_used_at' => now(),
-            ],
-        );
+        $token = $request->validated('expo_push_token') ?? $request->validated('device_token');
 
-        return $this->success(new DeviceTokenResource($deviceToken), 'Device token registered', 201);
+        DB::transaction(function () use ($request, $token) {
+            User::where('expo_push_token', $token)
+                ->whereKeyNot($request->user()->id)
+                ->update(['expo_push_token' => null]);
+
+            $request->user()->update(['expo_push_token' => $token]);
+        });
+
+        return $this->success(null, 'Expo push token registered', 201);
     }
 
-    public function deleteDeviceToken(Request $request, DeviceToken $deviceToken): JsonResponse
+    public function deleteDeviceToken(Request $request, ?string $deviceToken = null): JsonResponse
     {
-        if ($deviceToken->user_id !== $request->user()->id) {
+        if ($deviceToken !== null && $request->user()->expo_push_token !== $deviceToken) {
             return $this->error('Resource not found', 404);
         }
 
-        $deviceToken->update(['is_active' => false]);
+        $request->user()->update(['expo_push_token' => null]);
 
-        return $this->success(null, 'Device token deactivated');
+        return $this->success(null, 'Expo push token removed');
     }
 }
