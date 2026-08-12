@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\Order;
+use App\Models\ServicePoint;
+
 class ServicePointApiTest extends ApiTestCase
 {
     public function test_can_create_service_point_with_generated_code_and_qr(): void
@@ -69,5 +72,66 @@ class ServicePointApiTest extends ApiTestCase
             ->getJson('/api/v1/service-points/'.$response->json('data.id'))
             ->assertOk()
             ->assertJsonPath('data.scan_url', 'https://menu.example.com/menu?point='.$qrIdentifier);
+    }
+
+    public function test_service_point_api_reports_occupied_from_active_orders(): void
+    {
+        [$business, $user] = $this->createBusinessUser('occupied-service-point-owner@example.com');
+        $occupiedPoint = ServicePoint::create([
+            'business_id' => $business->id,
+            'code' => 'SP-OCCUPIED',
+            'qr_identifier' => 'sp_occupied_table',
+            'name' => 'Table 10',
+            'seats' => 4,
+            'category' => 'Dining Hall',
+            'point_type' => 'table',
+            'status' => 'available',
+            'is_active' => true,
+        ]);
+        $availablePoint = ServicePoint::create([
+            'business_id' => $business->id,
+            'code' => 'SP-AVAILABLE',
+            'qr_identifier' => 'sp_available_table',
+            'name' => 'Table 11',
+            'seats' => 4,
+            'category' => 'Dining Hall',
+            'point_type' => 'table',
+            'status' => 'available',
+            'is_active' => true,
+        ]);
+        $order = Order::create([
+            'business_id' => $business->id,
+            'service_point_id' => $occupiedPoint->id,
+            'order_number' => 'ORD-SP-ACTIVE',
+            'order_type' => 'dine_in',
+            'subtotal' => 450,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 450,
+            'payment_status' => 'unpaid',
+            'order_status' => 'preparing',
+        ]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/service-points/'.$occupiedPoint->id)
+            ->assertOk()
+            ->assertJsonPath('data.id', $occupiedPoint->id)
+            ->assertJsonPath('data.status', 'occupied')
+            ->assertJsonPath('data.amount', 450)
+            ->assertJsonPath('data.active_order_count', 1)
+            ->assertJsonPath('data.active_orders.0.id', $order->id)
+            ->assertJsonPath('data.active_orders.0.order_number', 'ORD-SP-ACTIVE');
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/service-points?status=occupied')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $occupiedPoint->id);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/service-points?status=available')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $availablePoint->id);
     }
 }

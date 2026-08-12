@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServicePoint extends Model
 {
@@ -34,5 +35,15 @@ class ServicePoint extends Model
     public function business()
     {
         return $this->belongsTo(Business::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function activeOrders(): HasMany
+    {
+        return $this->orders()->live();
     }
 }

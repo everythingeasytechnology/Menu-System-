@@ -25,10 +25,17 @@ class ServicePointController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $points = ServicePoint::where('business_id', $this->businessId($request))
+        $query = ServicePoint::with(['activeOrders' => fn ($query) => $query->with('items')->latest()])
+            ->withCount('activeOrders')
+            ->where('business_id', $this->businessId($request))
             ->when($request->filled('point_type'), fn ($query) => $query->where('point_type', $request->input('point_type')))
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
-            ->when($request->filled('category'), fn ($query) => $query->where('category', $request->input('category')))
+            ->when($request->filled('category'), fn ($query) => $query->where('category', $request->input('category')));
+
+        if ($request->filled('status')) {
+            $this->applyStatusFilter($query, $request->input('status'));
+        }
+
+        $points = $query
             ->orderBy('category')
             ->orderBy('name')
             ->paginate((int) $request->input('per_page', 25));
@@ -56,7 +63,7 @@ class ServicePointController extends ApiController
 
         $this->auditLogService->record($request->user(), $point->business_id, 'service_point.created', $point);
 
-        return $this->success(new ServicePointResource($point), 'Service point created', 201);
+        return $this->success(new ServicePointResource($this->withOccupancy($point)), 'Service point created', 201);
     }
 
     public function show(Request $request, ServicePoint $servicePoint): JsonResponse
@@ -65,7 +72,7 @@ class ServicePointController extends ApiController
             return $this->error('Resource not found', 404);
         }
 
-        return $this->success(new ServicePointResource($servicePoint), 'Service point details');
+        return $this->success(new ServicePointResource($this->withOccupancy($servicePoint)), 'Service point details');
     }
 
     public function update(ServicePointRequest $request, ServicePoint $servicePoint): JsonResponse
@@ -77,7 +84,7 @@ class ServicePointController extends ApiController
         $servicePoint->update($request->validated());
         $this->auditLogService->record($request->user(), $servicePoint->business_id, 'service_point.updated', $servicePoint);
 
-        return $this->success(new ServicePointResource($servicePoint->fresh()), 'Service point updated');
+        return $this->success(new ServicePointResource($this->withOccupancy($servicePoint->fresh())), 'Service point updated');
     }
 
     public function destroy(Request $request, ServicePoint $servicePoint): JsonResponse
@@ -93,7 +100,7 @@ class ServicePointController extends ApiController
 
         $this->auditLogService->record($request->user(), $servicePoint->business_id, 'service_point.deactivated', $servicePoint);
 
-        return $this->success(new ServicePointResource($servicePoint->fresh()), 'Service point deactivated');
+        return $this->success(new ServicePointResource($this->withOccupancy($servicePoint->fresh())), 'Service point deactivated');
     }
 
     public function qr(Request $request, ServicePoint $servicePoint): JsonResponse
@@ -150,5 +157,35 @@ class ServicePointController extends ApiController
     private function scanUrl(ServicePoint $servicePoint): string
     {
         return ScanUrlService::forQr($servicePoint->qr_identifier);
+    }
+
+    private function withOccupancy(ServicePoint $servicePoint): ServicePoint
+    {
+        return $servicePoint
+            ->load(['activeOrders' => fn ($query) => $query->with('items')->latest()])
+            ->loadCount('activeOrders');
+    }
+
+    private function applyStatusFilter($query, string $status): void
+    {
+        $status = str_replace('_', '-', $status);
+
+        if ($status === 'occupied') {
+            $query->where(function ($query) {
+                $query->where('status', 'occupied')
+                    ->orWhereHas('activeOrders');
+            });
+
+            return;
+        }
+
+        if ($status === 'available') {
+            $query->where('status', 'available')
+                ->whereDoesntHave('activeOrders');
+
+            return;
+        }
+
+        $query->where('status', $status);
     }
 }
