@@ -234,16 +234,55 @@ class AuthController extends ApiController
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $this->mailSettingsService->apply();
-        Password::sendResetLink($request->validated());
+        $data = $request->validated();
+        $user = $this->activeUserByEmail($data['email']);
 
-        return $this->success(null, 'If the email exists, a password reset link has been sent.');
+        if (! $user) {
+            return $this->error('We could not find an active account with that email.', 422, [
+                'email' => ['We could not find an active account with that email.'],
+            ]);
+        }
+
+        if (! $this->mailSettingsService->apply()) {
+            return $this->error('SMTP settings are not enabled.', 422, [
+                'email' => ['Please enable SMTP settings before sending password reset email.'],
+            ]);
+        }
+
+        try {
+            $status = Password::sendResetLink(['email' => $user->email]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->error('Unable to send password reset email.', 502, [
+                'email' => ['Please check SMTP settings and try again.'],
+            ]);
+        }
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            return $this->error('Unable to send password reset email.', 422, [
+                'email' => [__($status)],
+            ]);
+        }
+
+        return $this->success([
+            'email' => $user->email,
+            'mail_sent' => true,
+        ], 'Password reset link sent to your email.');
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
+        $data = $request->validated();
+
+        if (! $this->activeUserByEmail($data['email'])) {
+            return $this->error('We could not find an active account with that email.', 422, [
+                'email' => ['We could not find an active account with that email.'],
+            ]);
+        }
+
         $status = Password::reset(
-            $request->validated(),
+            $data,
             function (User $user, string $password) {
                 $user->forceFill([
                     'password' => $password,
@@ -305,5 +344,12 @@ class AuthController extends ApiController
     private function emailOtpCacheKey(string $email): string
     {
         return 'auth:email-otp:'.sha1(Str::lower($email));
+    }
+
+    private function activeUserByEmail(string $email): ?User
+    {
+        return User::where('email', $email)
+            ->where('status', 'active')
+            ->first();
     }
 }

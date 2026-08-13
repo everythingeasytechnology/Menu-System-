@@ -6,9 +6,12 @@ use App\Mail\BusinessRegistrationSuccessMail;
 use App\Mail\EmailOtpMail;
 use App\Models\MailSetting;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 
 class AuthApiTest extends ApiTestCase
 {
@@ -226,6 +229,82 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.verified', true);
 
         $this->assertNull(Cache::get('auth:email-otp:'.sha1('verify-otp@example.com')));
+    }
+
+    public function test_forgot_password_api_sends_reset_link_for_active_mobile_user(): void
+    {
+        Notification::fake();
+        $this->enableSmtpSettings();
+
+        $staff = User::create([
+            'name' => 'Mobile Staff',
+            'email' => 'mobile-reset@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'active',
+        ]);
+
+        $this->postJson('/api/v1/auth/forgot-password', [
+            'email' => 'mobile-reset@example.com',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Password reset link sent to your email.')
+            ->assertJsonPath('data.email', 'mobile-reset@example.com')
+            ->assertJsonPath('data.mail_sent', true);
+
+        Notification::assertSentTo($staff, ResetPassword::class);
+    }
+
+    public function test_forgot_password_api_rejects_missing_or_inactive_email(): void
+    {
+        Notification::fake();
+        $this->enableSmtpSettings();
+
+        User::create([
+            'name' => 'Inactive Staff',
+            'email' => 'inactive-mobile-reset@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'inactive',
+        ]);
+
+        $this->postJson('/api/v1/auth/forgot-password', [
+            'email' => 'missing-mobile-reset@example.com',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'We could not find an active account with that email.');
+
+        $this->postJson('/api/v1/auth/forgot-password', [
+            'email' => 'inactive-mobile-reset@example.com',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'We could not find an active account with that email.');
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_reset_password_api_updates_password_from_reset_link_token(): void
+    {
+        $staff = User::create([
+            'name' => 'Reset Staff',
+            'email' => 'reset-token-mobile@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'active',
+        ]);
+
+        $token = Password::broker()->createToken($staff);
+
+        $this->postJson('/api/v1/auth/reset-password', [
+            'email' => 'reset-token-mobile@example.com',
+            'token' => $token,
+            'password' => 'new-password123',
+            'password_confirmation' => 'new-password123',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Password reset successfully');
+
+        $this->assertTrue(Hash::check('new-password123', $staff->fresh()->password));
     }
 
     public function test_auth_login_returns_token_for_active_staff(): void
