@@ -9,12 +9,11 @@ use App\Models\User;
 use App\Services\AuditLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class StaffController extends ApiController
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -39,12 +38,16 @@ class StaffController extends ApiController
     public function store(StaffRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $profileImagePath = $request->hasFile('profile_image')
+            ? $this->storeProfileImage($request)
+            : null;
 
         $staff = User::create([
             'business_id' => $this->businessId($request),
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
+            'profile_image_path' => $profileImagePath,
             'role' => $data['role'],
             'status' => $data['status'] ?? 'active',
             'password' => $data['password'],
@@ -77,6 +80,16 @@ class StaffController extends ApiController
 
         if (empty($data['password'])) {
             unset($data['password']);
+        }
+
+        unset($data['profile_image'], $data['remove_profile_image']);
+
+        if ($request->hasFile('profile_image')) {
+            $this->deleteProfileImage($staff);
+            $data['profile_image_path'] = $this->storeProfileImage($request);
+        } elseif ($request->boolean('remove_profile_image')) {
+            $this->deleteProfileImage($staff);
+            $data['profile_image_path'] = null;
         }
 
         $staff->update($data);
@@ -137,5 +150,17 @@ class StaffController extends ApiController
     {
         return $staff->business_id === $this->businessId($request)
             && $staff->role !== 'owner';
+    }
+
+    private function storeProfileImage(Request $request): string
+    {
+        return $request->file('profile_image')->store('profile-images', 'public');
+    }
+
+    private function deleteProfileImage(User $staff): void
+    {
+        if ($staff->profile_image_path) {
+            Storage::disk('public')->delete($staff->profile_image_path);
+        }
     }
 }

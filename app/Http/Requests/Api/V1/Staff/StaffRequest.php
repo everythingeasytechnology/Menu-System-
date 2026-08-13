@@ -29,6 +29,8 @@ class StaffRequest extends ApiFormRequest
             ])],
             'status' => ['sometimes', 'string', Rule::in(['active', 'inactive', 'suspended'])],
             'password' => [$this->isMethod('post') ? 'required' : 'nullable', 'string', 'min:8', 'confirmed'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'remove_profile_image' => ['sometimes', 'boolean'],
         ];
     }
 }

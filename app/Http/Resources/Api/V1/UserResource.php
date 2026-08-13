@@ -15,6 +15,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'profile_image_url' => $this->profile_image_path ? asset('storage/'.$this->profile_image_path) : null,
             'role' => $this->role,
             'status' => $this->status,
         ];

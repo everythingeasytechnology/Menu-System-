@@ -111,7 +111,14 @@
                         <!-- Name with Avatar -->
                         <td class="py-3.5 px-5">
                             <div class="flex items-center gap-2.5">
-                                <span class="text-xs font-bold w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#161615] flex items-center justify-center" x-text="staff.initials"></span>
+                                <span class="text-xs font-bold w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#161615] flex items-center justify-center overflow-hidden">
+                                    <template x-if="staff.profileImageUrl">
+                                        <img :src="staff.profileImageUrl" :alt="staff.name" class="h-full w-full object-cover">
+                                    </template>
+                                    <template x-if="!staff.profileImageUrl">
+                                        <span x-text="staff.initials"></span>
+                                    </template>
+                                </span>
                                 <span class="font-bold text-ink" x-text="staff.name"></span>
                             </div>
                         </td>
@@ -181,7 +188,7 @@
         style="display: none;"
     >
         <x-card
-            class="w-full max-w-md p-6 relative overflow-hidden"
+            class="w-full max-w-lg p-6 relative overflow-hidden"
             variant="default"
             @click.outside="isModalOpen = false"
         >
@@ -196,10 +203,52 @@
             </button>
 
             <h3 class="text-lg font-bold text-ink mb-2" x-text="editingStaff ? 'Edit Staff Profile' : 'Add New Staff Member'"></h3>
-            <p class="text-xs text-muted mb-6" x-text="editingStaff ? 'Update role, contact info, or credentials.' : 'Create a login for a manager, waiter, kitchen staff, or cashier.'"></p>
+            <p class="text-xs text-muted mb-6" x-text="editingStaff ? 'Update photo, role, contact info, or credentials.' : 'Create a login for a manager, waiter, kitchen staff, or cashier.'"></p>
 
             <div class="space-y-4">
                 <p x-show="formError" x-text="formError" class="text-xs font-semibold text-danger bg-danger/5 border border-danger/20 rounded-lg px-3 py-2"></p>
+
+                <div class="rounded-xl border border-border bg-card-tint p-4 flex items-center gap-4">
+                    <div class="h-16 w-16 rounded-xl border border-border bg-white dark:bg-[#161615] overflow-hidden flex items-center justify-center text-sm font-bold text-ink shrink-0">
+                        <template x-if="profileImagePreview()">
+                            <img :src="profileImagePreview()" alt="Profile preview" class="h-full w-full object-cover">
+                        </template>
+                        <template x-if="!profileImagePreview()">
+                            <span x-text="formInitials()"></span>
+                        </template>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <label class="block text-xs font-bold text-ink mb-1.5">Profile Image</label>
+                        <p class="text-[11px] text-muted">JPG, PNG, GIF, or WEBP up to 2MB.</p>
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <label class="inline-flex items-center gap-1.5 rounded-xl bg-orange hover:bg-orange/95 px-3 py-2 text-[11px] font-bold text-white shadow-md shadow-orange/15 transition-all cursor-pointer select-none">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                                </svg>
+                                <span x-text="profileImagePreview() ? 'Change Photo' : 'Upload Photo'"></span>
+                                <input
+                                    type="file"
+                                    class="hidden"
+                                    accept="image/*"
+                                    @click="$event.target.value = null"
+                                    @change="handleProfileImageChange($event)"
+                                >
+                            </label>
+                            <button
+                                type="button"
+                                x-show="profileImagePreview()"
+                                @click="removeProfileImage()"
+                                class="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-[11px] font-bold text-muted hover:text-danger hover:border-danger/30 transition-all cursor-pointer"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                                <span>Remove</span>
+                            </button>
+                        </div>
+                        <p x-show="profileImageName" x-text="profileImageName" class="mt-2 truncate text-[10px] font-semibold text-muted"></p>
+                    </div>
+                </div>
 
                 <div>
                     <label class="block text-xs font-bold text-ink mb-1.5">Staff Name *</label>
@@ -314,6 +363,9 @@
             editingStaff: null,
             formError: '',
             toast: '',
+            profileImageFile: null,
+            profileImageName: '',
+            profileImageObjectUrl: '',
             form: {
                 name: '',
                 role: 'waiter',
@@ -322,6 +374,8 @@
                 status: 'active',
                 password: '',
                 password_confirmation: '',
+                profileImageUrl: '',
+                remove_profile_image: false,
             },
 
             get filteredStaff() {
@@ -341,6 +395,7 @@
             openCreateModal() {
                 this.editingStaff = null;
                 this.formError = '';
+                this.resetProfileImageState();
                 this.form = {
                     name: '',
                     role: 'waiter',
@@ -349,6 +404,8 @@
                     status: 'active',
                     password: '',
                     password_confirmation: '',
+                    profileImageUrl: '',
+                    remove_profile_image: false,
                 };
                 this.isModalOpen = true;
             },
@@ -356,6 +413,7 @@
             openEditModal(staff) {
                 this.editingStaff = staff;
                 this.formError = '';
+                this.resetProfileImageState();
                 this.form = {
                     name: staff.name,
                     role: staff.role,
@@ -364,6 +422,8 @@
                     status: staff.status,
                     password: '',
                     password_confirmation: '',
+                    profileImageUrl: staff.profileImageUrl || '',
+                    remove_profile_image: false,
                 };
                 this.isModalOpen = true;
             },
@@ -371,6 +431,107 @@
             showToast(message) {
                 this.toast = message;
                 setTimeout(() => { this.toast = ''; }, 4000);
+            },
+
+            profileImagePreview() {
+                if (this.form.remove_profile_image) {
+                    return '';
+                }
+
+                return this.profileImageObjectUrl || this.form.profileImageUrl;
+            },
+
+            formInitials() {
+                return this.initialsFor(this.form.name);
+            },
+
+            initialsFor(name) {
+                const initials = (name || '')
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part.charAt(0))
+                    .join('')
+                    .toUpperCase();
+
+                return initials || 'S';
+            },
+
+            handleProfileImageChange(event) {
+                const file = event.target.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    this.formError = 'Please choose a valid image file.';
+                    return;
+                }
+
+                if (file.size > 2 * 1024 * 1024) {
+                    this.formError = 'Profile image must be 2MB or smaller.';
+                    return;
+                }
+
+                if (this.profileImageObjectUrl) {
+                    URL.revokeObjectURL(this.profileImageObjectUrl);
+                }
+
+                this.profileImageFile = file;
+                this.profileImageName = file.name;
+                this.profileImageObjectUrl = URL.createObjectURL(file);
+                this.form.remove_profile_image = false;
+                this.formError = '';
+            },
+
+            removeProfileImage() {
+                if (this.profileImageObjectUrl) {
+                    URL.revokeObjectURL(this.profileImageObjectUrl);
+                }
+
+                this.profileImageFile = null;
+                this.profileImageName = '';
+                this.profileImageObjectUrl = '';
+                this.form.profileImageUrl = '';
+                this.form.remove_profile_image = true;
+            },
+
+            resetProfileImageState() {
+                if (this.profileImageObjectUrl) {
+                    URL.revokeObjectURL(this.profileImageObjectUrl);
+                }
+
+                this.profileImageFile = null;
+                this.profileImageName = '';
+                this.profileImageObjectUrl = '';
+            },
+
+            buildStaffFormData() {
+                const formData = new FormData();
+
+                formData.append('name', this.form.name);
+                formData.append('role', this.form.role);
+                formData.append('phone', this.form.phone);
+                formData.append('email', this.form.email);
+                formData.append('status', this.form.status);
+                formData.append('password', this.form.password);
+                formData.append('password_confirmation', this.form.password_confirmation);
+
+                if (this.profileImageFile) {
+                    formData.append('profile_image', this.profileImageFile);
+                }
+
+                if (this.editingStaff) {
+                    formData.append('_method', 'PUT');
+
+                    if (this.form.remove_profile_image) {
+                        formData.append('remove_profile_image', '1');
+                    }
+                }
+
+                return formData;
             },
 
             async saveStaff() {
@@ -393,7 +554,7 @@
                 this.formError = '';
 
                 const url = this.editingStaff ? `/staff/${this.editingStaff.id}` : '/staff';
-                const method = this.editingStaff ? 'PUT' : 'POST';
+                const method = 'POST';
 
                 try {
                     const response = await fetch(url, {
@@ -401,10 +562,9 @@
                         credentials: 'same-origin',
                         headers: {
                             'Accept': 'application/json',
-                            'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': csrf,
                         },
-                        body: JSON.stringify(this.form),
+                        body: this.buildStaffFormData(),
                     });
 
                     const payload = await response.json();

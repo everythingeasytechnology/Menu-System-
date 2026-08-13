@@ -8,6 +8,7 @@ use App\Services\OwnerDashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -26,8 +27,7 @@ class StaffController extends Controller
     public function __construct(
         private readonly OwnerDashboardService $dashboardService,
         private readonly AuditLogService $auditLogService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -59,16 +59,22 @@ class StaffController extends Controller
                 'role' => ['required', 'string', Rule::in(array_keys(self::ROLES))],
                 'status' => ['sometimes', 'string', Rule::in(self::STATUSES)],
                 'password' => ['required', 'string', 'min:8', 'confirmed'],
+                'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             ]);
         } catch (ValidationException $exception) {
             return $this->validationError($exception);
         }
+
+        $profileImagePath = $request->hasFile('profile_image')
+            ? $this->storeProfileImage($request)
+            : null;
 
         $staff = User::create([
             'business_id' => $business->id,
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
+            'profile_image_path' => $profileImagePath,
             'role' => $data['role'],
             'status' => $data['status'] ?? 'active',
             'password' => Hash::make($data['password']),
@@ -99,15 +105,27 @@ class StaffController extends Controller
                 'role' => ['required', 'string', Rule::in(array_keys(self::ROLES))],
                 'status' => ['required', 'string', Rule::in(self::STATUSES)],
                 'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+                'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+                'remove_profile_image' => ['sometimes', 'boolean'],
             ]);
         } catch (ValidationException $exception) {
             return $this->validationError($exception);
         }
 
+        unset($data['profile_image'], $data['remove_profile_image']);
+
         if (empty($data['password'])) {
             unset($data['password']);
         } else {
             $data['password'] = Hash::make($data['password']);
+        }
+
+        if ($request->hasFile('profile_image')) {
+            $this->deleteProfileImage($staff);
+            $data['profile_image_path'] = $this->storeProfileImage($request);
+        } elseif ($request->boolean('remove_profile_image')) {
+            $this->deleteProfileImage($staff);
+            $data['profile_image_path'] = null;
         }
 
         $staff->update($data);
@@ -162,7 +180,20 @@ class StaffController extends Controller
             'status' => $user->status,
             'statusLabel' => ucfirst($user->status),
             'initials' => $this->initials($user->name),
+            'profileImageUrl' => $user->profile_image_path ? asset('storage/'.$user->profile_image_path) : null,
         ];
+    }
+
+    private function storeProfileImage(Request $request): string
+    {
+        return $request->file('profile_image')->store('profile-images', 'public');
+    }
+
+    private function deleteProfileImage(User $staff): void
+    {
+        if ($staff->profile_image_path) {
+            Storage::disk('public')->delete($staff->profile_image_path);
+        }
     }
 
     private function initials(string $name): string
