@@ -60,7 +60,7 @@
             <!-- Dynamic Categories Tabs -->
             <div class="flex items-center gap-1 bg-card-tint border border-border p-1 rounded-xl w-full lg:w-auto overflow-x-auto scrollbar-none">
                 <button 
-                    @click="selectedCategory = 'all'"
+                    @click="selectCategory('all')"
                     :class="selectedCategory === 'all' ? 'bg-white text-ink shadow-sm font-bold border border-border/30' : 'text-muted hover:text-ink font-semibold'"
                     class="rounded-lg px-4 py-2 text-xs transition-all cursor-pointer whitespace-nowrap"
                 >
@@ -68,7 +68,7 @@
                 </button>
                 <template x-for="cat in categories" :key="cat">
                     <button 
-                        @click="selectedCategory = cat"
+                        @click="selectCategory(cat)"
                         :class="selectedCategory === cat ? 'bg-white text-ink shadow-sm font-bold border border-border/30' : 'text-muted hover:text-ink font-semibold'"
                         class="rounded-lg px-4 py-2 text-xs transition-all cursor-pointer whitespace-nowrap"
                         x-text="cat"
@@ -81,12 +81,19 @@
                 <input 
                     type="text" 
                     x-model="searchQuery"
+                    @input="scheduleItemsFetch()"
                     placeholder="Search menu items..."
                     class="w-full rounded-xl border border-border bg-card-tint py-2.5 pl-9 pr-3 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
                 >
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg class="h-4 w-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <div x-show="isLoadingItems" class="absolute inset-y-0 right-0 flex items-center pr-3 text-orange" style="display: none;">
+                    <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                     </svg>
                 </div>
             </div>
@@ -97,10 +104,6 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
         <template x-for="item in items" :key="item.id">
             <div 
-                x-show="
-                    (selectedCategory === 'all' || item.category === selectedCategory) &&
-                    (searchQuery === '' || item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                "
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
@@ -202,6 +205,9 @@
             </div>
         </template>
     </div>
+    <div x-show="!isLoadingItems && items.length === 0" class="rounded-card border border-dashed border-border bg-card-tint px-5 py-10 text-center text-xs font-bold text-muted" style="display: none;">
+        No menu items found.
+    </div>
 
     <!-- Add Menu Item Modal (React Native Parity) -->
     <div 
@@ -249,7 +255,7 @@
                             type="text" 
                             name="name" 
                             x-model="newName"
-                            @input="if (!isEditing) { presetSearchQuery = newName; searchPresets(); }"
+                            @input.debounce.300ms="if (!isEditing) { presetSearchQuery = newName; searchPresets(); }"
                             required
                             placeholder="e.g. Matar Paneer"
                             class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-4 text-xs text-ink placeholder-muted focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
@@ -523,6 +529,9 @@ function menuManager(config) {
         selectedCategory: 'all',
         items: config.initialItems,
         categories: config.categories,
+        isLoadingItems: false,
+        searchDebounceTimer: null,
+        itemsFetchController: null,
         modalOpen: false,
         isEditing: false,
         editingId: null,
@@ -542,6 +551,67 @@ function menuManager(config) {
         removeImageFlag: '0',
         currentImagePath: '',
         presetImages: [],
+
+        selectCategory(category) {
+            if (this.selectedCategory === category) {
+                return;
+            }
+
+            this.selectedCategory = category;
+            this.fetchItems();
+        },
+
+        scheduleItemsFetch() {
+            clearTimeout(this.searchDebounceTimer);
+            this.searchDebounceTimer = setTimeout(() => this.fetchItems(), 350);
+        },
+
+        async fetchItems() {
+            if (this.itemsFetchController) {
+                this.itemsFetchController.abort();
+            }
+
+            const controller = new AbortController();
+            this.itemsFetchController = controller;
+            this.isLoadingItems = true;
+
+            const params = new URLSearchParams();
+            const search = this.searchQuery.trim();
+
+            if (search !== '') {
+                params.set('search', search);
+            }
+
+            if (this.selectedCategory !== 'all') {
+                params.set('category', this.selectedCategory);
+            }
+
+            try {
+                const queryString = params.toString();
+                const response = await fetch(`/menu/items${queryString ? '?' + queryString : ''}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unable to load menu items.');
+                }
+
+                const payload = await response.json();
+                this.items = payload.items || [];
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error('Failed to load menu items', e);
+                }
+            } finally {
+                if (this.itemsFetchController === controller) {
+                    this.isLoadingItems = false;
+                    this.itemsFetchController = null;
+                }
+            }
+        },
 
         async searchPresets() {
             if (this.presetSearchQuery.trim() === '') {

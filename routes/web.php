@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Auth\BusinessOwnerLoginController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\MenuController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderOperationsController;
 use App\Http\Controllers\ServicePointController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [BusinessOwnerLoginController::class, 'create'])->name('login');
@@ -60,6 +60,7 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
 
     // Management
     Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
+    Route::get('/menu/items', [MenuController::class, 'items'])->name('menu.items');
     Route::get('/preset-images', [MenuController::class, 'presetImages'])->name('menu.preset-images');
     Route::post('/menu', [MenuController::class, 'store'])->name('menu.store');
     Route::put('/menu/{id}', [MenuController::class, 'update'])->name('menu.update');

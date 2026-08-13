@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
+    private const ITEM_RESULT_LIMIT = 80;
+
     public function __construct(
         private readonly MenuImageService $menuImageService,
         private readonly OwnerDashboardService $dashboardService,
@@ -22,21 +24,9 @@ class MenuController extends Controller
     public function index(Request $request)
     {
         $business = $this->dashboardService->businessFor($request->user());
-        $query = MenuItem::with(['variants', 'presetImage'])
-            ->where('business_id', $business->id);
-
-        // Apply Search Filter
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where('name', 'like', '%'.$search.'%');
-        }
-
-        // Apply Category Filter
-        if ($request->filled('category') && $request->input('category') !== 'all') {
-            $query->where('category', $request->input('category'));
-        }
-
-        $items = $query->get();
+        $items = $this->menuItemsQuery($request, $business->id)
+            ->limit(self::ITEM_RESULT_LIMIT)
+            ->get();
 
         // Retrieve all active categories from the categories table
         $categories = MenuCategory::where('business_id', $business->id)
@@ -47,6 +37,24 @@ class MenuController extends Controller
             ->toArray();
 
         return view('menu', compact('items', 'categories'));
+    }
+
+    public function items(Request $request)
+    {
+        $business = $this->dashboardService->businessFor($request->user());
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $items = $this->menuItemsQuery($request, $business->id)
+            ->limit(self::ITEM_RESULT_LIMIT)
+            ->get();
+
+        return response()->json([
+            'items' => $items,
+            'limit' => self::ITEM_RESULT_LIMIT,
+        ]);
     }
 
     /**
@@ -188,5 +196,22 @@ class MenuController extends Controller
         $presets = $query->take(15)->get();
 
         return response()->json($presets);
+    }
+
+    private function menuItemsQuery(Request $request, int $businessId)
+    {
+        return MenuItem::with(['variants', 'presetImage'])
+            ->where('business_id', $businessId)
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('category', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($request->filled('category') && $request->input('category') !== 'all', function ($query) use ($request) {
+                $query->where('category', $request->input('category'));
+            })
+            ->orderBy('name');
     }
 }

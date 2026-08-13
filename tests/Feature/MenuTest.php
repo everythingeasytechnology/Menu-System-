@@ -85,6 +85,47 @@ class MenuTest extends TestCase
         $response->assertDontSee('Other Business Burger');
     }
 
+    public function test_menu_items_feed_is_debounced_search_source_and_business_scoped(): void
+    {
+        $otherBusiness = Business::create([
+            'name' => 'Other Search Restaurant',
+            'type' => 'restaurant',
+            'status' => 'active',
+        ]);
+
+        MenuItem::create([
+            'business_id' => $this->business->id,
+            'name' => 'Paneer Roll',
+            'category' => 'Snacks',
+            'type' => 'veg',
+            'stock' => true,
+        ]);
+
+        MenuItem::create([
+            'business_id' => $this->business->id,
+            'name' => 'Masala Dosa',
+            'category' => 'South Indian',
+            'type' => 'veg',
+            'stock' => true,
+        ]);
+
+        MenuItem::create([
+            'business_id' => $otherBusiness->id,
+            'name' => 'Paneer From Other Business',
+            'category' => 'Snacks',
+            'type' => 'veg',
+            'stock' => true,
+        ]);
+
+        $response = $this->getJson('/menu/items?search=paneer');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.name', 'Paneer Roll')
+            ->assertJsonMissing(['name' => 'Paneer From Other Business'])
+            ->assertJsonPath('limit', 80);
+    }
+
     /**
      * Test adding a menu item with variants.
      */
