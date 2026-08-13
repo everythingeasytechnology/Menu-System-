@@ -278,7 +278,8 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('Mail Settings')
             ->assertSee('SMTP Details')
             ->assertSee('Send Test')
-            ->assertSee('Use only the mail server name');
+            ->assertSee('Use only the mail server name')
+            ->assertSee('info@everythingeasy.in');
 
         $this->post(route('admin.mail-settings.update'), [
             'enabled' => '1',

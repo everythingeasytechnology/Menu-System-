@@ -128,7 +128,7 @@
 
                 <label class="mt-4 block">
                     <span class="text-[10px] font-black uppercase tracking-wider text-muted">Test Email</span>
-                    <input type="email" name="test_email" value="{{ old('test_email', auth()->user()?->email) }}" class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-ink outline-none focus:border-orange">
+                    <input type="email" name="test_email" value="{{ old('test_email', 'info@everythingeasy.in') }}" class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-ink outline-none focus:border-orange">
                 </label>
 
                 <button type="submit" class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg bg-navy px-4 text-xs font-black text-white transition hover:bg-navy/90">
