@@ -133,6 +133,20 @@
                     <p x-show="!adminSidebarCompact" class="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Platform</p>
                     <div class="mt-2 space-y-1">
                         <a
+                            href="{{ route('admin.profile.edit') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.profile.*'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.profile.*'),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M4 21a8 8 0 0 1 16 0" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span x-show="!adminSidebarCompact" x-transition class="truncate">Admin Profile</span>
+                        </a>
+                        <a
                             href="{{ route('admin.mail-settings.edit') }}"
                             @class([
                                 'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
@@ -226,6 +240,9 @@
                     </div>
 
                     <div class="hidden min-w-0 items-center gap-3 md:flex">
+                        @if(auth()->user()?->profile_image_path)
+                            <img src="{{ asset('storage/'.auth()->user()->profile_image_path) }}" alt="{{ auth()->user()?->name ?? 'Super Admin' }}" class="h-10 w-10 rounded-lg border border-border object-cover">
+                        @endif
                         <div class="min-w-0 text-right">
                             <p class="truncate text-xs font-black text-ink">{{ auth()->user()?->name ?? 'Super Admin' }}</p>
                             <p class="truncate text-[11px] font-semibold text-muted">{{ auth()->user()?->email }}</p>

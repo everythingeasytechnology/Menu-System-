@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Auth\BusinessOwnerLoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -30,6 +31,9 @@ Route::prefix('admin')
     ->middleware(['auth', 'super.admin'])
     ->group(function () {
         Route::get('/', [SuperAdminController::class, 'index'])->name('dashboard');
+        Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
         Route::get('/businesses', [SuperAdminController::class, 'businesses'])->name('businesses.index');
         Route::get('/businesses/create', [SuperAdminController::class, 'createBusiness'])->name('businesses.create');
         Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');

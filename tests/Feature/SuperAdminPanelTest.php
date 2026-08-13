@@ -8,6 +8,8 @@ use App\Models\PresetFoodImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SuperAdminPanelTest extends TestCase
@@ -319,6 +321,50 @@ class SuperAdminPanelTest extends TestCase
 
         $this->assertSame('smtp.gmail.com', $setting->host);
         $this->assertSame('smtp-secret', $setting->password);
+    }
+
+    public function test_superadmin_can_update_own_profile_and_password(): void
+    {
+        Storage::fake('public');
+
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'profile-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->get(route('admin.profile.edit'))
+            ->assertOk()
+            ->assertSee('Admin Profile')
+            ->assertSee('Profile Details')
+            ->assertSee('Password');
+
+        $this->put(route('admin.profile.update'), [
+            'name' => 'Updated Super Admin',
+            'email' => 'updated-super@example.com',
+            'phone' => '+919999999999',
+            'profile_image' => UploadedFile::fake()->image('admin-logo.png', 300, 300),
+        ])->assertRedirect(route('admin.profile.edit'));
+
+        $superadmin->refresh();
+
+        $this->assertSame('Updated Super Admin', $superadmin->name);
+        $this->assertSame('updated-super@example.com', $superadmin->email);
+        $this->assertSame('+919999999999', $superadmin->phone);
+        $this->assertNotNull($superadmin->profile_image_path);
+        Storage::disk('public')->assertExists($superadmin->profile_image_path);
+
+        $this->put(route('admin.profile.password'), [
+            'current_password' => 'password123',
+            'password' => 'new-password123',
+            'password_confirmation' => 'new-password123',
+        ])->assertRedirect(route('admin.profile.edit'));
+
+        $this->assertTrue(Hash::check('new-password123', $superadmin->fresh()->password));
     }
 
     public function test_smtp_host_cannot_be_an_email_address(): void
