@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BusinessController;
 use App\Http\Controllers\Api\V1\CouponController;
@@ -31,6 +32,7 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/token-status', [AuthController::class, 'tokenStatus']);
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('app-version', [AppVersionController::class, 'show']);
 
     Route::get('public/menu/{qr}', [PublicMenuController::class, 'menu']);
     Route::get('public/menu/{qr}/items/{menuItem}', [PublicMenuController::class, 'item']);
@@ -43,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/change-password', [AuthController::class, 'changePassword']);
         Route::put('auth/profile', [AuthController::class, 'updateProfile']);
+        Route::match(['post', 'put', 'patch'], 'app-version', [AppVersionController::class, 'update']);
 
         Route::get('business', [BusinessController::class, 'show']);
         Route::put('business', [BusinessController::class, 'update']);
