@@ -156,10 +156,14 @@ Body:
 - `PUT /business` - update profile.
 - `GET /business/settings` - settings/payment flags without secrets.
 - `GET /business/status` - current business status.
+- `GET /business-owner/profile` - owner, business, settings, and payment profile.
+- `POST /business-owner/profile` - multipart/form-data owner/business profile update with image uploads.
 
 Update body supports `name`, `type`, `gst_number`, `phone`, `email`, `address`, `city`, `state`, `country`, `opening_time`, `closing_time`, `timezone`, and `status`.
 
 Authorization rule: business is inferred from authenticated user. Users cannot request another business by ID.
+
+Business owner profile update uses multipart/form-data. Supported fields include `owner_name`, `owner_email`, `owner_phone`, `profile_image`, `remove_profile_image`, `business_name`, `business_type`, `business_email`, `business_phone`, `gst_number`, `shop_no`, `address`, `city`, `state`, `district`, `country`, `pincode`, `opening_time`, `closing_time`, `timezone`, `logo`, and `remove_logo`.
 
 ## Staff
 

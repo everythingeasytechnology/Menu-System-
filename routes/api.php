@@ -43,6 +43,8 @@ Route::prefix('v1')->group(function () {
         Route::put('business/settings', [BusinessController::class, 'updateSettings']);
         Route::patch('business/settings', [BusinessController::class, 'updateSettings']);
         Route::get('business/status', [BusinessController::class, 'status']);
+        Route::get('business-owner/profile', [BusinessController::class, 'ownerProfile']);
+        Route::post('business-owner/profile', [BusinessController::class, 'updateOwnerProfile']);
 
         Route::get('staff/roles', [StaffController::class, 'roles']);
         Route::post('staff/{staff}/status', [StaffController::class, 'updateStatus']);

@@ -21,6 +21,7 @@ class BusinessResource extends JsonResource
             'state' => $this->state,
             'country' => $this->country,
             'logo_path' => $this->logo_path,
+            'logo_url' => $this->logo_path ? asset('storage/'.$this->logo_path) : null,
             'opening_time' => $this->opening_time,
             'closing_time' => $this->closing_time,
             'timezone' => $this->timezone,

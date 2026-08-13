@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Requests\Api\V1\Business\UpdateBusinessOwnerProfileRequest;
 use App\Http\Requests\Api\V1\Business\UpdateBusinessRequest;
 use App\Http\Requests\Api\V1\Business\UpdateBusinessSettingsRequest;
 use App\Http\Resources\Api\V1\BusinessResource;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Models\BusinessSetting;
 use App\Models\CashSetting;
 use App\Models\RazorpaySetting;
@@ -16,9 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 class BusinessController extends ApiController
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     public function show(Request $request): JsonResponse
     {
@@ -225,5 +225,163 @@ class BusinessController extends ApiController
             'status' => $business->status,
             'timezone' => $business->timezone,
         ], 'Business status');
+    }
+
+    public function ownerProfile(Request $request): JsonResponse
+    {
+        if (! $this->canManageOwnerProfile($request)) {
+            return $this->error('Only business owners can access this profile.', 403);
+        }
+
+        $business = $this->business($request);
+
+        if (! $business) {
+            return $this->error('Business profile not found', 404);
+        }
+
+        return $this->success($this->ownerProfilePayload($request, $business), 'Business owner profile');
+    }
+
+    public function updateOwnerProfile(UpdateBusinessOwnerProfileRequest $request): JsonResponse
+    {
+        if (! $this->canManageOwnerProfile($request)) {
+            return $this->error('Only business owners can update this profile.', 403);
+        }
+
+        $business = $this->business($request);
+
+        if (! $business) {
+            return $this->error('Business profile not found', 404);
+        }
+
+        $data = $request->validated();
+        $user = $request->user();
+
+        $ownerData = [];
+        if (array_key_exists('owner_name', $data) || array_key_exists('name', $data)) {
+            $ownerData['name'] = $data['owner_name'] ?? $data['name'];
+        }
+        if (array_key_exists('owner_email', $data) || array_key_exists('email', $data)) {
+            $ownerData['email'] = $data['owner_email'] ?? $data['email'];
+        }
+        if (array_key_exists('owner_phone', $data) || array_key_exists('phone', $data)) {
+            $ownerData['phone'] = $data['owner_phone'] ?? $data['phone'];
+        }
+
+        if ($request->hasFile('profile_image')) {
+            $this->deletePublicFile($user->profile_image_path);
+            $ownerData['profile_image_path'] = $request->file('profile_image')->store('profile-images', 'public');
+        } elseif ($request->boolean('remove_profile_image')) {
+            $this->deletePublicFile($user->profile_image_path);
+            $ownerData['profile_image_path'] = null;
+        }
+
+        if ($ownerData !== []) {
+            $user->update($ownerData);
+        }
+
+        $businessData = [];
+        if (array_key_exists('business_name', $data) || array_key_exists('brand_name', $data)) {
+            $businessData['name'] = $data['business_name'] ?? $data['brand_name'];
+        }
+        if (array_key_exists('business_type', $data) || array_key_exists('type', $data)) {
+            $businessData['type'] = $data['business_type'] ?? $data['type'];
+        }
+        if (array_key_exists('business_email', $data)) {
+            $businessData['email'] = $data['business_email'];
+        }
+        if (array_key_exists('business_phone', $data)) {
+            $businessData['phone'] = $data['business_phone'];
+        }
+        if (array_key_exists('gst_number', $data) || array_key_exists('gst_no', $data)) {
+            $businessData['gst_number'] = $data['gst_number'] ?? $data['gst_no'];
+        }
+
+        foreach (['address', 'city', 'state', 'country', 'opening_time', 'closing_time', 'timezone'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $businessData[$field] = $data[$field];
+            }
+        }
+
+        $businessSetting = BusinessSetting::firstOrCreate(['business_id' => $business->id]);
+
+        if ($request->hasFile('logo')) {
+            $this->deletePublicFile($business->logo_path);
+            if ($businessSetting->logo_path !== $business->logo_path) {
+                $this->deletePublicFile($businessSetting->logo_path);
+            }
+
+            $businessData['logo_path'] = $request->file('logo')->store('logos', 'public');
+        } elseif ($request->boolean('remove_logo')) {
+            $this->deletePublicFile($business->logo_path);
+            if ($businessSetting->logo_path !== $business->logo_path) {
+                $this->deletePublicFile($businessSetting->logo_path);
+            }
+
+            $businessData['logo_path'] = null;
+        }
+
+        if ($businessData !== []) {
+            $business->update($businessData);
+        }
+
+        $settingsData = $this->businessSettingsDataFromProfile($data, $business->fresh());
+        if (array_key_exists('logo_path', $businessData)) {
+            $settingsData['logo_path'] = $businessData['logo_path'];
+        }
+
+        if ($settingsData !== []) {
+            $businessSetting->update($settingsData);
+        }
+
+        $this->auditLogService->record($user->fresh(), $business->id, 'business.owner_profile.updated', $business->fresh());
+
+        return $this->success($this->ownerProfilePayload($request, $business->fresh()), 'Business owner profile updated');
+    }
+
+    private function canManageOwnerProfile(Request $request): bool
+    {
+        return in_array($request->user()?->role, ['owner', 'admin'], true);
+    }
+
+    private function ownerProfilePayload(Request $request, $business): array
+    {
+        return [
+            'owner' => new UserResource($request->user()->fresh()),
+            ...$this->settingsPayload($business),
+        ];
+    }
+
+    private function businessSettingsDataFromProfile(array $data, $business): array
+    {
+        $settingsData = [];
+
+        if (array_key_exists('business_name', $data) || array_key_exists('brand_name', $data)) {
+            $settingsData['brand_name'] = $data['business_name'] ?? $data['brand_name'];
+        }
+        if (array_key_exists('business_email', $data)) {
+            $settingsData['business_email'] = $data['business_email'];
+        }
+        if (array_key_exists('shop_no', $data)) {
+            $settingsData['shop_no'] = $data['shop_no'];
+        }
+        if (array_key_exists('gst_number', $data) || array_key_exists('gst_no', $data)) {
+            $settingsData['gst_no'] = $data['gst_number'] ?? $data['gst_no'];
+        }
+
+        foreach (['address', 'country', 'state', 'district', 'pincode', 'latitude', 'longitude'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $settingsData[$field] = $data[$field];
+            }
+        }
+
+        return $settingsData;
+    }
+
+    private function deletePublicFile(?string $path): void
+    {
+        if ($path) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }
