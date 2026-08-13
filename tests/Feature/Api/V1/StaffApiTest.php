@@ -59,6 +59,13 @@ class StaffApiTest extends ApiTestCase
             ->assertJsonPath('data.status', 'suspended');
 
         $this->withHeaders($this->authHeaders($owner))
+            ->patchJson('/api/v1/staff/'.$staffId.'/status', [
+                'status' => 'active',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'active');
+
+        $this->withHeaders($this->authHeaders($owner))
             ->deleteJson('/api/v1/staff/'.$staffId)
             ->assertOk()
             ->assertJsonPath('message', 'Staff member deactivated')
