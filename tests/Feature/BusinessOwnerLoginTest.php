@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\MailSetting;
 use App\Models\User;
+use App\Services\MailBrandingService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -154,6 +155,35 @@ class BusinessOwnerLoginTest extends TestCase
             ->assertSessionHas('status', 'Password updated. You can sign in now.');
 
         $this->assertTrue(Hash::check('new-password123', $user->fresh()->password));
+    }
+
+    public function test_password_reset_email_uses_product_branding(): void
+    {
+        User::create([
+            'name' => 'Super Admin',
+            'email' => 'brand-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+            'profile_image_path' => 'profile-images/product-logo.png',
+        ]);
+
+        $user = User::create([
+            'name' => 'Owner',
+            'email' => 'brand-owner@example.com',
+            'password' => 'password123',
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+
+        app(MailBrandingService::class)->apply();
+
+        $html = (string) (new ResetPassword('reset-token'))->toMail($user)->render();
+
+        $this->assertStringContainsString(asset('storage/profile-images/product-logo.png'), $html);
+        $this->assertStringContainsString('EverythingEasy', $html);
+        $this->assertStringNotContainsString('Laravel Logo', $html);
+        $this->assertStringNotContainsString('laravel.com/img/notification-logo', $html);
     }
 
     private function enableSmtpSettings(): void

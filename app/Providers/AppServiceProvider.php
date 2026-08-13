@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\MailBrandingService;
 use App\Services\MailSettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         app(MailSettingsService::class)->apply();
+        app(MailBrandingService::class)->apply();
 
         RateLimiter::for('api', function (Request $request) {
             $key = optional($request->user())->id ?: $request->ip();
