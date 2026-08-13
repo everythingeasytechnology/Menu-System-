@@ -34,6 +34,9 @@ Route::prefix('admin')
         Route::post('/menu-images', [SuperAdminController::class, 'storeMenuImage'])->name('menu-images.store');
         Route::put('/menu-images/{presetFoodImage}', [SuperAdminController::class, 'updateMenuImage'])->name('menu-images.update');
         Route::delete('/menu-images/{presetFoodImage}', [SuperAdminController::class, 'destroyMenuImage'])->name('menu-images.destroy');
+        Route::get('/mail-settings', [SuperAdminController::class, 'mailSettings'])->name('mail-settings.edit');
+        Route::post('/mail-settings', [SuperAdminController::class, 'updateMailSettings'])->name('mail-settings.update');
+        Route::post('/mail-settings/test', [SuperAdminController::class, 'testMailSettings'])->name('mail-settings.test');
     });
 
 Route::middleware(['auth', 'business.owner'])->group(function () {

@@ -10,20 +10,28 @@ use App\Http\Requests\Api\V1\Auth\ResetPasswordRequest;
 use App\Http\Requests\Api\V1\Auth\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\BusinessResource;
 use App\Http\Resources\Api\V1\UserResource;
+use App\Mail\BusinessRegistrationSuccessMail;
+use App\Mail\EmailOtpMail;
 use App\Models\Business;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\MailSettingsService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Throwable;
 
 class AuthController extends ApiController
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly MailSettingsService $mailSettingsService,
+    ) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -56,6 +64,8 @@ class AuthController extends ApiController
         });
 
         [$user, $business, $token] = $result;
+
+        $this->sendMailIfEnabled(fn () => Mail::to($user->email)->send(new BusinessRegistrationSuccessMail($user, $business)));
 
         return $this->success([
             'token_type' => 'Bearer',
@@ -125,11 +135,15 @@ class AuthController extends ApiController
             'email' => ['required', 'email', 'max:255'],
         ]);
 
+        $otp = '1234';
+        $mailSent = $this->sendMailIfEnabled(fn () => Mail::to($data['email'])->send(new EmailOtpMail($otp)));
+
         return $this->success([
             'email' => $data['email'],
-            'otp' => '1234',
+            'otp' => $otp,
             'expires_in_seconds' => 300,
             'mode' => 'dummy',
+            'mail_sent' => $mailSent,
         ], 'Email OTP generated');
     }
 
@@ -151,6 +165,7 @@ class AuthController extends ApiController
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
+        $this->mailSettingsService->apply();
         Password::sendResetLink($request->validated());
 
         return $this->success(null, 'If the email exists, a password reset link has been sent.');
@@ -199,5 +214,22 @@ class AuthController extends ApiController
         $request->user()->update($request->validated());
 
         return $this->success(new UserResource($request->user()->fresh()), 'Profile updated successfully');
+    }
+
+    private function sendMailIfEnabled(callable $callback): bool
+    {
+        if (! $this->mailSettingsService->apply()) {
+            return false;
+        }
+
+        try {
+            $callback();
+
+            return true;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return false;
+        }
     }
 }

@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Mail\BusinessRegistrationSuccessMail;
+use App\Mail\EmailOtpMail;
+use App\Models\MailSetting;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 class AuthApiTest extends ApiTestCase
 {
@@ -24,6 +28,27 @@ class AuthApiTest extends ApiTestCase
 
         $this->assertDatabaseHas('businesses', ['name' => 'Everything Easy Cafe']);
         $this->assertDatabaseHas('users', ['email' => 'akhil@example.com', 'role' => 'owner']);
+    }
+
+    public function test_register_sends_success_email_when_smtp_is_enabled(): void
+    {
+        Mail::fake();
+        $this->enableSmtpSettings();
+
+        $this->postJson('/api/v1/auth/register', [
+            'name' => 'Mail Owner',
+            'email' => 'mail-owner@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'business_name' => 'Mail Cafe',
+            'business_type' => 'restaurant',
+        ])->assertCreated()
+            ->assertJsonPath('data.business.name', 'Mail Cafe');
+
+        Mail::assertSent(BusinessRegistrationSuccessMail::class, function (BusinessRegistrationSuccessMail $mail) {
+            return $mail->hasTo('mail-owner@example.com')
+                && $mail->business->name === 'Mail Cafe';
+        });
     }
 
     public function test_login_returns_token_and_me_requires_authentication(): void
@@ -104,6 +129,24 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.mode', 'dummy');
     }
 
+    public function test_email_otp_sends_mail_when_smtp_is_enabled(): void
+    {
+        Mail::fake();
+        $this->enableSmtpSettings();
+
+        $this->postJson('/api/v1/auth/email-otp', [
+            'email' => 'otp-mail@example.com',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.otp', '1234')
+            ->assertJsonPath('data.mail_sent', true);
+
+        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) {
+            return $mail->hasTo('otp-mail@example.com')
+                && $mail->otp === '1234';
+        });
+    }
+
     public function test_auth_login_returns_token_for_active_staff(): void
     {
         [$business] = $this->createBusinessUser('staff-login-owner@example.com');
@@ -158,5 +201,21 @@ class AuthApiTest extends ApiTestCase
             ->assertUnprocessable()
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Invalid credentials');
+    }
+
+    private function enableSmtpSettings(): void
+    {
+        MailSetting::create([
+            'enabled' => true,
+            'mailer' => 'smtp',
+            'host' => 'smtp.example.com',
+            'port' => 587,
+            'encryption' => 'tls',
+            'username' => 'smtp-user',
+            'password' => 'smtp-secret',
+            'from_address' => 'noreply@example.com',
+            'from_name' => 'EverythingEasy',
+            'timeout' => 30,
+        ]);
     }
 }

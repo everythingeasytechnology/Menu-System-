@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\MailSetting;
 use App\Models\PresetFoodImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,7 +36,8 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('Orders and Sales')
             ->assertSee('View Businesses')
             ->assertSee('Create Business')
-            ->assertSee('Menu Images');
+            ->assertSee('Menu Images')
+            ->assertSee('Mail Settings');
     }
 
     public function test_owner_cannot_open_superadmin_section(): void
@@ -257,5 +259,63 @@ class SuperAdminPanelTest extends TestCase
         $this->assertDatabaseMissing('preset_food_images', [
             'id' => $image->id,
         ]);
+    }
+
+    public function test_superadmin_can_manage_smtp_settings(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'smtp-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->get(route('admin.mail-settings.edit'))
+            ->assertOk()
+            ->assertSee('Mail Settings')
+            ->assertSee('SMTP Details')
+            ->assertSee('Send Test');
+
+        $this->post(route('admin.mail-settings.update'), [
+            'enabled' => '1',
+            'host' => 'smtp.mailtrap.io',
+            'port' => 587,
+            'encryption' => 'tls',
+            'username' => 'smtp-user',
+            'password' => 'smtp-secret',
+            'from_address' => 'noreply@example.com',
+            'from_name' => 'EverythingEasy',
+            'timeout' => 45,
+        ])->assertRedirect(route('admin.mail-settings.edit'));
+
+        $setting = MailSetting::query()->firstOrFail();
+
+        $this->assertTrue($setting->enabled);
+        $this->assertSame('smtp.mailtrap.io', $setting->host);
+        $this->assertSame(587, $setting->port);
+        $this->assertSame('smtp-secret', $setting->password);
+        $this->assertNotSame('smtp-secret', $setting->getRawOriginal('password'));
+        $this->assertSame('smtp.mailtrap.io', config('mail.mailers.smtp.host'));
+        $this->assertSame('noreply@example.com', config('mail.from.address'));
+
+        $this->post(route('admin.mail-settings.update'), [
+            'enabled' => '1',
+            'host' => 'smtp.gmail.com',
+            'port' => 465,
+            'encryption' => 'ssl',
+            'username' => 'gmail-user',
+            'password' => '',
+            'from_address' => 'hello@example.com',
+            'from_name' => 'ServiceOS',
+            'timeout' => 30,
+        ])->assertRedirect(route('admin.mail-settings.edit'));
+
+        $setting->refresh();
+
+        $this->assertSame('smtp.gmail.com', $setting->host);
+        $this->assertSame('smtp-secret', $setting->password);
     }
 }

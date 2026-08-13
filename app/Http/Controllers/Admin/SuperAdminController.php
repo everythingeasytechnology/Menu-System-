@@ -3,24 +3,30 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BusinessRegistrationSuccessMail;
 use App\Models\Business;
 use App\Models\BusinessSetting;
+use App\Models\MailSetting;
 use App\Models\Order;
 use App\Models\PresetFoodImage;
 use App\Models\User;
+use App\Services\MailSettingsService;
 use App\Services\MenuImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class SuperAdminController extends Controller
 {
-    public function __construct(private readonly MenuImageService $menuImageService)
-    {
-    }
+    public function __construct(
+        private readonly MenuImageService $menuImageService,
+        private readonly MailSettingsService $mailSettingsService,
+    ) {}
 
     public const BUSINESS_STATUSES = [
         'active' => 'Active',
@@ -107,7 +113,7 @@ class SuperAdminController extends Controller
             'owner_password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        DB::transaction(function () use ($data) {
+        [$owner, $business] = DB::transaction(function () use ($data) {
             $owner = User::create([
                 'name' => $data['owner_name'],
                 'email' => $data['owner_email'],
@@ -144,7 +150,11 @@ class SuperAdminController extends Controller
                     'sgst' => 2.5,
                 ],
             );
+
+            return [$owner->fresh(), $business->fresh()];
         });
+
+        $this->sendMailIfEnabled(fn () => Mail::to($owner->email)->send(new BusinessRegistrationSuccessMail($owner, $business)));
 
         return redirect()
             ->route('admin.businesses.index')
@@ -273,6 +283,100 @@ class SuperAdminController extends Controller
             ->with('success', 'Menu image deleted.');
     }
 
+    public function mailSettings()
+    {
+        return view('admin.mail-settings.edit', [
+            'setting' => MailSetting::query()->first(),
+            'encryptions' => [
+                'none' => 'None',
+                'tls' => 'TLS',
+                'ssl' => 'SSL',
+            ],
+        ]);
+    }
+
+    public function updateMailSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'host' => ['required_if:enabled,1', 'nullable', 'string', 'max:255'],
+            'port' => ['required_if:enabled,1', 'nullable', 'integer', 'min:1', 'max:65535'],
+            'encryption' => ['nullable', 'string', Rule::in(['none', 'tls', 'ssl'])],
+            'username' => ['nullable', 'string', 'max:255'],
+            'password' => ['nullable', 'string', 'max:1000'],
+            'from_address' => ['required_if:enabled,1', 'nullable', 'email', 'max:255'],
+            'from_name' => ['required_if:enabled,1', 'nullable', 'string', 'max:255'],
+            'timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
+        ]);
+
+        $setting = MailSetting::query()->firstOrNew([]);
+        $payload = [
+            'enabled' => (bool) $data['enabled'],
+            'mailer' => 'smtp',
+            'host' => $data['host'] ?? null,
+            'port' => $data['port'] ?? null,
+            'encryption' => ($data['encryption'] ?? 'none') === 'none' ? null : $data['encryption'],
+            'username' => $data['username'] ?? null,
+            'from_address' => $data['from_address'] ?? null,
+            'from_name' => $data['from_name'] ?? null,
+            'timeout' => $data['timeout'] ?? 30,
+        ];
+
+        if (filled($data['password'] ?? null)) {
+            $payload['password'] = $data['password'];
+        }
+
+        $setting->fill($payload)->save();
+        $this->mailSettingsService->apply($setting);
+
+        return redirect()
+            ->route('admin.mail-settings.edit')
+            ->with('success', 'SMTP settings updated.');
+    }
+
+    public function testMailSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'test_email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $setting = MailSetting::query()->first();
+
+        if (! $setting || ! $setting->enabled) {
+            return redirect()
+                ->route('admin.mail-settings.edit')
+                ->with('error', 'Enable and save SMTP settings before sending a test email.');
+        }
+
+        try {
+            $this->mailSettingsService->apply($setting);
+
+            Mail::raw('This is a test email from EverythingEasy ServiceOS SMTP settings.', function ($message) use ($data) {
+                $message->to($data['test_email'])->subject('SMTP test email');
+            });
+
+            $setting->forceFill([
+                'last_tested_at' => now(),
+                'last_test_status' => 'success',
+                'last_test_message' => 'Test email sent to '.$data['test_email'],
+            ])->save();
+
+            return redirect()
+                ->route('admin.mail-settings.edit')
+                ->with('success', 'Test email sent successfully.');
+        } catch (Throwable $exception) {
+            $setting->forceFill([
+                'last_tested_at' => now(),
+                'last_test_status' => 'failed',
+                'last_test_message' => $exception->getMessage(),
+            ])->save();
+
+            return redirect()
+                ->route('admin.mail-settings.edit')
+                ->with('error', 'Test email failed: '.$exception->getMessage());
+        }
+    }
+
     private function stats(): array
     {
         return [
@@ -357,5 +461,22 @@ class SuperAdminController extends Controller
         }
 
         Storage::disk('public')->delete(substr($imagePath, strlen('storage/')));
+    }
+
+    private function sendMailIfEnabled(callable $callback): bool
+    {
+        if (! $this->mailSettingsService->apply()) {
+            return false;
+        }
+
+        try {
+            $callback();
+
+            return true;
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return false;
+        }
     }
 }

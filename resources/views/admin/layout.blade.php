@@ -132,12 +132,25 @@
                 <div>
                     <p x-show="!adminSidebarCompact" class="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Platform</p>
                     <div class="mt-2 space-y-1">
+                        <a
+                            href="{{ route('admin.mail-settings.edit') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.mail-settings.*'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.mail-settings.*'),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                                <path d="M4 6h16v12H4V6Z" stroke-linejoin="round" />
+                                <path d="m4 7 8 6 8-6" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span x-show="!adminSidebarCompact" x-transition class="truncate">Mail Settings</span>
+                        </a>
                         @php
                             $futureNav = [
                                 ['label' => 'Subscriptions', 'icon' => 'card'],
                                 ['label' => 'Billing', 'icon' => 'receipt'],
                                 ['label' => 'Reports', 'icon' => 'chart'],
-                                ['label' => 'Settings', 'icon' => 'settings'],
                             ];
                         @endphp
 
