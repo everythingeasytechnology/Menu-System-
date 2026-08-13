@@ -12,9 +12,9 @@
         <div class="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
             <div class="flex flex-col gap-4 border-b border-border bg-card-tint p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex min-w-0 items-center gap-4">
-                    <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                    <div class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-white p-1 shadow-sm">
                         @if($admin->profile_image_path)
-                            <img src="{{ asset('storage/'.$admin->profile_image_path) }}" alt="{{ $admin->name }}" class="h-full w-full object-cover">
+                            <img src="{{ asset('storage/'.$admin->profile_image_path) }}" alt="{{ $admin->name }}" class="max-h-full max-w-full object-contain">
                         @else
                             <span class="text-2xl font-black text-orange">{{ str($admin->name)->substr(0, 1)->upper() }}</span>
                         @endif
@@ -61,12 +61,12 @@
                     <p class="mt-0.5 text-xs font-semibold text-muted">This image becomes the product logo in platform emails.</p>
                 </div>
 
-                <div class="grid gap-5 p-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-                    <div class="rounded-lg border border-border bg-card-tint p-3">
+                <div class="flex flex-col gap-5 p-4 lg:flex-row">
+                    <div class="w-full rounded-lg border border-border bg-card-tint p-3 lg:w-60 lg:shrink-0">
                         <span class="text-[10px] font-black uppercase tracking-wider text-muted">Brand Logo</span>
-                        <div class="mt-3 grid aspect-square w-full place-items-center overflow-hidden rounded-lg border border-border bg-card">
+                        <div class="mt-3 grid h-40 w-40 max-w-full place-items-center overflow-hidden rounded-lg border border-border bg-white p-2 shadow-sm">
                             @if($admin->profile_image_path)
-                                <img src="{{ asset('storage/'.$admin->profile_image_path) }}" alt="{{ $admin->name }}" class="h-full w-full object-cover">
+                                <img src="{{ asset('storage/'.$admin->profile_image_path) }}" alt="{{ $admin->name }}" class="max-h-full max-w-full object-contain">
                             @else
                                 <span class="text-5xl font-black text-orange">{{ str($admin->name)->substr(0, 1)->upper() }}</span>
                             @endif
