@@ -71,6 +71,30 @@ Body:
 
 Returns bearer token, user, and business for active owner or staff accounts. Use `data.user.role` to identify permissions such as `owner`, `manager`, `waiter`, `kitchen_staff`, or `cashier`.
 
+### Availability Checks
+
+`POST /auth/check-email`
+
+Auth required: No
+
+```json
+{
+  "email": "owner@example.com"
+}
+```
+
+`POST /auth/check-phone`
+
+Auth required: No
+
+```json
+{
+  "phone": "+919999999999"
+}
+```
+
+Both endpoints return `data.exists` and `data.available` for step forms.
+
 ### Logout
 
 `POST /auth/logout`

@@ -23,9 +23,7 @@ use Illuminate\Support\Str;
 
 class AuthController extends ApiController
 {
-    public function __construct(private readonly AuditLogService $auditLogService)
-    {
-    }
+    public function __construct(private readonly AuditLogService $auditLogService) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -87,6 +85,38 @@ class AuthController extends ApiController
             'user' => new UserResource($user->load('business')),
             'business' => $user->business ? new BusinessResource($user->business) : null,
         ], 'Logged in successfully');
+    }
+
+    public function checkEmail(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $exists = User::where('email', $data['email'])->exists();
+
+        return $this->success([
+            'field' => 'email',
+            'value' => $data['email'],
+            'exists' => $exists,
+            'available' => ! $exists,
+        ], $exists ? 'Email already exists' : 'Email is available');
+    }
+
+    public function checkPhone(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string', 'max:30'],
+        ]);
+
+        $exists = User::where('phone', $data['phone'])->exists();
+
+        return $this->success([
+            'field' => 'phone',
+            'value' => $data['phone'],
+            'exists' => $exists,
+            'available' => ! $exists,
+        ], $exists ? 'Phone number already exists' : 'Phone number is available');
     }
 
     public function logout(Request $request): JsonResponse

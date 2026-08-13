@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api\V1;
 
-use App\Models\Business;
 use App\Models\User;
 
 class AuthApiTest extends ApiTestCase
@@ -45,6 +44,51 @@ class AuthApiTest extends ApiTestCase
             ->getJson('/api/v1/auth/me')
             ->assertOk()
             ->assertJsonPath('data.user.id', $user->id);
+    }
+
+    public function test_can_check_email_availability_for_step_form(): void
+    {
+        $this->createBusinessUser('taken@example.com');
+
+        $this->postJson('/api/v1/auth/check-email', [
+            'email' => 'taken@example.com',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Email already exists')
+            ->assertJsonPath('data.field', 'email')
+            ->assertJsonPath('data.exists', true)
+            ->assertJsonPath('data.available', false);
+
+        $this->postJson('/api/v1/auth/check-email', [
+            'email' => 'available@example.com',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Email is available')
+            ->assertJsonPath('data.exists', false)
+            ->assertJsonPath('data.available', true);
+    }
+
+    public function test_can_check_phone_availability_for_step_form(): void
+    {
+        [, $user] = $this->createBusinessUser('phone-check@example.com');
+        $user->update(['phone' => '+919999999999']);
+
+        $this->postJson('/api/v1/auth/check-phone', [
+            'phone' => '+919999999999',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Phone number already exists')
+            ->assertJsonPath('data.field', 'phone')
+            ->assertJsonPath('data.exists', true)
+            ->assertJsonPath('data.available', false);
+
+        $this->postJson('/api/v1/auth/check-phone', [
+            'phone' => '+918888888888',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Phone number is available')
+            ->assertJsonPath('data.exists', false)
+            ->assertJsonPath('data.available', true);
     }
 
     public function test_auth_login_returns_token_for_active_staff(): void
