@@ -358,9 +358,32 @@ class AuthApiTest extends ApiTestCase
             'email' => 'inactive-staff-login@example.com',
             'password' => 'password123',
         ])
-            ->assertUnprocessable()
+            ->assertForbidden()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Invalid credentials');
+            ->assertJsonPath('message', 'Your account is inactive.')
+            ->assertJsonPath('errors.account_status.0', 'inactive');
+    }
+
+    public function test_auth_login_rejects_suspended_staff_with_status_message(): void
+    {
+        [$business] = $this->createBusinessUser('suspended-staff-owner@example.com');
+        User::create([
+            'business_id' => $business->id,
+            'name' => 'Suspended Waiter',
+            'email' => 'suspended-staff-login@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'suspended',
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'suspended-staff-login@example.com',
+            'password' => 'password123',
+        ])
+            ->assertForbidden()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Your account has been suspended by admin.')
+            ->assertJsonPath('errors.account_status.0', 'suspended');
     }
 
     private function enableSmtpSettings(): void

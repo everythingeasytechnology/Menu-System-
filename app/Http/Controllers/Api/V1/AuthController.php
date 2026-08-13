@@ -82,9 +82,27 @@ class AuthController extends ApiController
         $data = $request->validated();
         $user = User::where('email', $data['email'])->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password) || $user->status !== 'active') {
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
             return $this->error('Invalid credentials', 422, [
                 'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if ($user->status === 'suspended') {
+            return $this->error('Your account has been suspended by admin.', 403, [
+                'account_status' => ['suspended'],
+            ]);
+        }
+
+        if ($user->status === 'inactive') {
+            return $this->error('Your account is inactive.', 403, [
+                'account_status' => ['inactive'],
+            ]);
+        }
+
+        if ($user->status !== 'active') {
+            return $this->error('Your account is not active.', 403, [
+                'account_status' => [$user->status],
             ]);
         }
 
