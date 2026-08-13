@@ -119,11 +119,11 @@
             <div class="w-full max-w-sm space-y-4">
                 <!-- Branding Header -->
                 <div class="text-center space-y-2">
-                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-orange text-white shadow-lg shadow-orange/30">
-                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                    </div>
+                    <x-super-admin-logo
+                        image-box-class="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white p-1 shadow-lg shadow-orange/30"
+                        fallback-box-class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange text-white shadow-lg shadow-orange/30"
+                        icon-class="h-7 w-7"
+                    />
                     <div>
                         <h2 class="text-xl font-bold tracking-tight text-white leading-tight">Authorize Display Kiosk</h2>
                         <p class="text-[10px] text-slate-400 mt-0.5">Connect this terminal screen to your EverythingEasy ServiceOS business branch.</p>
@@ -187,11 +187,11 @@
                 <!-- Header (Dark Theme) -->
                 <header class="flex items-center justify-between border-b border-navy/40 pb-3.5 shrink-0">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
+                        <x-super-admin-logo
+                            image-box-class="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 shadow-lg shadow-orange/30"
+                            fallback-box-class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30"
+                            icon-class="h-5 w-5"
+                        />
                         <div>
                             <h1 class="text-base font-bold tracking-tight text-white leading-tight">EverythingEasy ServiceOS</h1>
                             <span class="inline-flex items-center gap-1 text-[9px] text-teal font-semibold mt-0.5">

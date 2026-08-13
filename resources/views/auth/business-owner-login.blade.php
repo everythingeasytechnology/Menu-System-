@@ -17,11 +17,11 @@
             <div class="relative z-10 flex min-h-screen w-full flex-col justify-between p-10 xl:p-14">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
+                        <x-super-admin-logo
+                            image-box-class="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 shadow-lg shadow-orange/30"
+                            fallback-box-class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-lg shadow-orange/30"
+                            icon-class="h-6 w-6"
+                        />
                         <div>
                             <p class="text-lg font-black leading-tight">EverythingEasy</p>
                             <p class="text-[11px] font-bold uppercase tracking-wider text-orange">ServiceOS</p>
@@ -106,11 +106,11 @@
             <div class="w-full max-w-md">
                 <div class="mb-8 flex items-center justify-between lg:hidden">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange text-white shadow-md shadow-orange/20">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
+                        <x-super-admin-logo
+                            image-box-class="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-1 shadow-md shadow-orange/20"
+                            fallback-box-class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange text-white shadow-md shadow-orange/20"
+                            icon-class="h-6 w-6"
+                        />
                         <div>
                             <p class="text-base font-black leading-tight">EverythingEasy</p>
                             <p class="text-[10px] font-bold uppercase tracking-wider text-orange">ServiceOS</p>
