@@ -15,10 +15,6 @@ class AppVersionController extends ApiController
 
     public function update(Request $request): JsonResponse
     {
-        if ($request->user()?->role !== 'superadmin') {
-            return $this->error('Only superadmin can update app version.', 403);
-        }
-
         $data = $request->validate([
             'version' => ['required', 'string', 'max:50'],
         ]);
