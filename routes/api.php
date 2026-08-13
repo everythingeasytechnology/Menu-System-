@@ -33,7 +33,6 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('auth/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('app-version', [AppVersionController::class, 'show']);
-    Route::match(['post', 'put', 'patch'], 'app-version', [AppVersionController::class, 'update']);
 
     Route::get('public/menu/{qr}', [PublicMenuController::class, 'menu']);
     Route::get('public/menu/{qr}/items/{menuItem}', [PublicMenuController::class, 'item']);

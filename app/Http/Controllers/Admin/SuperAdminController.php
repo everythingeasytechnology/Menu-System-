@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\BusinessRegistrationSuccessMail;
+use App\Models\AppVersion;
 use App\Models\Business;
 use App\Models\BusinessSetting;
 use App\Models\MailSetting;
@@ -410,6 +411,28 @@ class SuperAdminController extends Controller
                 ->route('admin.mail-settings.edit')
                 ->with('error', 'Test email failed: '.$exception->getMessage());
         }
+    }
+
+    public function appVersion()
+    {
+        return view('admin.app-version.edit', [
+            'appVersion' => AppVersion::current(),
+        ]);
+    }
+
+    public function updateAppVersion(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'version' => ['required', 'string', 'max:50'],
+        ]);
+
+        AppVersion::current()->update([
+            'version' => $data['version'],
+        ]);
+
+        return redirect()
+            ->route('admin.app-version.edit')
+            ->with('success', 'App version updated.');
     }
 
     private function stats(): array

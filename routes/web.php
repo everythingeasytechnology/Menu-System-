@@ -47,6 +47,8 @@ Route::prefix('admin')
         Route::get('/mail-settings', [SuperAdminController::class, 'mailSettings'])->name('mail-settings.edit');
         Route::post('/mail-settings', [SuperAdminController::class, 'updateMailSettings'])->name('mail-settings.update');
         Route::post('/mail-settings/test', [SuperAdminController::class, 'testMailSettings'])->name('mail-settings.test');
+        Route::get('/app-version', [SuperAdminController::class, 'appVersion'])->name('app-version.edit');
+        Route::post('/app-version', [SuperAdminController::class, 'updateAppVersion'])->name('app-version.update');
     });
 
 Route::middleware(['auth', 'business.owner'])->group(function () {

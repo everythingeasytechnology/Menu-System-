@@ -12,17 +12,15 @@ class AppVersionApiTest extends ApiTestCase
             ->assertJsonPath('data.version', '1.0.0');
     }
 
-    public function test_app_version_can_be_updated_without_token(): void
+    public function test_app_version_api_does_not_update_version(): void
     {
         $this->postJson('/api/v1/app-version', [
             'version' => '1.2.0',
         ])
-            ->assertOk()
-            ->assertJsonPath('message', 'App version updated')
-            ->assertJsonPath('data.version', '1.2.0');
+            ->assertMethodNotAllowed();
 
         $this->getJson('/api/v1/app-version')
             ->assertOk()
-            ->assertJsonPath('data.version', '1.2.0');
+            ->assertJsonPath('data.version', '1.0.0');
     }
 }

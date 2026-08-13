@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AppVersion;
 use App\Models\Business;
 use App\Models\BusinessSetting;
 use App\Models\MailSetting;
@@ -40,7 +41,8 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('View Businesses')
             ->assertSee('Create Business')
             ->assertSee('Menu Images')
-            ->assertSee('Mail Settings');
+            ->assertSee('Mail Settings')
+            ->assertSee('App Version');
     }
 
     public function test_owner_cannot_open_superadmin_section(): void
@@ -416,6 +418,31 @@ class SuperAdminPanelTest extends TestCase
 
         $this->assertSame('smtp.gmail.com', $setting->host);
         $this->assertSame('smtp-secret', $setting->password);
+    }
+
+    public function test_superadmin_can_manage_app_version(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'version-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->get(route('admin.app-version.edit'))
+            ->assertOk()
+            ->assertSee('App Version')
+            ->assertSee('Version Details')
+            ->assertSee('1.0.0');
+
+        $this->post(route('admin.app-version.update'), [
+            'version' => '1.2.3',
+        ])->assertRedirect(route('admin.app-version.edit'));
+
+        $this->assertSame('1.2.3', AppVersion::current()->version);
     }
 
     public function test_superadmin_can_update_own_profile_and_password(): void

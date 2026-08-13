@@ -160,6 +160,20 @@
                             </svg>
                             <span x-show="!adminSidebarCompact" x-transition class="truncate">Mail Settings</span>
                         </a>
+                        <a
+                            href="{{ route('admin.app-version.edit') }}"
+                            @class([
+                                'group flex h-11 items-center gap-3 rounded-lg px-3 text-sm transition',
+                                'bg-orange font-black text-white shadow-lg shadow-orange/20' => request()->routeIs('admin.app-version.*'),
+                                'font-bold text-white/75 hover:bg-white/10 hover:text-white' => ! request()->routeIs('admin.app-version.*'),
+                            ])
+                        >
+                            <svg class="h-5 w-5 shrink-0 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                                <path d="M7 7h10M7 12h10M7 17h6" stroke-linecap="round" />
+                                <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-linejoin="round" />
+                            </svg>
+                            <span x-show="!adminSidebarCompact" x-transition class="truncate">App Version</span>
+                        </a>
                         @php
                             $futureNav = [
                                 ['label' => 'Subscriptions', 'icon' => 'card'],

@@ -1,13 +1,17 @@
 <?php
 
+use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\EnsureBusinessOwner;
+use App\Http\Middleware\EnsureSuperAdmin;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -19,9 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'api.token' => \App\Http\Middleware\AuthenticateApiToken::class,
-            'business.owner' => \App\Http\Middleware\EnsureBusinessOwner::class,
-            'super.admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'api.token' => AuthenticateApiToken::class,
+            'business.owner' => EnsureBusinessOwner::class,
+            'super.admin' => EnsureSuperAdmin::class,
         ]);
 
         $middleware->throttleApi();
@@ -85,6 +89,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 'success' => false,
                 'message' => 'Resource not found',
             ], 404);
+        });
+
+        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Method not allowed',
+            ], 405);
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
