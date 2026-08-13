@@ -44,10 +44,10 @@ class ServicePointApiTest extends ApiTestCase
 
         $download = $this->get($response->json('data.scanner_download_url'))
             ->assertOk()
-            ->assertHeader('Content-Type', 'image/svg+xml')
-            ->assertSee('<svg', false);
+            ->assertHeader('Content-Type', 'image/png');
 
-        $this->assertStringContainsString('scanner.svg', $download->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith("\x89PNG\r\n\x1A\n", $download->getContent());
+        $this->assertStringContainsString('scanner.png', $download->headers->get('Content-Disposition'));
     }
 
     public function test_service_point_scan_url_can_point_to_react_customer_menu(): void

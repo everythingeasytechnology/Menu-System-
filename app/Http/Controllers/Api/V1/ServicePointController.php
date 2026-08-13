@@ -117,11 +117,11 @@ class ServicePointController extends ApiController
 
     public function downloadScanner(Request $request, ServicePoint $servicePoint): Response
     {
-        $svg = $this->qrCodeService->svg($this->scanUrl($servicePoint));
-        $filename = Str::slug($servicePoint->code.'-'.$servicePoint->name).'-scanner.svg';
+        $png = $this->qrCodeService->png($this->scanUrl($servicePoint));
+        $filename = Str::slug($servicePoint->code.'-'.$servicePoint->name).'-scanner.png';
 
-        return response($svg, 200, [
-            'Content-Type' => 'image/svg+xml',
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'Cache-Control' => 'private, max-age=3600',
         ]);

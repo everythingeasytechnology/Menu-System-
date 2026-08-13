@@ -2,13 +2,32 @@
 
 namespace App\Services;
 
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Writer\SvgWriter;
 use Throwable;
 
 class QrCodeService
 {
+    public function png(string $data): string
+    {
+        if (class_exists(Builder::class) && class_exists(PngWriter::class)) {
+            return $this->pngWithEndroid($data);
+        }
+
+        throw new \RuntimeException('PNG QR generation is not available.');
+    }
+
     public function svg(string $data): string
     {
-        if (class_exists(\Endroid\QrCode\Builder\Builder::class)) {
+        if (class_exists(Builder::class)) {
             try {
                 return $this->svgWithEndroid($data);
             } catch (Throwable) {
@@ -16,7 +35,7 @@ class QrCodeService
             }
         }
 
-        if (class_exists(\BaconQrCode\Writer::class)) {
+        if (class_exists(Writer::class)) {
             try {
                 return $this->svgWithBacon($data);
             } catch (Throwable) {
@@ -29,17 +48,32 @@ class QrCodeService
 
     private function svgWithEndroid(string $data): string
     {
-        $result = (new \Endroid\QrCode\Builder\Builder(
-            writer: new \Endroid\QrCode\Writer\SvgWriter(),
+        $result = (new Builder(
+            writer: new SvgWriter,
             writerOptions: [
-                \Endroid\QrCode\Writer\SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => false,
+                SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => false,
             ],
             data: $data,
-            encoding: new \Endroid\QrCode\Encoding\Encoding('UTF-8'),
-            errorCorrectionLevel: \Endroid\QrCode\ErrorCorrectionLevel::High,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: 512,
             margin: 24,
-            roundBlockSizeMode: \Endroid\QrCode\RoundBlockSizeMode::Margin,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
+        ))->build();
+
+        return $result->getString();
+    }
+
+    private function pngWithEndroid(string $data): string
+    {
+        $result = (new Builder(
+            writer: new PngWriter,
+            data: $data,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 512,
+            margin: 24,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
         ))->build();
 
         return $result->getString();
@@ -47,12 +81,12 @@ class QrCodeService
 
     private function svgWithBacon(string $data): string
     {
-        $renderer = new \BaconQrCode\Renderer\ImageRenderer(
-            new \BaconQrCode\Renderer\RendererStyle\RendererStyle(512, 3),
-            new \BaconQrCode\Renderer\Image\SvgImageBackEnd(),
+        $renderer = new ImageRenderer(
+            new RendererStyle(512, 3),
+            new SvgImageBackEnd,
         );
 
-        $writer = new \BaconQrCode\Writer($renderer);
+        $writer = new Writer($renderer);
 
         return $writer->writeString($data, 'UTF-8', \BaconQrCode\Common\ErrorCorrectionLevel::H());
     }
