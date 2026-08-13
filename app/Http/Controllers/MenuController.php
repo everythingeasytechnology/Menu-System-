@@ -2,27 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MenuCategory;
 use App\Models\MenuItem;
+use App\Models\PresetFoodImage;
 use App\Services\MenuImageService;
+use App\Services\OwnerDashboardService;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
-    public function __construct(private readonly MenuImageService $menuImageService)
-    {
-    }
+    public function __construct(
+        private readonly MenuImageService $menuImageService,
+        private readonly OwnerDashboardService $dashboardService,
+    ) {}
 
     /**
      * Display a listing of the menu items with filters.
      */
     public function index(Request $request)
     {
-        $query = MenuItem::with(['variants', 'presetImage']);
+        $business = $this->dashboardService->businessFor($request->user());
+        $query = MenuItem::with(['variants', 'presetImage'])
+            ->where('business_id', $business->id);
 
         // Apply Search Filter
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where('name', 'like', '%' . $search . '%');
+            $query->where('name', 'like', '%'.$search.'%');
         }
 
         // Apply Category Filter
@@ -33,7 +39,12 @@ class MenuController extends Controller
         $items = $query->get();
 
         // Retrieve all active categories from the categories table
-        $categories = \App\Models\MenuCategory::where('active', true)->pluck('name')->toArray();
+        $categories = MenuCategory::where('business_id', $business->id)
+            ->where('active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->toArray();
 
         return view('menu', compact('items', 'categories'));
     }
@@ -43,6 +54,7 @@ class MenuController extends Controller
      */
     public function store(Request $request)
     {
+        $business = $this->dashboardService->businessFor($request->user());
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'required|string|max:255',
@@ -62,6 +74,7 @@ class MenuController extends Controller
         );
 
         $menuItem = MenuItem::create([
+            'business_id' => $business->id,
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
@@ -85,6 +98,7 @@ class MenuController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $business = $this->dashboardService->businessFor($request->user());
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'required|string|max:255',
@@ -98,7 +112,7 @@ class MenuController extends Controller
             'variants.*.price' => 'required|numeric|min:0',
         ]);
 
-        $menuItem = MenuItem::findOrFail($id);
+        $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
 
         $presetImageId = $this->menuImageService->resolvePresetImageId(
             $request,
@@ -131,10 +145,11 @@ class MenuController extends Controller
     /**
      * Toggle the stock availability status of a menu item.
      */
-    public function toggleStock($id)
+    public function toggleStock(Request $request, $id)
     {
-        $menuItem = MenuItem::findOrFail($id);
-        $menuItem->stock = !$menuItem->stock;
+        $business = $this->dashboardService->businessFor($request->user());
+        $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
+        $menuItem->stock = ! $menuItem->stock;
         $menuItem->save();
 
         return response()->json([
@@ -146,9 +161,10 @@ class MenuController extends Controller
     /**
      * Remove the specified menu item from the catalog.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $menuItem = MenuItem::findOrFail($id);
+        $business = $this->dashboardService->businessFor($request->user());
+        $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
         $menuItem->delete();
 
         return response()->json([
@@ -161,12 +177,12 @@ class MenuController extends Controller
      */
     public function presetImages(Request $request)
     {
-        $query = \App\Models\PresetFoodImage::query();
+        $query = PresetFoodImage::query();
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('tags', 'like', '%' . $search . '%');
+            $query->where('name', 'like', '%'.$search.'%')
+                ->orWhere('tags', 'like', '%'.$search.'%');
         }
 
         $presets = $query->take(15)->get();

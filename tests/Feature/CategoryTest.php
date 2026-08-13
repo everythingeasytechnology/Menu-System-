@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Business;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,11 +12,20 @@ class CategoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Business $business;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->signInBusinessOwner('category-owner@example.com');
+        $owner = $this->signInBusinessOwner('category-owner@example.com');
+        $this->business = Business::create([
+            'owner_user_id' => $owner->id,
+            'name' => 'Category Restaurant',
+            'type' => 'restaurant',
+            'status' => 'active',
+        ]);
+        $owner->update(['business_id' => $this->business->id]);
     }
 
     /**
@@ -24,6 +34,7 @@ class CategoryTest extends TestCase
     public function test_categories_index_loads_categories(): void
     {
         $cat = MenuCategory::create([
+            'business_id' => $this->business->id,
             'name' => 'Italian Specials',
             'code' => 'ITA',
             'active' => true,
@@ -49,6 +60,7 @@ class CategoryTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('menu_categories', [
+            'business_id' => $this->business->id,
             'name' => 'Soups',
             'code' => 'SOU',
             'active' => true,
@@ -61,12 +73,14 @@ class CategoryTest extends TestCase
     public function test_can_update_category_and_rename_associated_items(): void
     {
         $cat = MenuCategory::create([
+            'business_id' => $this->business->id,
             'name' => 'old_name',
             'code' => 'OLD',
             'active' => true,
         ]);
 
         $item = MenuItem::create([
+            'business_id' => $this->business->id,
             'name' => 'Tomato Soup',
             'category' => 'old_name',
             'type' => 'veg',
@@ -81,7 +95,7 @@ class CategoryTest extends TestCase
         $response = $this->put("/categories/{$cat->id}", $updateData);
 
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('menu_categories', [
             'id' => $cat->id,
             'name' => 'new_name',
@@ -98,6 +112,7 @@ class CategoryTest extends TestCase
     public function test_can_toggle_category_active(): void
     {
         $cat = MenuCategory::create([
+            'business_id' => $this->business->id,
             'name' => 'Desserts',
             'code' => 'DES',
             'active' => true,
@@ -118,6 +133,7 @@ class CategoryTest extends TestCase
     public function test_can_delete_category(): void
     {
         $cat = MenuCategory::create([
+            'business_id' => $this->business->id,
             'name' => 'Sides',
             'code' => 'SDE',
             'active' => true,

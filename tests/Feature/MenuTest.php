@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Business;
 use App\Models\MenuItem;
-use App\Models\MenuItemVariant;
+use App\Models\PresetFoodImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,11 +12,20 @@ class MenuTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Business $business;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->signInBusinessOwner('menu-owner@example.com');
+        $owner = $this->signInBusinessOwner('menu-owner@example.com');
+        $this->business = Business::create([
+            'owner_user_id' => $owner->id,
+            'name' => 'Current Restaurant',
+            'type' => 'restaurant',
+            'status' => 'active',
+        ]);
+        $owner->update(['business_id' => $this->business->id]);
     }
 
     /**
@@ -24,6 +34,7 @@ class MenuTest extends TestCase
     public function test_menu_index_loads_items(): void
     {
         $item = MenuItem::create([
+            'business_id' => $this->business->id,
             'name' => 'Paneer Tikka',
             'category' => 'Starters',
             'type' => 'veg',
@@ -33,7 +44,7 @@ class MenuTest extends TestCase
 
         $item->variants()->create([
             'label' => 'Single Portion',
-            'price' => 180.00
+            'price' => 180.00,
         ]);
 
         $response = $this->get('/menu');
@@ -43,12 +54,43 @@ class MenuTest extends TestCase
         $response->assertSee('Single Portion');
     }
 
+    public function test_menu_index_only_loads_items_for_current_business(): void
+    {
+        $otherBusiness = Business::create([
+            'name' => 'Other Restaurant',
+            'type' => 'restaurant',
+            'status' => 'active',
+        ]);
+
+        MenuItem::create([
+            'business_id' => $this->business->id,
+            'name' => 'Current Business Noodles',
+            'category' => 'Mains',
+            'type' => 'veg',
+            'stock' => true,
+        ]);
+
+        MenuItem::create([
+            'business_id' => $otherBusiness->id,
+            'name' => 'Other Business Burger',
+            'category' => 'Mains',
+            'type' => 'non-veg',
+            'stock' => true,
+        ]);
+
+        $response = $this->get('/menu');
+
+        $response->assertOk();
+        $response->assertSee('Current Business Noodles');
+        $response->assertDontSee('Other Business Burger');
+    }
+
     /**
      * Test adding a menu item with variants.
      */
     public function test_can_add_menu_item_with_variants(): void
     {
-        $preset = \App\Models\PresetFoodImage::create([
+        $preset = PresetFoodImage::create([
             'name' => 'Steak',
             'tags' => 'steak',
             'image_path' => 'images/defaults/steak.jpg',
@@ -62,14 +104,15 @@ class MenuTest extends TestCase
             'preset_image_id' => $preset->id,
             'variants' => [
                 ['label' => 'Half Portion', 'price' => '200.00'],
-                ['label' => 'Full Portion', 'price' => '380.00']
-            ]
+                ['label' => 'Full Portion', 'price' => '380.00'],
+            ],
         ];
 
         $response = $this->post('/menu', $data);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('menu_items', [
+            'business_id' => $this->business->id,
             'name' => 'Chicken Tikka',
             'type' => 'non-veg',
             'preset_food_image_id' => $preset->id,
@@ -80,7 +123,7 @@ class MenuTest extends TestCase
         $this->assertDatabaseHas('menu_item_variants', [
             'menu_item_id' => $item->id,
             'label' => 'Half Portion',
-            'price' => 200.00
+            'price' => 200.00,
         ]);
     }
 
@@ -90,6 +133,7 @@ class MenuTest extends TestCase
     public function test_can_toggle_menu_item_stock(): void
     {
         $item = MenuItem::create([
+            'business_id' => $this->business->id,
             'name' => 'Lemon Tea',
             'category' => 'Beverages',
             'type' => 'veg',
@@ -111,13 +155,14 @@ class MenuTest extends TestCase
      */
     public function test_can_update_menu_item_and_variants(): void
     {
-        $preset = \App\Models\PresetFoodImage::create([
+        $preset = PresetFoodImage::create([
             'name' => 'Pizza',
             'tags' => 'pizza',
             'image_path' => 'images/defaults/pizza.jpg',
         ]);
 
         $item = MenuItem::create([
+            'business_id' => $this->business->id,
             'name' => 'Old Butter Chicken',
             'category' => 'Non-Veg Main Course',
             'type' => 'non-veg',
@@ -127,7 +172,7 @@ class MenuTest extends TestCase
 
         $item->variants()->create([
             'label' => 'Single Portion',
-            'price' => 300.00
+            'price' => 300.00,
         ]);
 
         $updateData = [
@@ -138,14 +183,14 @@ class MenuTest extends TestCase
             'preset_image_id' => $preset->id,
             'variants' => [
                 ['label' => 'Half Portion', 'price' => '220.00'],
-                ['label' => 'Full Portion', 'price' => '420.00']
-            ]
+                ['label' => 'Full Portion', 'price' => '420.00'],
+            ],
         ];
 
         $response = $this->put("/menu/{$item->id}", $updateData);
 
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('menu_items', [
             'id' => $item->id,
             'name' => 'New Butter Chicken',
@@ -158,7 +203,7 @@ class MenuTest extends TestCase
         $this->assertDatabaseHas('menu_item_variants', [
             'menu_item_id' => $item->id,
             'label' => 'Full Portion',
-            'price' => 420.00
+            'price' => 420.00,
         ]);
         $this->assertDatabaseMissing('menu_item_variants', [
             'label' => 'Single Portion',
@@ -170,13 +215,13 @@ class MenuTest extends TestCase
      */
     public function test_can_search_preset_images(): void
     {
-        \App\Models\PresetFoodImage::create([
+        PresetFoodImage::create([
             'name' => 'Paneer Butter Masala',
             'tags' => 'paneer, veg, indian',
             'image_path' => 'images/defaults/salad.jpg',
         ]);
 
-        \App\Models\PresetFoodImage::create([
+        PresetFoodImage::create([
             'name' => 'Gourmet Ribeye Steak',
             'tags' => 'steak, beef, meat, non-veg',
             'image_path' => 'images/defaults/steak.jpg',
@@ -200,6 +245,7 @@ class MenuTest extends TestCase
     public function test_can_delete_menu_item(): void
     {
         $item = MenuItem::create([
+            'business_id' => $this->business->id,
             'name' => 'Cold Coffee',
             'category' => 'Beverages',
             'type' => 'veg',
@@ -209,7 +255,7 @@ class MenuTest extends TestCase
 
         $variant = $item->variants()->create([
             'label' => 'Regular',
-            'price' => 120.00
+            'price' => 120.00,
         ]);
 
         $response = $this->delete("/menu/{$item->id}");
