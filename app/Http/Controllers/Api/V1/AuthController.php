@@ -119,6 +119,20 @@ class AuthController extends ApiController
         ], $exists ? 'Phone number already exists' : 'Phone number is available');
     }
 
+    public function emailOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        return $this->success([
+            'email' => $data['email'],
+            'otp' => '123456',
+            'expires_in_seconds' => 300,
+            'mode' => 'dummy',
+        ], 'Email OTP generated');
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->attributes->get('access_token')?->update(['revoked_at' => now()]);

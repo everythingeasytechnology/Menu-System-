@@ -91,6 +91,19 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.available', true);
     }
 
+    public function test_can_generate_dummy_email_otp(): void
+    {
+        $this->postJson('/api/v1/auth/email-otp', [
+            'email' => 'otp@example.com',
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Email OTP generated')
+            ->assertJsonPath('data.email', 'otp@example.com')
+            ->assertJsonPath('data.otp', '123456')
+            ->assertJsonPath('data.expires_in_seconds', 300)
+            ->assertJsonPath('data.mode', 'dummy');
+    }
+
     public function test_auth_login_returns_token_for_active_staff(): void
     {
         [$business] = $this->createBusinessUser('staff-login-owner@example.com');

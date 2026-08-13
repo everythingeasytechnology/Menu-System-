@@ -95,6 +95,20 @@ Auth required: No
 
 Both endpoints return `data.exists` and `data.available` for step forms.
 
+### Email OTP
+
+`POST /auth/email-otp`
+
+Auth required: No
+
+```json
+{
+  "email": "owner@example.com"
+}
+```
+
+This is a temporary dummy endpoint and returns fixed OTP `123456` until SMTP/real OTP storage is added.
+
 ### Logout
 
 `POST /auth/logout`
