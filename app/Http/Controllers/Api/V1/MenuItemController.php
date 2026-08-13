@@ -18,8 +18,7 @@ class MenuItemController extends ApiController
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly MenuImageService $menuImageService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -79,7 +78,7 @@ class MenuItemController extends ApiController
 
             $this->auditLogService->record($request->user(), $businessId, 'menu_item.created', $item);
 
-            return $item->load(['variants', 'presetImage']);
+            return $item->load(['variants', 'presetImage', 'menuCategory']);
         });
 
         return $this->success(new MenuItemResource($item), 'Menu item created', 201);
@@ -91,7 +90,7 @@ class MenuItemController extends ApiController
             return $this->error('Resource not found', 404);
         }
 
-        return $this->success(new MenuItemResource($menuItem->load(['variants', 'presetImage'])), 'Menu item details');
+        return $this->success(new MenuItemResource($menuItem->load(['variants', 'presetImage', 'menuCategory'])), 'Menu item details');
     }
 
     public function update(MenuItemRequest $request, MenuItem $menuItem): JsonResponse
@@ -137,7 +136,7 @@ class MenuItemController extends ApiController
 
             $this->auditLogService->record($request->user(), $menuItem->business_id, 'menu_item.updated', $menuItem);
 
-            return $menuItem->fresh(['variants', 'presetImage']);
+            return $menuItem->fresh(['variants', 'presetImage', 'menuCategory']);
         });
 
         return $this->success(new MenuItemResource($item), 'Menu item updated');
@@ -152,7 +151,7 @@ class MenuItemController extends ApiController
         $menuItem->update(['status' => 'inactive', 'availability' => false, 'stock' => false]);
         $this->auditLogService->record($request->user(), $menuItem->business_id, 'menu_item.deactivated', $menuItem);
 
-        return $this->success(new MenuItemResource($menuItem->fresh(['variants', 'presetImage'])), 'Menu item deactivated');
+        return $this->success(new MenuItemResource($menuItem->fresh(['variants', 'presetImage', 'menuCategory'])), 'Menu item deactivated');
     }
 
     public function toggleAvailability(Request $request, MenuItem $menuItem): JsonResponse
@@ -164,7 +163,7 @@ class MenuItemController extends ApiController
         $available = ! ($menuItem->availability && $menuItem->stock);
         $menuItem->update(['availability' => $available, 'stock' => $available]);
 
-        return $this->success(new MenuItemResource($menuItem->fresh(['variants', 'presetImage'])), 'Menu item availability updated');
+        return $this->success(new MenuItemResource($menuItem->fresh(['variants', 'presetImage', 'menuCategory'])), 'Menu item availability updated');
     }
 
     private function categoryForBusiness(int $businessId, int $categoryId): MenuCategory
@@ -180,7 +179,7 @@ class MenuItemController extends ApiController
 
     private function filteredQuery(Request $request)
     {
-        return MenuItem::with(['variants', 'presetImage'])
+        return MenuItem::with(['variants', 'presetImage', 'menuCategory'])
             ->where('business_id', $this->businessId($request))
             ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
             ->when($request->filled('category_id'), fn ($query) => $query->where('menu_category_id', $request->integer('category_id')))

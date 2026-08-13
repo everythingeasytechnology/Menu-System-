@@ -83,4 +83,32 @@ class MenuApiTest extends ApiTestCase
             ->assertJsonPath('data.0.name', 'Chicken Tikka')
             ->assertJsonMissing(['name' => 'Paneer Tikka']);
     }
+
+    public function test_menu_item_response_uses_current_category_name_from_category_table(): void
+    {
+        [, $user] = $this->createBusinessUser('category-name-response@example.com');
+
+        $categoryId = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/categories', ['name' => 'Pizza'])
+            ->json('data.id');
+
+        $itemId = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/menu-items', [
+                'category_id' => $categoryId,
+                'name' => 'Margherita',
+                'type' => 'veg',
+                'price' => 250,
+            ])
+            ->json('data.id');
+
+        $this->withHeaders($this->authHeaders($user))
+            ->putJson('/api/v1/categories/'.$categoryId, ['name' => 'Updated Pizza'])
+            ->assertOk();
+
+        $this->withHeaders($this->authHeaders($user))
+            ->getJson('/api/v1/menu-items/'.$itemId)
+            ->assertOk()
+            ->assertJsonPath('data.category_id', $categoryId)
+            ->assertJsonPath('data.category', 'Updated Pizza');
+    }
 }
