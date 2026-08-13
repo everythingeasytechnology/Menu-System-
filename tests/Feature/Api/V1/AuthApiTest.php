@@ -161,6 +161,42 @@ class AuthApiTest extends ApiTestCase
         $this->assertTrue(Hash::check($sentOtp, $cachedOtp['otp_hash']));
     }
 
+    public function test_email_otp_can_be_verified(): void
+    {
+        Mail::fake();
+        $this->enableSmtpSettings();
+
+        $this->postJson('/api/v1/auth/email-otp', [
+            'email' => 'verify-otp@example.com',
+        ])->assertOk();
+
+        $sentOtp = null;
+
+        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) use (&$sentOtp) {
+            $sentOtp = $mail->otp;
+
+            return $mail->hasTo('verify-otp@example.com');
+        });
+
+        $this->postJson('/api/v1/auth/email-otp/verify', [
+            'email' => 'verify-otp@example.com',
+            'otp' => '0000',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Invalid or expired OTP.');
+
+        $this->postJson('/api/v1/auth/email-otp/verify', [
+            'email' => 'verify-otp@example.com',
+            'otp' => $sentOtp,
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Email OTP verified')
+            ->assertJsonPath('data.email', 'verify-otp@example.com')
+            ->assertJsonPath('data.verified', true);
+
+        $this->assertNull(Cache::get('auth:email-otp:'.sha1('verify-otp@example.com')));
+    }
+
     public function test_auth_login_returns_token_for_active_staff(): void
     {
         [$business] = $this->createBusinessUser('staff-login-owner@example.com');

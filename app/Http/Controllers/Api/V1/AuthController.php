@@ -169,6 +169,30 @@ class AuthController extends ApiController
         ], 'Email OTP sent');
     }
 
+    public function verifyEmailOtp(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+            'otp' => ['required', 'string', 'regex:/^\d{4}$/'],
+        ]);
+
+        $cacheKey = $this->emailOtpCacheKey($data['email']);
+        $cachedOtp = Cache::get($cacheKey);
+
+        if (! is_array($cachedOtp) || ! Hash::check($data['otp'], $cachedOtp['otp_hash'] ?? '')) {
+            return $this->error('Invalid or expired OTP.', 422, [
+                'otp' => ['The OTP is invalid or has expired.'],
+            ]);
+        }
+
+        Cache::forget($cacheKey);
+
+        return $this->success([
+            'email' => $data['email'],
+            'verified' => true,
+        ], 'Email OTP verified');
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->attributes->get('access_token')?->update(['revoked_at' => now()]);
