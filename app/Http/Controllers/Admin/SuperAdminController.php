@@ -299,7 +299,15 @@ class SuperAdminController extends Controller
     {
         $data = $request->validate([
             'enabled' => ['required', 'boolean'],
-            'host' => ['required_if:enabled,1', 'nullable', 'string', 'max:255'],
+            'host' => [
+                'required_if:enabled,1',
+                'nullable',
+                'string',
+                'max:255',
+                'not_regex:/@/',
+                'not_regex:/^https?:\/\//i',
+                'not_regex:/:\d+$/',
+            ],
             'port' => ['required_if:enabled,1', 'nullable', 'integer', 'min:1', 'max:65535'],
             'encryption' => ['nullable', 'string', Rule::in(['none', 'tls', 'ssl'])],
             'username' => ['nullable', 'string', 'max:255'],
@@ -307,6 +315,8 @@ class SuperAdminController extends Controller
             'from_address' => ['required_if:enabled,1', 'nullable', 'email', 'max:255'],
             'from_name' => ['required_if:enabled,1', 'nullable', 'string', 'max:255'],
             'timeout' => ['nullable', 'integer', 'min:1', 'max:120'],
+        ], [
+            'host.not_regex' => 'SMTP Host must be a server name like smtp.gmail.com or mail.everythingeasy.in, not an email, URL, or host with port.',
         ]);
 
         $setting = MailSetting::query()->firstOrNew([]);

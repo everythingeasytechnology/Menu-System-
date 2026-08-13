@@ -277,7 +277,8 @@ class SuperAdminPanelTest extends TestCase
             ->assertOk()
             ->assertSee('Mail Settings')
             ->assertSee('SMTP Details')
-            ->assertSee('Send Test');
+            ->assertSee('Send Test')
+            ->assertSee('Use only the mail server name');
 
         $this->post(route('admin.mail-settings.update'), [
             'enabled' => '1',
@@ -317,5 +318,35 @@ class SuperAdminPanelTest extends TestCase
 
         $this->assertSame('smtp.gmail.com', $setting->host);
         $this->assertSame('smtp-secret', $setting->password);
+    }
+
+    public function test_smtp_host_cannot_be_an_email_address(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'bad-smtp-host-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->from(route('admin.mail-settings.edit'))
+            ->post(route('admin.mail-settings.update'), [
+                'enabled' => '1',
+                'host' => 'noreply@everythingeasy.in',
+                'port' => 587,
+                'encryption' => 'tls',
+                'username' => 'noreply@everythingeasy.in',
+                'password' => 'smtp-secret',
+                'from_address' => 'noreply@everythingeasy.in',
+                'from_name' => 'EverythingEasy',
+                'timeout' => 30,
+            ])
+            ->assertRedirect(route('admin.mail-settings.edit'))
+            ->assertSessionHasErrors('host');
+
+        $this->assertDatabaseCount('mail_settings', 0);
     }
 }

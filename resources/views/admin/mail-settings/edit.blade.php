@@ -29,6 +29,7 @@
                 <label class="block md:col-span-2">
                     <span class="text-[10px] font-black uppercase tracking-wider text-muted">SMTP Host</span>
                     <input name="host" value="{{ old('host', $setting?->host) }}" placeholder="smtp.gmail.com" class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-ink outline-none focus:border-orange">
+                    <span class="mt-1 block text-[11px] font-semibold text-muted">Use only the mail server name, for example smtp.gmail.com or mail.everythingeasy.in.</span>
                 </label>
 
                 <label class="block">
@@ -48,6 +49,7 @@
                 <label class="block">
                     <span class="text-[10px] font-black uppercase tracking-wider text-muted">Username</span>
                     <input name="username" value="{{ old('username', $setting?->username) }}" autocomplete="off" class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-ink outline-none focus:border-orange">
+                    <span class="mt-1 block text-[11px] font-semibold text-muted">This can be your mailbox email, for example noreply@everythingeasy.in.</span>
                 </label>
 
                 <label class="block">
