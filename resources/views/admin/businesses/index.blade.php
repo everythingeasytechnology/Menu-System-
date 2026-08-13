@@ -82,7 +82,10 @@
                                 <span class="mt-0.5 block text-muted">{{ $business->created_at?->format('d M Y') }}</span>
                             </td>
                             <td class="px-3 py-3 text-right">
-                                <a href="{{ route('admin.businesses.edit', $business) }}" class="inline-flex h-8 items-center justify-center rounded-lg bg-navy px-3 text-[10px] font-black uppercase tracking-wider text-white">
+                                <a href="{{ route('admin.businesses.pdf', $business) }}" class="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-card px-3 text-[10px] font-black uppercase tracking-wider text-ink transition hover:border-orange hover:text-orange">
+                                    PDF
+                                </a>
+                                <a href="{{ route('admin.businesses.edit', $business) }}" class="ml-1 inline-flex h-8 items-center justify-center rounded-lg bg-navy px-3 text-[10px] font-black uppercase tracking-wider text-white">
                                     Edit
                                 </a>
                             </td>

@@ -39,6 +39,7 @@ Route::prefix('admin')
         Route::post('/businesses', [SuperAdminController::class, 'storeBusiness'])->name('businesses.store');
         Route::get('/businesses/{business}/edit', [SuperAdminController::class, 'editBusiness'])->name('businesses.edit');
         Route::put('/businesses/{business}', [SuperAdminController::class, 'updateBusiness'])->name('businesses.update');
+        Route::get('/businesses/{business}/pdf', [SuperAdminController::class, 'downloadBusinessPdf'])->name('businesses.pdf');
         Route::get('/menu-images', [SuperAdminController::class, 'menuImages'])->name('menu-images.index');
         Route::post('/menu-images', [SuperAdminController::class, 'storeMenuImage'])->name('menu-images.store');
         Route::put('/menu-images/{presetFoodImage}', [SuperAdminController::class, 'updateMenuImage'])->name('menu-images.update');

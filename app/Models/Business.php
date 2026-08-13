@@ -65,6 +65,11 @@ class Business extends Model
         return $this->hasMany(Room::class);
     }
 
+    public function servicePoints(): HasMany
+    {
+        return $this->hasMany(ServicePoint::class);
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

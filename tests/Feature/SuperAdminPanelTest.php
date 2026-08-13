@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\BusinessSetting;
 use App\Models\MailSetting;
 use App\Models\PresetFoodImage;
 use App\Models\User;
@@ -111,6 +112,100 @@ class SuperAdminPanelTest extends TestCase
             ->assertSee('Edit Business Details')
             ->assertSee('Owner Only Cafe')
             ->assertSee('Visible Owner');
+    }
+
+    public function test_business_owner_details_include_settings_and_pdf_download(): void
+    {
+        $superadmin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'owner-pdf-super@example.com',
+            'password' => 'password123',
+            'role' => 'superadmin',
+            'status' => 'active',
+        ]);
+
+        $owner = User::create([
+            'name' => 'PDF Owner',
+            'email' => 'pdf-owner@example.com',
+            'password' => 'password123',
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+
+        $ownerBusiness = Business::create([
+            'owner_user_id' => $owner->id,
+            'name' => 'Owner PDF Cafe',
+            'type' => 'restaurant',
+            'email' => 'owner-pdf-cafe@example.com',
+            'phone' => '9999999999',
+            'city' => 'Delhi',
+            'state' => 'Delhi',
+            'country' => 'India',
+            'timezone' => 'Asia/Kolkata',
+            'status' => 'active',
+        ]);
+
+        $owner->update(['business_id' => $ownerBusiness->id]);
+
+        BusinessSetting::create([
+            'business_id' => $ownerBusiness->id,
+            'brand_name' => 'Owner PDF Brand',
+            'business_email' => 'settings@example.com',
+            'shop_no' => 'A-12',
+            'address' => 'Main Market',
+            'country' => 'India',
+            'state' => 'Delhi',
+            'district' => 'Central Delhi',
+            'pincode' => '110001',
+            'gst_no' => '07ABCDE1234F1Z5',
+            'gst_enabled' => true,
+            'cgst' => 2.5,
+            'sgst' => 2.5,
+        ]);
+
+        $staff = User::create([
+            'name' => 'Staff User',
+            'email' => 'staff-owned-business@example.com',
+            'password' => 'password123',
+            'role' => 'waiter',
+            'status' => 'active',
+        ]);
+
+        $staffBusiness = Business::create([
+            'owner_user_id' => $staff->id,
+            'name' => 'Staff Owned Business',
+            'type' => 'restaurant',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($superadmin);
+
+        $this->get(route('admin.businesses.index'))
+            ->assertOk()
+            ->assertSee('Owner PDF Cafe')
+            ->assertSee('PDF')
+            ->assertDontSee('Staff Owned Business');
+
+        $this->get(route('admin.businesses.edit', $ownerBusiness))
+            ->assertOk()
+            ->assertSee('Business Settings')
+            ->assertSee('Owner PDF Brand')
+            ->assertSee('07ABCDE1234F1Z5')
+            ->assertSee('Download PDF');
+
+        $this->get(route('admin.businesses.edit', $staffBusiness))
+            ->assertNotFound();
+
+        $pdf = $this->get(route('admin.businesses.pdf', $ownerBusiness));
+
+        $pdf->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Content-Disposition', 'attachment; filename="owner-pdf-cafe-details.pdf"');
+
+        $this->assertStringStartsWith('%PDF-1.4', $pdf->getContent());
+        $this->assertStringContainsString('Owner PDF Cafe', $pdf->getContent());
+        $this->assertStringContainsString('Owner PDF Brand', $pdf->getContent());
+        $this->assertStringContainsString('07ABCDE1234F1Z5', $pdf->getContent());
     }
 
     public function test_superadmin_can_create_business_with_owner_login(): void

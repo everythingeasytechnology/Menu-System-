@@ -10,6 +10,7 @@ use App\Models\MailSetting;
 use App\Models\Order;
 use App\Models\PresetFoodImage;
 use App\Models\User;
+use App\Services\BusinessOwnerPdfService;
 use App\Services\MailSettingsService;
 use App\Services\MenuImageService;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
 
@@ -26,6 +28,7 @@ class SuperAdminController extends Controller
     public function __construct(
         private readonly MenuImageService $menuImageService,
         private readonly MailSettingsService $mailSettingsService,
+        private readonly BusinessOwnerPdfService $businessOwnerPdfService,
     ) {}
 
     public const BUSINESS_STATUSES = [
@@ -51,7 +54,8 @@ class SuperAdminController extends Controller
     public function businesses(Request $request)
     {
         $businessQuery = Business::query()
-            ->with('owner')
+            ->whereHas('owner', fn ($owner) => $owner->where('role', 'owner'))
+            ->with(['owner', 'businessSetting'])
             ->withCount(['orders'])
             ->latest();
 
@@ -89,8 +93,12 @@ class SuperAdminController extends Controller
 
     public function editBusiness(Business $business)
     {
+        $this->abortUnlessOwnerBusiness($business);
+
         return view('admin.businesses.edit', [
-            'business' => $business->load('owner')->loadCount('orders'),
+            'business' => $business
+                ->load(['owner', 'businessSetting'])
+                ->loadCount(['orders', 'menuItems', 'categories', 'restaurantTables', 'rooms', 'servicePoints']),
             'businessStatuses' => self::BUSINESS_STATUSES,
             'ownerStatuses' => self::OWNER_STATUSES,
         ]);
@@ -163,6 +171,8 @@ class SuperAdminController extends Controller
 
     public function updateBusiness(Request $request, Business $business): RedirectResponse
     {
+        $this->abortUnlessOwnerBusiness($business);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'string', 'max:50'],
@@ -208,6 +218,21 @@ class SuperAdminController extends Controller
         return redirect()
             ->route('admin.businesses.edit', $business)
             ->with('success', 'Business updated.');
+    }
+
+    public function downloadBusinessPdf(Business $business)
+    {
+        $this->abortUnlessOwnerBusiness($business);
+
+        $business->load(['owner', 'businessSetting']);
+        $pdf = $this->businessOwnerPdfService->make($business);
+        $filename = Str::slug($business->name ?: 'business-owner').'-details.pdf';
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Length' => strlen($pdf),
+        ]);
     }
 
     public function menuImages(Request $request)
@@ -402,6 +427,13 @@ class SuperAdminController extends Controller
             'live_orders' => Order::whereIn('order_status', Order::ACTIVE_STATUSES)->count(),
             'gross_sales' => (float) Order::where('order_status', '!=', 'cancelled')->sum('total'),
         ];
+    }
+
+    private function abortUnlessOwnerBusiness(Business $business): void
+    {
+        $business->loadMissing('owner');
+
+        abort_if(! $business->owner || $business->owner->role !== 'owner', 404);
     }
 
     private function charts(): array
