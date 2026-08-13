@@ -42,8 +42,7 @@ class ServicePointApiTest extends ApiTestCase
             'is_active' => true,
         ]);
 
-        $download = $this->withHeaders($this->authHeaders($user))
-            ->get($response->json('data.scanner_download_url'))
+        $download = $this->get($response->json('data.scanner_download_url'))
             ->assertOk()
             ->assertHeader('Content-Type', 'image/svg+xml')
             ->assertSee('<svg', false);

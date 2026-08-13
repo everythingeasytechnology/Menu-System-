@@ -20,8 +20,7 @@ class ServicePointController extends ApiController
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly QrCodeService $qrCodeService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -118,10 +117,6 @@ class ServicePointController extends ApiController
 
     public function downloadScanner(Request $request, ServicePoint $servicePoint): Response
     {
-        if ($servicePoint->business_id !== $this->businessId($request)) {
-            abort(404);
-        }
-
         $svg = $this->qrCodeService->svg($this->scanUrl($servicePoint));
         $filename = Str::slug($servicePoint->code.'-'.$servicePoint->name).'-scanner.svg';
 

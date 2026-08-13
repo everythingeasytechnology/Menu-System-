@@ -33,6 +33,7 @@ Route::prefix('v1')->group(function () {
     Route::get('public/menu/{qr}/items/{menuItem}', [PublicMenuController::class, 'item']);
     Route::post('public/menu/{qr}/orders', [PublicMenuController::class, 'createOrder']);
     Route::get('public/orders/{orderNumber}', [PublicMenuController::class, 'orderStatus']);
+    Route::get('service-points/{servicePoint}/scanner', [ServicePointController::class, 'downloadScanner']);
 
     Route::middleware('api.token')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -61,7 +62,6 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('rooms', RoomController::class);
 
         Route::get('service-points/{servicePoint}/qr', [ServicePointController::class, 'qr']);
-        Route::get('service-points/{servicePoint}/scanner', [ServicePointController::class, 'downloadScanner']);
         Route::apiResource('service-points', ServicePointController::class)->parameters(['service-points' => 'servicePoint']);
 
         Route::post('categories/reorder', [MenuCategoryController::class, 'reorder']);
