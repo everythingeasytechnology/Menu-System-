@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('menu-items/filter', [MenuItemController::class, 'filter']);
         Route::post('menu-items/{menuItem}/availability', [MenuItemController::class, 'toggleAvailability']);
+        Route::post('menu-items/{menuItem}', [MenuItemController::class, 'update'])->name('menu-items.update-form');
         Route::apiResource('menu-items', MenuItemController::class)->parameters(['menu-items' => 'menuItem']);
 
         Route::get('orders/all', [OrderController::class, 'all']);

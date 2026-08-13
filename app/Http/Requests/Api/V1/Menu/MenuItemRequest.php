@@ -8,12 +8,14 @@ class MenuItemRequest extends ApiFormRequest
 {
     public function rules(): array
     {
+        $isCreating = $this->isMethod('post') && ! $this->route('menuItem');
+
         return [
-            'category_id' => [$this->isMethod('post') ? 'required' : 'sometimes', 'integer', 'exists:menu_categories,id'],
-            'name' => [$this->isMethod('post') ? 'required' : 'sometimes', 'string', 'max:255'],
+            'category_id' => [$isCreating ? 'required' : 'sometimes', 'integer', 'exists:menu_categories,id'],
+            'name' => [$isCreating ? 'required' : 'sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['sometimes', 'string', 'in:veg,non-veg'],
-            'price' => [$this->isMethod('post') ? 'required' : 'sometimes', 'numeric', 'min:0'],
+            'price' => [$isCreating ? 'required' : 'sometimes', 'numeric', 'min:0'],
             'tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'preparation_time_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'cooking_time' => ['nullable', 'string', 'max:100'],

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\MenuItem;
+use Illuminate\Http\UploadedFile;
+
 class MenuApiTest extends ApiTestCase
 {
     public function test_can_create_category_and_menu_item_for_authenticated_business(): void
@@ -110,5 +113,38 @@ class MenuApiTest extends ApiTestCase
             ->assertOk()
             ->assertJsonPath('data.category_id', $categoryId)
             ->assertJsonPath('data.category', 'Updated Pizza');
+    }
+
+    public function test_can_update_menu_item_image_with_form_data(): void
+    {
+        [, $user] = $this->createBusinessUser('menu-item-image-update@example.com');
+
+        $categoryId = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/categories', ['name' => 'Pizza'])
+            ->json('data.id');
+
+        $itemId = $this->withHeaders($this->authHeaders($user))
+            ->postJson('/api/v1/menu-items', [
+                'category_id' => $categoryId,
+                'name' => 'Margherita',
+                'type' => 'veg',
+                'price' => 250,
+            ])
+            ->json('data.id');
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->post('/api/v1/menu-items/'.$itemId, [
+                'image' => UploadedFile::fake()->image('margherita.jpg', 300, 300),
+            ]);
+
+        $menuItem = MenuItem::with('presetImage')->findOrFail($itemId);
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Menu item updated')
+            ->assertJsonPath('data.id', $itemId)
+            ->assertJsonPath('data.image', asset($menuItem->presetImage->image_path));
+
+        $this->assertNotNull($menuItem->preset_food_image_id);
+        $this->assertStringStartsWith('storage/menu_items/', $menuItem->presetImage->image_path);
     }
 }
