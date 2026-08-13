@@ -204,7 +204,9 @@
                                 <input type="checkbox" name="remember" value="1" class="h-4 w-4 rounded border-border text-orange focus:ring-orange/20">
                                 Remember me
                             </label>
-                            <span class="text-[11px] font-bold text-muted">Secure session</span>
+                            <a href="{{ route('password.request') }}" class="text-xs font-black text-orange transition hover:text-orange/80">
+                                Forgot password?
+                            </a>
                         </div>
 
                         <button
