@@ -167,6 +167,7 @@ Authorization rule: business is inferred from authenticated user. Users cannot r
 - `POST /staff`
 - `GET /staff/{id}`
 - `PUT /staff/{id}`
+- `POST /staff/{id}` - multipart/form-data edit, recommended when uploading profile images.
 - `DELETE /staff/{id}`
 - `POST /staff/{id}/status`
 - `GET /staff/roles`
@@ -180,7 +181,7 @@ List filters:
 - `search`
 - `per_page`
 
-Create body:
+Create body supports JSON or multipart/form-data. Use multipart/form-data when sending `profile_image`.
 
 ```json
 {
@@ -190,11 +191,12 @@ Create body:
   "role": "waiter",
   "status": "active",
   "password": "password123",
-  "password_confirmation": "password123"
+  "password_confirmation": "password123",
+  "profile_image": "<file>"
 }
 ```
 
-Edit body:
+Edit body supports JSON with `PUT /staff/{id}`. For profile image upload, send multipart/form-data to `POST /staff/{id}`.
 
 ```json
 {
@@ -204,11 +206,13 @@ Edit body:
   "role": "manager",
   "status": "active",
   "password": "newpassword123",
-  "password_confirmation": "newpassword123"
+  "password_confirmation": "newpassword123",
+  "profile_image": "<file>",
+  "remove_profile_image": false
 }
 ```
 
-For edit, omit `password` when you do not want to change it.
+For edit, omit `password` when you do not want to change it. Send `remove_profile_image=1` to remove the existing profile image.
 
 Status body:
 

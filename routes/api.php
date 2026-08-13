@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
 
         Route::get('staff/roles', [StaffController::class, 'roles']);
         Route::post('staff/{staff}/status', [StaffController::class, 'updateStatus']);
+        Route::post('staff/{staff}', [StaffController::class, 'update'])->name('staff.update-form');
         Route::apiResource('staff', StaffController::class)->parameters(['staff' => 'staff']);
 
         Route::get('tables/{table}/qr', [TableController::class, 'qr']);

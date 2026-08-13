@@ -3,7 +3,9 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class StaffApiTest extends ApiTestCase
 {
@@ -97,5 +99,65 @@ class StaffApiTest extends ApiTestCase
             ->assertOk()
             ->assertJsonFragment(['value' => 'waiter'])
             ->assertJsonFragment(['value' => 'kitchen_staff']);
+    }
+
+    public function test_can_create_update_and_remove_staff_profile_image_with_form_data(): void
+    {
+        Storage::fake('public');
+
+        [$business, $owner] = $this->createBusinessUser('staff-form-owner@example.com');
+
+        $createResponse = $this->withHeaders($this->authHeaders($owner))
+            ->post('/api/v1/staff', [
+                'name' => 'Form Data Staff',
+                'email' => 'staff.form@example.com',
+                'phone' => '+917777777777',
+                'role' => 'waiter',
+                'status' => 'active',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'profile_image' => UploadedFile::fake()->image('staff.jpg', 300, 300),
+            ]);
+
+        $staff = User::where('email', 'staff.form@example.com')->firstOrFail();
+
+        $createResponse->assertCreated()
+            ->assertJsonPath('data.business_id', $business->id)
+            ->assertJsonPath('data.profile_image_url', asset('storage/'.$staff->profile_image_path));
+
+        Storage::disk('public')->assertExists($staff->profile_image_path);
+
+        $oldPath = $staff->profile_image_path;
+
+        $updateResponse = $this->withHeaders($this->authHeaders($owner))
+            ->post('/api/v1/staff/'.$staff->id, [
+                'name' => 'Updated Form Staff',
+                'profile_image' => UploadedFile::fake()->image('staff-updated.png', 300, 300),
+            ]);
+
+        $staff->refresh();
+
+        $updateResponse->assertOk()
+            ->assertJsonPath('data.name', 'Updated Form Staff')
+            ->assertJsonPath('data.profile_image_url', asset('storage/'.$staff->profile_image_path));
+
+        $this->assertNotSame($oldPath, $staff->profile_image_path);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($staff->profile_image_path);
+
+        $newPath = $staff->profile_image_path;
+
+        $removeResponse = $this->withHeaders($this->authHeaders($owner))
+            ->post('/api/v1/staff/'.$staff->id, [
+                'remove_profile_image' => '1',
+            ]);
+
+        $staff->refresh();
+
+        $removeResponse->assertOk()
+            ->assertJsonPath('data.profile_image_url', null);
+
+        $this->assertNull($staff->profile_image_path);
+        Storage::disk('public')->assertMissing($newPath);
     }
 }
