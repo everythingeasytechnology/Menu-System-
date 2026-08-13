@@ -19,6 +19,7 @@ use App\Services\MailSettingsService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -135,16 +136,37 @@ class AuthController extends ApiController
             'email' => ['required', 'email', 'max:255'],
         ]);
 
-        $otp = '1234';
-        $mailSent = $this->sendMailIfEnabled(fn () => Mail::to($data['email'])->send(new EmailOtpMail($otp)));
+        if (! $this->mailSettingsService->apply()) {
+            return $this->error('SMTP settings are not enabled.', 422, [
+                'email' => ['Please enable SMTP settings before sending email OTP.'],
+            ]);
+        }
+
+        $expiresInSeconds = 300;
+        $otp = (string) random_int(1000, 9999);
+
+        try {
+            Mail::to($data['email'])->send(new EmailOtpMail($otp, $expiresInSeconds));
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->error('Unable to send OTP email.', 502, [
+                'email' => ['Please check SMTP settings and try again.'],
+            ]);
+        }
+
+        Cache::put($this->emailOtpCacheKey($data['email']), [
+            'email' => Str::lower($data['email']),
+            'otp_hash' => Hash::make($otp),
+            'expires_at' => now()->addSeconds($expiresInSeconds)->toIso8601String(),
+        ], $expiresInSeconds);
 
         return $this->success([
             'email' => $data['email'],
-            'otp' => $otp,
-            'expires_in_seconds' => 300,
-            'mode' => 'dummy',
-            'mail_sent' => $mailSent,
-        ], 'Email OTP generated');
+            'expires_in_seconds' => $expiresInSeconds,
+            'mode' => 'smtp',
+            'mail_sent' => true,
+        ], 'Email OTP sent');
     }
 
     public function logout(Request $request): JsonResponse
@@ -231,5 +253,10 @@ class AuthController extends ApiController
 
             return false;
         }
+    }
+
+    private function emailOtpCacheKey(string $email): string
+    {
+        return 'auth:email-otp:'.sha1(Str::lower($email));
     }
 }

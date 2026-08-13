@@ -6,6 +6,8 @@ use App\Mail\BusinessRegistrationSuccessMail;
 use App\Mail\EmailOtpMail;
 use App\Models\MailSetting;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class AuthApiTest extends ApiTestCase
@@ -116,17 +118,13 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.available', true);
     }
 
-    public function test_can_generate_dummy_email_otp(): void
+    public function test_email_otp_requires_enabled_smtp_settings(): void
     {
         $this->postJson('/api/v1/auth/email-otp', [
             'email' => 'otp@example.com',
         ])
-            ->assertOk()
-            ->assertJsonPath('message', 'Email OTP generated')
-            ->assertJsonPath('data.email', 'otp@example.com')
-            ->assertJsonPath('data.otp', '1234')
-            ->assertJsonPath('data.expires_in_seconds', 300)
-            ->assertJsonPath('data.mode', 'dummy');
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'SMTP settings are not enabled.');
     }
 
     public function test_email_otp_sends_mail_when_smtp_is_enabled(): void
@@ -134,17 +132,33 @@ class AuthApiTest extends ApiTestCase
         Mail::fake();
         $this->enableSmtpSettings();
 
-        $this->postJson('/api/v1/auth/email-otp', [
+        $response = $this->postJson('/api/v1/auth/email-otp', [
             'email' => 'otp-mail@example.com',
-        ])
-            ->assertOk()
-            ->assertJsonPath('data.otp', '1234')
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('message', 'Email OTP sent')
+            ->assertJsonPath('data.email', 'otp-mail@example.com')
+            ->assertJsonPath('data.expires_in_seconds', 300)
+            ->assertJsonPath('data.mode', 'smtp')
             ->assertJsonPath('data.mail_sent', true);
 
-        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) {
+        $this->assertArrayNotHasKey('otp', $response->json('data'));
+
+        $sentOtp = null;
+
+        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) use (&$sentOtp) {
+            $sentOtp = $mail->otp;
+
             return $mail->hasTo('otp-mail@example.com')
-                && $mail->otp === '1234';
+                && preg_match('/^\d{4}$/', $mail->otp) === 1;
         });
+
+        $cachedOtp = Cache::get('auth:email-otp:'.sha1('otp-mail@example.com'));
+
+        $this->assertIsArray($cachedOtp);
+        $this->assertSame('otp-mail@example.com', $cachedOtp['email']);
+        $this->assertTrue(Hash::check($sentOtp, $cachedOtp['otp_hash']));
     }
 
     public function test_auth_login_returns_token_for_active_staff(): void
