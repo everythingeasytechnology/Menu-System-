@@ -127,7 +127,7 @@ class AuthController extends ApiController
 
         return $this->success([
             'email' => $data['email'],
-            'otp' => '123456',
+            'otp' => '1234',
             'expires_in_seconds' => 300,
             'mode' => 'dummy',
         ], 'Email OTP generated');

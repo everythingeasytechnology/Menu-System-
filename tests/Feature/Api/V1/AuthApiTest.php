@@ -99,7 +99,7 @@ class AuthApiTest extends ApiTestCase
             ->assertOk()
             ->assertJsonPath('message', 'Email OTP generated')
             ->assertJsonPath('data.email', 'otp@example.com')
-            ->assertJsonPath('data.otp', '123456')
+            ->assertJsonPath('data.otp', '1234')
             ->assertJsonPath('data.expires_in_seconds', 300)
             ->assertJsonPath('data.mode', 'dummy');
     }

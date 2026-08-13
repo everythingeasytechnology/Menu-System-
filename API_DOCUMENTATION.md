@@ -107,7 +107,7 @@ Auth required: No
 }
 ```
 
-This is a temporary dummy endpoint and returns fixed OTP `123456` until SMTP/real OTP storage is added.
+This is a temporary dummy endpoint and returns fixed OTP `1234` until SMTP/real OTP storage is added.
 
 ### Logout
 
