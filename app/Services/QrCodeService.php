@@ -16,6 +16,12 @@ use Throwable;
 
 class QrCodeService
 {
+    private const SCANNER_WIDTH = 640;
+
+    private const SCANNER_HEIGHT = 760;
+
+    private const QR_SIZE = 512;
+
     public function png(string $data): string
     {
         if (class_exists(Builder::class) && class_exists(PngWriter::class)) {
@@ -23,6 +29,56 @@ class QrCodeService
         }
 
         throw new \RuntimeException('PNG QR generation is not available.');
+    }
+
+    public function scannerPng(string $data, string $businessName): string
+    {
+        $qrImage = imagecreatefromstring($this->png($data));
+
+        if (! $qrImage) {
+            throw new \RuntimeException('Unable to create QR scanner image.');
+        }
+
+        $canvas = imagecreatetruecolor(self::SCANNER_WIDTH, self::SCANNER_HEIGHT);
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        $ink = imagecolorallocate($canvas, 17, 24, 39);
+        $muted = imagecolorallocate($canvas, 100, 116, 139);
+        $orange = imagecolorallocate($canvas, 249, 115, 22);
+        $lightOrange = imagecolorallocate($canvas, 255, 247, 237);
+        $border = imagecolorallocate($canvas, 254, 215, 170);
+
+        imagefilledrectangle($canvas, 0, 0, self::SCANNER_WIDTH, self::SCANNER_HEIGHT, $white);
+        imagefilledrectangle($canvas, 32, 24, self::SCANNER_WIDTH - 32, 96, $lightOrange);
+        imagerectangle($canvas, 32, 24, self::SCANNER_WIDTH - 32, 96, $border);
+
+        $this->centerText($canvas, $this->shortText($businessName ?: 'EverythingEasy', 38), 5, 44, $ink);
+        $this->centerText($canvas, 'Scan to Order', 3, 76, $orange);
+
+        imagecopyresampled(
+            $canvas,
+            $qrImage,
+            (int) ((self::SCANNER_WIDTH - self::QR_SIZE) / 2),
+            126,
+            0,
+            0,
+            self::QR_SIZE,
+            self::QR_SIZE,
+            imagesx($qrImage),
+            imagesy($qrImage),
+        );
+
+        imagefilledrectangle($canvas, 56, 662, self::SCANNER_WIDTH - 56, 724, $lightOrange);
+        imagerectangle($canvas, 56, 662, self::SCANNER_WIDTH - 56, 724, $border);
+        $this->centerText($canvas, 'Powered by EverythingEasy Technology', 3, 686, $muted);
+
+        ob_start();
+        imagepng($canvas);
+        $png = (string) ob_get_clean();
+
+        imagedestroy($qrImage);
+        imagedestroy($canvas);
+
+        return $png;
     }
 
     public function svg(string $data): string
@@ -77,6 +133,24 @@ class QrCodeService
         ))->build();
 
         return $result->getString();
+    }
+
+    private function centerText(\GdImage $image, string $text, int $font, int $y, int $color): void
+    {
+        $x = (int) ((imagesx($image) - imagefontwidth($font) * strlen($text)) / 2);
+
+        imagestring($image, $font, max(0, $x), $y, $text, $color);
+    }
+
+    private function shortText(string $text, int $maxLength): string
+    {
+        $text = trim(preg_replace('/\s+/', ' ', $text) ?: '');
+
+        if (strlen($text) <= $maxLength) {
+            return $text;
+        }
+
+        return rtrim(substr($text, 0, $maxLength - 3)).'...';
     }
 
     private function svgWithBacon(string $data): string
