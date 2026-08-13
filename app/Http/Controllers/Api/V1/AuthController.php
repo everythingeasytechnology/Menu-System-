@@ -13,6 +13,7 @@ use App\Http\Resources\Api\V1\UserResource;
 use App\Mail\BusinessRegistrationSuccessMail;
 use App\Mail\EmailOtpMail;
 use App\Models\Business;
+use App\Models\PersonalAccessToken;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\MailSettingsService;
@@ -96,6 +97,28 @@ class AuthController extends ApiController
             'user' => new UserResource($user->load('business')),
             'business' => $user->business ? new BusinessResource($user->business) : null,
         ], 'Logged in successfully');
+    }
+
+    public function tokenStatus(Request $request): JsonResponse
+    {
+        $plainTextToken = $request->bearerToken() ?: $request->input('token');
+
+        if (! $plainTextToken) {
+            return $this->error('Token is required', 422, [
+                'token' => ['Please provide a bearer token or token field.'],
+            ]);
+        }
+
+        $accessToken = PersonalAccessToken::findByPlainTextToken($plainTextToken);
+        $user = $accessToken?->user;
+
+        if (! $accessToken || ! $user) {
+            return $this->error('Invalid token', 401);
+        }
+
+        return $this->success([
+            'status' => $user->status,
+        ], 'User status');
     }
 
     public function checkEmail(Request $request): JsonResponse

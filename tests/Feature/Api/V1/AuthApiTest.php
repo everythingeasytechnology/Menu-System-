@@ -73,6 +73,37 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.user.id', $user->id);
     }
 
+    public function test_token_status_returns_only_user_status_from_bearer_token(): void
+    {
+        [, $user] = $this->createBusinessUser('token-status@example.com');
+        $token = $user->createApiToken('status-check');
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/auth/token-status')
+            ->assertOk()
+            ->assertJsonPath('message', 'User status')
+            ->assertJsonPath('data.status', 'active')
+            ->assertJsonMissing(['email' => $user->email]);
+    }
+
+    public function test_token_status_returns_suspended_status_even_after_token_is_revoked(): void
+    {
+        [, $user] = $this->createBusinessUser('revoked-token-status@example.com');
+        $token = $user->createApiToken('status-check');
+
+        $user->update(['status' => 'suspended']);
+        $user->accessTokens()->update(['revoked_at' => now()]);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/auth/me')
+            ->assertUnauthorized();
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/auth/token-status')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'suspended');
+    }
+
     public function test_can_check_email_availability_for_step_form(): void
     {
         $this->createBusinessUser('taken@example.com');
