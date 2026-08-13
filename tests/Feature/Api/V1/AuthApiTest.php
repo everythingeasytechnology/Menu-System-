@@ -360,7 +360,7 @@ class AuthApiTest extends ApiTestCase
         ])
             ->assertForbidden()
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Your account is inactive.')
+            ->assertJsonPath('message', 'Your account has been marked inactive by admin.')
             ->assertJsonPath('errors.account_status.0', 'inactive');
     }
 

@@ -95,7 +95,7 @@ class AuthController extends ApiController
         }
 
         if ($user->status === 'inactive') {
-            return $this->error('Your account is inactive.', 403, [
+            return $this->error('Your account has been marked inactive by admin.', 403, [
                 'account_status' => ['inactive'],
             ]);
         }
