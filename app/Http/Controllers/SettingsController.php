@@ -17,11 +17,12 @@ class SettingsController extends Controller
      */
     public function index()
     {
-        $business = $this->currentBusiness();
-        $businessId = $business->id;
+        $businessId = $this->currentBusiness()->id;
 
-        // The view historically reads $business->brand_name / gst_no (business_settings' field
-        // names). Map them here so the Blade template doesn't need to change.
+        // Use a detached copy for the view so setting display-only fields (brand_name/gst_no,
+        // kept for Blade template compatibility) never mutates the real model instance — a
+        // mutated instance would otherwise try to save these non-existent columns on next update.
+        $business = Business::findOrFail($businessId);
         $business->brand_name = $business->name;
         $business->gst_no = $business->gst_number;
 
