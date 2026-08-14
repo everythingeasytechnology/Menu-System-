@@ -207,7 +207,7 @@ class OwnerDashboardService
             'location' => $this->locationLabel($order),
             'customer' => $order->customer_name ?: 'Walk-in Customer',
             'phone' => $order->customer_phone ?: 'N/A',
-            'email' => $order->user?->email,
+            'email' => $order->customer_email ?: $order->user?->email,
             'amount' => 'Rs. '.number_format((float) $order->total, 2),
             'subtotal' => 'Rs. '.number_format((float) $order->subtotal, 2),
             'tax' => 'Rs. '.number_format((float) $order->tax, 2),

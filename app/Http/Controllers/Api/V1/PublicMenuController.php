@@ -68,6 +68,7 @@ class PublicMenuController extends ApiController
         $validated = $request->validate([
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
             'coupon_code' => ['nullable', 'string', 'max:100'],
             'payment_method' => ['nullable', 'string', 'in:cash,online,razorpay'],
             'notes' => ['nullable', 'string'],

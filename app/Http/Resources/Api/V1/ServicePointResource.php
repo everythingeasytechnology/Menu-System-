@@ -49,6 +49,7 @@ class ServicePointResource extends JsonResource
             'payment_status' => $order->payment_status,
             'total' => (float) $order->total,
             'customer' => $order->customer_name ?: 'Walk-in Customer',
+            'customer_email' => $order->customer_email,
             'items' => $order->items->map(fn ($item) => [
                 'id' => $item->id,
                 'label' => $item->quantity.'x '.$item->item_name.($item->variant_label ? ' ('.$item->variant_label.')' : ''),

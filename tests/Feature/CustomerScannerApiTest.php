@@ -143,6 +143,7 @@ class CustomerScannerApiTest extends TestCase
         $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
             'customer_name' => 'Walk In Guest',
             'customer_phone' => '9999999999',
+            'customer_email' => 'guest@example.com',
             'items' => [
                 [
                     'menu_item_id' => $this->menuItem->id,
@@ -156,6 +157,7 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.context.id', $this->servicePoint->id)
             ->assertJsonPath('data.order.customer_name', 'Walk In Guest')
+            ->assertJsonPath('data.order.customer_email', 'guest@example.com')
             ->assertJsonPath('data.order.service_point_id', $this->servicePoint->id);
 
         $this->assertDatabaseHas('orders', [
@@ -163,6 +165,7 @@ class CustomerScannerApiTest extends TestCase
             'service_point_id' => $this->servicePoint->id,
             'customer_name' => 'Walk In Guest',
             'customer_phone' => '9999999999',
+            'customer_email' => 'guest@example.com',
             'order_status' => 'preparing',
         ]);
 

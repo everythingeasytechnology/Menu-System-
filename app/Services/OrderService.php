@@ -56,6 +56,7 @@ class OrderService
                 'order_type' => $data['order_type'] ?? ($roomId ? 'room_service' : 'dine_in'),
                 'customer_name' => $data['customer_name'] ?? null,
                 'customer_phone' => $data['customer_phone'] ?? null,
+                'customer_email' => $data['customer_email'] ?? null,
                 'subtotal' => $subtotal,
                 'tax' => $tax,
                 'discount' => $discount,

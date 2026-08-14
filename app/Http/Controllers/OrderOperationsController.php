@@ -59,6 +59,7 @@ class OrderOperationsController extends Controller
                     $query->where('order_number', 'like', '%'.$search.'%')
                         ->orWhere('customer_name', 'like', '%'.$search.'%')
                         ->orWhere('customer_phone', 'like', '%'.$search.'%')
+                        ->orWhere('customer_email', 'like', '%'.$search.'%')
                         ->orWhereHas('items', fn ($items) => $items->where('item_name', 'like', '%'.$search.'%'))
                         ->orWhereHas('servicePoint', function ($point) use ($search) {
                             $point->where('name', 'like', '%'.$search.'%')

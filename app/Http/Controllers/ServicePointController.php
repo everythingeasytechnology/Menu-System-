@@ -283,6 +283,7 @@ class ServicePointController extends Controller
                 'total' => (float) $order->total,
                 'amount_label' => 'Rs. '.number_format((float) $order->total, 2),
                 'customer' => $order->customer_name ?: 'Walk-in Customer',
+                'customer_email' => $order->customer_email,
                 'items' => $order->items->map(fn ($item) => [
                     'id' => $item->id,
                     'label' => $item->quantity.'x '.$item->item_name.($item->variant_label ? ' ('.$item->variant_label.')' : ''),

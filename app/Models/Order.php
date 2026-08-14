@@ -27,6 +27,7 @@ class Order extends Model
         'order_type',
         'customer_name',
         'customer_phone',
+        'customer_email',
         'subtotal',
         'tax',
         'discount',

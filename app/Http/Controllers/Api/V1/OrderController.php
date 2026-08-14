@@ -204,7 +204,8 @@ class OrderController extends ApiController
                 $query->where(function ($query) use ($search) {
                     $query->where('order_number', 'like', '%'.$search.'%')
                         ->orWhere('customer_name', 'like', '%'.$search.'%')
-                        ->orWhere('customer_phone', 'like', '%'.$search.'%');
+                        ->orWhere('customer_phone', 'like', '%'.$search.'%')
+                        ->orWhere('customer_email', 'like', '%'.$search.'%');
                 });
             });
     }
