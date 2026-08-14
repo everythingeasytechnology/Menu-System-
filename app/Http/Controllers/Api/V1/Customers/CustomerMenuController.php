@@ -14,42 +14,23 @@ use Illuminate\Http\Request;
 
 class CustomerMenuController extends ApiController
 {
-    public function __construct(
-        private readonly ScannerContextResolver $scannerContextResolver
-    ) {
+    public function __construct(private readonly ScannerContextResolver $scannerContextResolver)
+    {
     }
 
-    /**
-     * Get customer menu items.
-     */
     public function menu(string $qr): JsonResponse
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
 
-        $categories = $this->categoryQuery($business)
-            ->with([
-                'menuItems' => fn ($items) => $this->availableMenuItemsQuery(
-                    $business,
-                    $items
-                ),
-            ])
-            ->get();
-
-        $items = $categories
-            ->flatMap(fn ($category) => $category->menuItems)
-            ->values();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Menu items',
+        return $this->success([
             'business' => $this->businessPayload($business),
-            'data' => MenuItemResource::collection($items),
-        ]);
+            'context' => $context,
+            'categories' => MenuCategoryResource::collection($this->categoryQuery($business)->with([
+                'menuItems' => fn ($items) => $this->availableMenuItemsQuery($business, $items),
+            ])->get()),
+        ], 'Customer menu');
     }
 
-    /**
-     * Get customer menu categories.
-     */
     public function categories(string $qr): JsonResponse
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
@@ -57,33 +38,19 @@ class CustomerMenuController extends ApiController
         return $this->success([
             'business' => $this->businessPayload($business),
             'context' => $context,
-            'categories' => MenuCategoryResource::collection(
-                $this->categoryQuery($business)->get()
-            ),
+            'categories' => MenuCategoryResource::collection($this->categoryQuery($business)->get()),
         ], 'Customer categories');
     }
 
-    /**
-     * Get a single customer category with available items.
-     */
     public function category(string $qr, MenuCategory $category): JsonResponse
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
 
-        if (
-            $category->business_id !== $business->id
-            || ! $category->active
-            || $category->status !== 'active'
-        ) {
+        if ($category->business_id !== $business->id || ! $category->active || $category->status !== 'active') {
             return $this->error('Resource not found', 404);
         }
 
-        $category->load([
-            'menuItems' => fn ($items) => $this->availableMenuItemsQuery(
-                $business,
-                $items
-            ),
-        ]);
+        $category->load(['menuItems' => fn ($items) => $this->availableMenuItemsQuery($business, $items)]);
 
         return $this->success([
             'business' => $this->businessPayload($business),
@@ -92,82 +59,30 @@ class CustomerMenuController extends ApiController
         ], 'Customer category');
     }
 
-    /**
-     * Get available customer menu items with filters.
-     */
     public function items(Request $request, string $qr): JsonResponse
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
 
         $request->validate([
-            'category_id' => [
-                'nullable',
-                'integer',
-                'exists:menu_categories,id',
-            ],
-            'category' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'type' => [
-                'nullable',
-                'string',
-                'in:veg,non-veg',
-            ],
-            'search' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
+            'category_id' => ['nullable', 'integer', 'exists:menu_categories,id'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'in:veg,non-veg'],
+            'search' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $items = $this->availableMenuItemsQuery(
-            $business,
-            MenuItem::query()
-        )
-            ->when(
-                $request->filled('category_id'),
-                fn ($query) => $query->where(
-                    'menu_category_id',
-                    $request->integer('category_id')
-                )
-            )
-            ->when(
-                $request->filled('category'),
-                fn ($query) => $query->where(
-                    'category',
-                    $request->input('category')
-                )
-            )
-            ->when(
-                $request->filled('type'),
-                fn ($query) => $query->where(
-                    'type',
-                    $request->input('type')
-                )
-            )
-            ->when(
-                $request->filled('search'),
-                function ($query) use ($request) {
-                    $search = $request->input('search');
+        $items = $this->availableMenuItemsQuery($business, MenuItem::query())
+            ->when($request->filled('category_id'), fn ($query) => $query->where('menu_category_id', $request->integer('category_id')))
+            ->when($request->filled('category'), fn ($query) => $query->where('category', $request->input('category')))
+            ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->input('search');
 
-                    $query->where(function ($nested) use ($search) {
-                        $nested
-                            ->where('name', 'like', "%{$search}%")
-                            ->orWhere(
-                                'description',
-                                'like',
-                                "%{$search}%"
-                            )
-                            ->orWhere(
-                                'category',
-                                'like',
-                                "%{$search}%"
-                            );
-                    });
-                }
-            )
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('category', 'like', "%{$search}%");
+                });
+            })
             ->get();
 
         return $this->success([
@@ -177,9 +92,6 @@ class CustomerMenuController extends ApiController
         ], 'Customer menu items');
     }
 
-    /**
-     * Get a single available customer menu item.
-     */
     public function item(string $qr, MenuItem $menuItem): JsonResponse
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
@@ -196,19 +108,10 @@ class CustomerMenuController extends ApiController
         return $this->success([
             'business' => $this->businessPayload($business),
             'context' => $context,
-            'item' => new MenuItemResource(
-                $menuItem->load([
-                    'variants',
-                    'presetImage',
-                    'menuCategory',
-                ])
-            ),
+            'item' => new MenuItemResource($menuItem->load(['variants', 'presetImage', 'menuCategory'])),
         ], 'Customer menu item');
     }
 
-    /**
-     * Base query for active categories.
-     */
     private function categoryQuery(Business $business)
     {
         return $business->categories()
@@ -218,34 +121,20 @@ class CustomerMenuController extends ApiController
             ->orderBy('name');
     }
 
-    /**
-     * Base query for available menu items.
-     */
-    private function availableMenuItemsQuery(
-        Business $business,
-        $query
-    ) {
-        return $query
-            ->where('business_id', $business->id)
+    private function availableMenuItemsQuery(Business $business, $query)
+    {
+        return $query->where('business_id', $business->id)
             ->where('status', 'active')
             ->where('availability', true)
             ->where('stock', true)
-            ->with([
-                'variants',
-                'presetImage',
-                'menuCategory',
-            ])
+            ->with(['variants', 'presetImage', 'menuCategory'])
             ->orderBy('sort_order')
             ->orderBy('name');
     }
 
-    /**
-     * Business information for customer APIs.
-     */
     private function businessPayload(Business $business): array
     {
         $settings = $business->businessSetting;
-
         $logoPath = $settings?->logo_path ?: $business->logo_path;
 
         return [
@@ -267,19 +156,13 @@ class CustomerMenuController extends ApiController
         ];
     }
 
-    /**
-     * Convert storage path to public asset URL.
-     */
     private function assetUrl(?string $path): ?string
     {
         if (! $path) {
             return null;
         }
 
-        if (
-            str_starts_with($path, 'http://')
-            || str_starts_with($path, 'https://')
-        ) {
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;
         }
 
@@ -287,6 +170,6 @@ class CustomerMenuController extends ApiController
             return asset($path);
         }
 
-        return asset('storage/' . $path);
+        return asset('storage/'.$path);
     }
 }
