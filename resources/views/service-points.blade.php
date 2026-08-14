@@ -50,8 +50,13 @@
             <!-- Zone Switcher (Dynamic Categories) -->
             <template x-if="categories.length > 0">
                 <div class="flex items-center gap-1 bg-card-tint border border-border p-1 rounded-xl">
+                    <button
+                        @click="activeFloor = 'all'"
+                        :class="activeFloor === 'all' ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
+                        class="rounded-lg px-3.5 py-1.5 text-[10px] cursor-pointer transition-all"
+                    >All</button>
                     <template x-for="cat in categories" :key="cat">
-                        <button 
+                        <button
                             @click="activeFloor = cat"
                             :class="activeFloor === cat ? 'bg-white text-ink shadow-xs font-bold' : 'text-muted hover:text-ink font-semibold'"
                             class="rounded-lg px-3.5 py-1.5 text-[10px] cursor-pointer transition-all"
@@ -141,9 +146,9 @@
         <template x-for="t in tables" :key="t.id">
             <div 
                 x-show="
-                    t.category === activeFloor && 
-                    (statusFilter === 'all' || 
-                     (statusFilter === 'available' && t.status === 'available') || 
+                    (activeFloor === 'all' || t.category === activeFloor) &&
+                    (statusFilter === 'all' ||
+                     (statusFilter === 'available' && t.status === 'available') ||
                      (statusFilter === 'occupied' && (t.status === 'occupied' || t.status === 'bill-pending')))
                 "
                 class="rounded-xl border bg-card p-4.5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all flex flex-col justify-between h-48 select-none relative overflow-hidden group"
@@ -544,7 +549,7 @@ function servicePointManager(config) {
         tables: config.initialPoints,
         categories: config.initialCategories,
         businessName: config.businessName || 'Hotel',
-        activeFloor: config.initialCategories.length > 0 ? config.initialCategories[0] : '',
+        activeFloor: 'all',
         drawerOpen: false,
         selectedTableId: null,
         createModalOpen: false,
@@ -561,7 +566,9 @@ function servicePointManager(config) {
         },
 
         get stats() {
-            let activeList = this.tables.filter(t => t.category === this.activeFloor);
+            let activeList = this.activeFloor === 'all'
+                ? this.tables
+                : this.tables.filter(t => t.category === this.activeFloor);
             return {
                 total: activeList.length,
                 available: activeList.filter(t => t.status === 'available').length,
@@ -766,7 +773,7 @@ function servicePointManager(config) {
                     if (!stillHasCategory) {
                         this.categories = this.categories.filter(c => c !== point.category);
                         if (this.activeFloor === point.category) {
-                            this.activeFloor = this.categories.length > 0 ? this.categories[0] : '';
+                            this.activeFloor = 'all';
                         }
                     }
                 }
