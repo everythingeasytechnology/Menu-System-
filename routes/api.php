@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BusinessController;
 use App\Http\Controllers\Api\V1\CouponController;
+use App\Http\Controllers\Api\V1\Customers\CustomerCouponController;
+use App\Http\Controllers\Api\V1\Customers\CustomerMenuController;
+use App\Http\Controllers\Api\V1\Customers\CustomerOrderController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MenuCategoryController;
@@ -38,6 +41,17 @@ Route::prefix('v1')->group(function () {
     Route::get('public/menu/{qr}/items/{menuItem}', [PublicMenuController::class, 'item']);
     Route::post('public/menu/{qr}/orders', [PublicMenuController::class, 'createOrder']);
     Route::get('public/orders/{orderNumber}', [PublicMenuController::class, 'orderStatus']);
+    Route::prefix('customer/scanner/{qr}')->group(function () {
+        Route::get('menu', [CustomerMenuController::class, 'menu']);
+        Route::get('categories', [CustomerMenuController::class, 'categories']);
+        Route::get('categories/{category}', [CustomerMenuController::class, 'category']);
+        Route::get('menu-items', [CustomerMenuController::class, 'items']);
+        Route::get('menu-items/{menuItem}', [CustomerMenuController::class, 'item']);
+        Route::get('coupons', [CustomerCouponController::class, 'index']);
+        Route::post('coupons/validate', [CustomerCouponController::class, 'validateCoupon']);
+        Route::post('orders', [CustomerOrderController::class, 'store']);
+    });
+    Route::get('customer/orders/{orderNumber}', [CustomerOrderController::class, 'show']);
     Route::get('service-points/{servicePoint}/scanner', [ServicePointController::class, 'downloadScanner']);
 
     Route::middleware('api.token')->group(function () {

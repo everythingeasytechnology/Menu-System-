@@ -5,26 +5,23 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\Api\V1\MenuCategoryResource;
 use App\Http\Resources\Api\V1\MenuItemResource;
 use App\Http\Resources\Api\V1\OrderResource;
-use App\Models\Business;
 use App\Models\MenuItem;
 use App\Models\Order;
-use App\Models\RestaurantTable;
-use App\Models\Room;
-use App\Models\ServicePoint;
+use App\Services\Customers\ScannerContextResolver;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class PublicMenuController extends ApiController
 {
-    public function __construct(private readonly OrderService $orderService)
-    {
-    }
+    public function __construct(
+        private readonly OrderService $orderService,
+        private readonly ScannerContextResolver $scannerContextResolver,
+    ) {}
 
     public function menu(string $qr): JsonResponse
     {
-        [$business, $context] = $this->businessFromQr($qr);
+        [$business, $context] = $this->scannerContextResolver->resolve($qr);
 
         $categories = $business->categories()
             ->where('active', true)
@@ -55,7 +52,7 @@ class PublicMenuController extends ApiController
 
     public function item(string $qr, MenuItem $menuItem): JsonResponse
     {
-        [$business] = $this->businessFromQr($qr);
+        [$business] = $this->scannerContextResolver->resolve($qr);
 
         if ($menuItem->business_id !== $business->id || $menuItem->status !== 'active') {
             return $this->error('Resource not found', 404);
@@ -66,7 +63,7 @@ class PublicMenuController extends ApiController
 
     public function createOrder(Request $request, string $qr): JsonResponse
     {
-        [$business, $context] = $this->businessFromQr($qr);
+        [$business, $context] = $this->scannerContextResolver->resolve($qr);
 
         $validated = $request->validate([
             'customer_name' => ['nullable', 'string', 'max:255'],
@@ -108,54 +105,5 @@ class PublicMenuController extends ApiController
             'total' => (float) $order->total,
             'created_at' => $order->created_at?->toISOString(),
         ], 'Order status');
-    }
-
-    private function businessFromQr(string $qr): array
-    {
-        $table = RestaurantTable::with('business')
-            ->where('qr_identifier', $qr)
-            ->where('is_active', true)
-            ->first();
-
-        if ($table && $table->business && $table->business->status === 'active') {
-            return [$table->business, [
-                'type' => 'table',
-                'id' => $table->id,
-                'name' => $table->name,
-                'qr_identifier' => $table->qr_identifier,
-            ]];
-        }
-
-        $room = Room::with('business')
-            ->where('qr_identifier', $qr)
-            ->where('is_active', true)
-            ->first();
-
-        if ($room && $room->business && $room->business->status === 'active') {
-            return [$room->business, [
-                'type' => 'room',
-                'id' => $room->id,
-                'name' => $room->name,
-                'qr_identifier' => $room->qr_identifier,
-            ]];
-        }
-
-        $servicePoint = ServicePoint::with('business')
-            ->where('qr_identifier', $qr)
-            ->where('is_active', true)
-            ->first();
-
-        if ($servicePoint && $servicePoint->business && $servicePoint->business->status === 'active') {
-            return [$servicePoint->business, [
-                'type' => 'service_point',
-                'id' => $servicePoint->id,
-                'name' => $servicePoint->name,
-                'category' => $servicePoint->category,
-                'point_type' => $servicePoint->point_type,
-                'qr_identifier' => $servicePoint->qr_identifier,
-            ]];
-        }
-
-        throw ValidationException::withMessages(['qr' => ['QR identifier is invalid or inactive.']]);
     }
 }
