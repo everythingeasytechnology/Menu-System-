@@ -47,7 +47,7 @@ class ServicePointApiTest extends ApiTestCase
             ->assertHeader('Content-Type', 'image/png');
 
         $this->assertStringStartsWith("\x89PNG\r\n\x1A\n", $download->getContent());
-        $this->assertSame([640, 760], array_slice(getimagesizefromstring($download->getContent()), 0, 2));
+        $this->assertSame([640, 640], array_slice(getimagesizefromstring($download->getContent()), 0, 2));
         $this->assertStringContainsString('scanner.png', $download->headers->get('Content-Disposition'));
     }
 

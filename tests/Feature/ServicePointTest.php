@@ -106,7 +106,7 @@ class ServicePointTest extends TestCase
         $this->assertEquals(250.00, $point->amount);
     }
 
-    public function test_service_point_scanner_renders_qr_svg(): void
+    public function test_service_point_scanner_renders_branded_qr_png(): void
     {
         $point = ServicePoint::create([
             'business_id' => $this->business->id,
@@ -123,9 +123,9 @@ class ServicePointTest extends TestCase
         $response = $this->get("/service-points/{$point->id}/scanner");
 
         $response->assertOk();
-        $this->assertStringContainsString('image/svg+xml', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('image/png', $response->headers->get('Content-Type'));
         $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
-        $this->assertStringContainsString('<svg', $response->getContent());
+        $this->assertStringStartsWith("\x89PNG\r\n\x1A\n", $response->getContent());
 
         $download = $this->get("/service-points/{$point->id}/scanner?download=1");
 

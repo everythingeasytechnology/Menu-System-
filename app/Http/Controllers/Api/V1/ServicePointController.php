@@ -117,12 +117,7 @@ class ServicePointController extends ApiController
 
     public function downloadScanner(Request $request, ServicePoint $servicePoint): Response
     {
-        $servicePoint->loadMissing('business');
-
-        $png = $this->qrCodeService->scannerPng(
-            $this->scanUrl($servicePoint),
-            $servicePoint->business?->name ?? 'EverythingEasy',
-        );
+        $png = $this->qrCodeService->scannerPng($this->scanUrl($servicePoint));
         $filename = Str::slug($servicePoint->code.'-'.$servicePoint->name).'-scanner.png';
 
         return response($png, 200, [

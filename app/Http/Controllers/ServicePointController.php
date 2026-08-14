@@ -179,13 +179,13 @@ class ServicePointController extends Controller
         $point = $this->pointForBusiness((int) $id, $business);
         $this->ensurePointReady($point, $business);
 
-        $svg = $this->qrCodeService->svg($this->scanUrl($point));
-        $filename = Str::slug($point->code.'-'.$point->name).'-scanner.svg';
+        $png = $this->qrCodeService->scannerPng($this->scanUrl($point));
+        $filename = Str::slug($point->code.'-'.$point->name).'-scanner.png';
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
-        return response($svg, 200, [
-            'Content-Type' => 'image/svg+xml',
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
             'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
             'Cache-Control' => 'private, max-age=3600',
         ]);
