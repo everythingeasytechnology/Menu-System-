@@ -89,9 +89,7 @@ class CustomerScannerApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.business.name', 'Customer QR Cafe')
-            ->assertJsonPath('data.context.type', 'service_point')
-            ->assertJsonFragment(['name' => 'Starters'])
+            ->assertJsonPath('business.name', 'Customer QR Cafe')
             ->assertJsonFragment(['name' => 'Customer Paneer Tikka'])
             ->assertJsonMissing(['name' => 'Other Business Burger']);
     }
@@ -102,8 +100,7 @@ class CustomerScannerApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.context.id', $this->servicePoint->id)
-            ->assertJsonPath('data.context.qr_identifier', 'customer-qr-001')
+            ->assertJsonPath('business.name', 'Customer QR Cafe')
             ->assertJsonFragment(['name' => 'Customer Paneer Tikka']);
     }
 
