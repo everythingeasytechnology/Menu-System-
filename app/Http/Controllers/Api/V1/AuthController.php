@@ -204,6 +204,7 @@ class AuthController extends ApiController
 
         return $this->success([
             'email' => $data['email'],
+            'otp' => $otp,
             'expires_in_seconds' => $expiresInSeconds,
             'mode' => 'smtp',
             'mail_sent' => true,

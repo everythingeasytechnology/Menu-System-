@@ -177,22 +177,19 @@ class AuthApiTest extends ApiTestCase
             ->assertJsonPath('data.mode', 'smtp')
             ->assertJsonPath('data.mail_sent', true);
 
-        $this->assertArrayNotHasKey('otp', $response->json('data'));
+        $returnedOtp = $response->json('data.otp');
+        $this->assertMatchesRegularExpression('/^\d{4}$/', $returnedOtp);
 
-        $sentOtp = null;
-
-        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) use (&$sentOtp) {
-            $sentOtp = $mail->otp;
-
+        Mail::assertSent(EmailOtpMail::class, function (EmailOtpMail $mail) use ($returnedOtp) {
             return $mail->hasTo('otp-mail@example.com')
-                && preg_match('/^\d{4}$/', $mail->otp) === 1;
+                && $mail->otp === $returnedOtp;
         });
 
         $cachedOtp = Cache::get('auth:email-otp:'.sha1('otp-mail@example.com'));
 
         $this->assertIsArray($cachedOtp);
         $this->assertSame('otp-mail@example.com', $cachedOtp['email']);
-        $this->assertTrue(Hash::check($sentOtp, $cachedOtp['otp_hash']));
+        $this->assertTrue(Hash::check($returnedOtp, $cachedOtp['otp_hash']));
     }
 
     public function test_email_otp_can_be_verified(): void
