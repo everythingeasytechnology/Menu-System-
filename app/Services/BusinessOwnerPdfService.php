@@ -27,10 +27,9 @@ class BusinessOwnerPdfService
         $this->lines = [];
         $this->y = 790;
 
-        $business->loadMissing(['owner', 'businessSetting']);
+        $business->loadMissing(['owner']);
         $business->loadCount(['orders', 'menuItems', 'categories', 'restaurantTables', 'rooms', 'servicePoints']);
 
-        $settings = $business->businessSetting;
         $owner = $business->owner;
 
         $this->text('Business Owner Details', 22, true);
@@ -56,17 +55,17 @@ class BusinessOwnerPdfService
         $this->row('Owner Role', $owner?->role);
 
         $this->section('Business Settings');
-        $this->row('Brand Name', $settings?->brand_name);
-        $this->row('Settings Email', $settings?->business_email);
-        $this->row('Shop No', $settings?->shop_no);
-        $this->row('Address', $settings?->address);
-        $this->row('District / State / Country', collect([$settings?->district, $settings?->state, $settings?->country])->filter()->join(', '));
-        $this->row('Pincode', $settings?->pincode);
-        $this->row('GST Enabled', $settings?->gst_enabled ? 'Yes' : 'No');
-        $this->row('GST No', $settings?->gst_no);
-        $this->row('CGST / SGST', trim(($settings?->cgst ?? '0').' / '.($settings?->sgst ?? '0')));
-        $this->row('Latitude / Longitude', collect([$settings?->latitude, $settings?->longitude])->filter()->join(' / '));
-        $this->row('Logo Path', $settings?->logo_path ?: $business->logo_path);
+        $this->row('Brand Name', $business->name);
+        $this->row('Settings Email', $business->business_email);
+        $this->row('Shop No', $business->shop_no);
+        $this->row('Address', $business->address);
+        $this->row('District / State / Country', collect([$business->district, $business->state, $business->country])->filter()->join(', '));
+        $this->row('Pincode', $business->pincode);
+        $this->row('GST Enabled', $business->gst_enabled ? 'Yes' : 'No');
+        $this->row('GST No', $business->gst_number);
+        $this->row('CGST / SGST', trim(($business->cgst ?? '0').' / '.($business->sgst ?? '0')));
+        $this->row('Latitude / Longitude', collect([$business->latitude, $business->longitude])->filter()->join(' / '));
+        $this->row('Logo Path', $business->logo_path);
 
         $this->section('Platform Counts');
         $this->row('Orders', (string) $business->orders_count);

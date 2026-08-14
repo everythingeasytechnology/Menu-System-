@@ -31,14 +31,14 @@
 
     $business = null;
     try {
-        if (\Illuminate\Support\Facades\Schema::hasTable('business_settings')) {
-            $business = \App\Models\BusinessSetting::first();
+        if (auth()->check() && auth()->user()->business_id && \Illuminate\Support\Facades\Schema::hasTable('businesses')) {
+            $business = auth()->user()->business;
         }
     } catch (\Throwable $e) {
         // Keep the sidebar available during early database setup.
     }
 
-    $brandName = $business?->brand_name ?? 'SmartMenu';
+    $brandName = $business?->name ?? 'SmartMenu';
     $logoUrl = $business?->logo_path ? asset('storage/' . $business->logo_path) : null;
 @endphp
 

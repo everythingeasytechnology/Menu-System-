@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -155,15 +154,12 @@ class CouponController extends Controller
             return $ownedBusiness;
         }
 
-        $settings = BusinessSetting::first();
         $business = Business::create([
             'owner_user_id' => $user->id,
-            'name' => $settings?->brand_name ?: 'EverythingEasy',
+            'name' => 'EverythingEasy',
             'type' => 'restaurant',
-            'email' => $settings?->business_email ?: $user->email,
-            'address' => $settings?->address,
-            'state' => $settings?->state,
-            'country' => $settings?->country ?: 'India',
+            'email' => $user->email,
+            'country' => 'India',
             'timezone' => 'Asia/Kolkata',
             'status' => 'active',
         ]);

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Mail\CustomerOrderReceiptMail;
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\Order;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -21,7 +20,7 @@ class CustomerOrderExperienceService
     public function payload(Order $order): array
     {
         $order->loadMissing([
-            'business.businessSetting',
+            'business',
             'items',
             'payments',
             'restaurantTable',
@@ -32,14 +31,12 @@ class CustomerOrderExperienceService
         ]);
 
         $business = $order->business;
-        $settings = $business
-            ? $this->ownerDashboardService->settingsFor($business)
-            : new BusinessSetting([
-                'brand_name' => config('app.name'),
-                'gst_enabled' => false,
-                'cgst' => 0,
-                'sgst' => 0,
-            ]);
+        $settings = $business ?? new Business([
+            'name' => config('app.name'),
+            'gst_enabled' => false,
+            'cgst' => 0,
+            'sgst' => 0,
+        ]);
         $formattedOrder = $this->ownerDashboardService->formatOrder($order);
 
         return [
@@ -84,22 +81,22 @@ class CustomerOrderExperienceService
         }
     }
 
-    private function businessPayload(?Business $business, BusinessSetting $settings): array
+    private function businessPayload(?Business $business, Business $settings): array
     {
         return [
-            'name' => $settings->brand_name ?: $business?->name ?: config('app.name'),
+            'name' => $settings->name ?: $business?->name ?: config('app.name'),
             'address' => $settings->address ?: $business?->address,
             'pincode' => $settings->pincode,
             'phone' => $business?->phone,
             'email' => $settings->business_email ?: $business?->email,
-            'gst_no' => $settings->gst_no,
+            'gst_no' => $settings->gst_number,
             'gst_enabled' => (bool) $settings->gst_enabled,
             'cgst' => (float) ($settings->cgst ?? 0),
             'sgst' => (float) ($settings->sgst ?? 0),
         ];
     }
 
-    private function receiptPayload(Order $order, BusinessSetting $settings, array $formattedOrder): array
+    private function receiptPayload(Order $order, Business $settings, array $formattedOrder): array
     {
         $subtotal = (float) $order->subtotal;
         $discount = (float) $order->discount;

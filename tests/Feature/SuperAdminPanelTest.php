@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\AppVersion;
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\MailSetting;
 use App\Models\PresetFoodImage;
 use App\Models\User;
@@ -149,9 +148,7 @@ class SuperAdminPanelTest extends TestCase
 
         $owner->update(['business_id' => $ownerBusiness->id]);
 
-        BusinessSetting::create([
-            'business_id' => $ownerBusiness->id,
-            'brand_name' => 'Owner PDF Brand',
+        $ownerBusiness->update([
             'business_email' => 'settings@example.com',
             'shop_no' => 'A-12',
             'address' => 'Main Market',
@@ -159,7 +156,7 @@ class SuperAdminPanelTest extends TestCase
             'state' => 'Delhi',
             'district' => 'Central Delhi',
             'pincode' => '110001',
-            'gst_no' => '07ABCDE1234F1Z5',
+            'gst_number' => '07ABCDE1234F1Z5',
             'gst_enabled' => true,
             'cgst' => 2.5,
             'sgst' => 2.5,
@@ -191,7 +188,7 @@ class SuperAdminPanelTest extends TestCase
         $this->get(route('admin.businesses.edit', $ownerBusiness))
             ->assertOk()
             ->assertSee('Business Settings')
-            ->assertSee('Owner PDF Brand')
+            ->assertSee('Owner PDF Cafe')
             ->assertSee('07ABCDE1234F1Z5')
             ->assertSee('Download PDF');
 
@@ -206,7 +203,6 @@ class SuperAdminPanelTest extends TestCase
 
         $this->assertStringStartsWith('%PDF-1.4', $pdf->getContent());
         $this->assertStringContainsString('Owner PDF Cafe', $pdf->getContent());
-        $this->assertStringContainsString('Owner PDF Brand', $pdf->getContent());
         $this->assertStringContainsString('07ABCDE1234F1Z5', $pdf->getContent());
     }
 

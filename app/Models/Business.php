@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Business extends Model
 {
@@ -17,12 +16,21 @@ class Business extends Model
         'name',
         'type',
         'gst_number',
+        'gst_enabled',
+        'cgst',
+        'sgst',
         'phone',
         'email',
+        'business_email',
         'address',
+        'shop_no',
         'city',
         'state',
+        'district',
         'country',
+        'pincode',
+        'latitude',
+        'longitude',
         'logo_path',
         'opening_time',
         'closing_time',
@@ -33,6 +41,9 @@ class Business extends Model
     protected $casts = [
         'opening_time' => 'datetime:H:i',
         'closing_time' => 'datetime:H:i',
+        'gst_enabled' => 'boolean',
+        'cgst' => 'float',
+        'sgst' => 'float',
     ];
 
     public function owner(): BelongsTo
@@ -73,10 +84,5 @@ class Business extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
-    }
-
-    public function businessSetting(): HasOne
-    {
-        return $this->hasOne(BusinessSetting::class);
     }
 }

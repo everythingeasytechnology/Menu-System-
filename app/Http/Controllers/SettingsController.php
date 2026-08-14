@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BusinessSetting;
+use App\Models\Business;
 use App\Models\RazorpaySetting;
 use App\Models\CashSetting;
 use App\Models\User;
@@ -17,30 +17,21 @@ class SettingsController extends Controller
      */
     public function index()
     {
-        $business = BusinessSetting::firstOrCreate([], [
-            'brand_name' => 'EverythingEasy',
-            'business_email' => 'contact@everythingeasy.com',
-            'shop_no' => 'G-12',
-            'address' => 'Connaught Place, Block C',
-            'country' => 'India',
-            'state' => 'Delhi',
-            'district' => 'New Delhi',
-            'pincode' => '110001',
-            'latitude' => '28.6304',
-            'longitude' => '77.2177',
-            'gst_no' => '07AAAAA1111A1Z1',
-            'gst_enabled' => false,
-            'cgst' => 2.50,
-            'sgst' => 2.50,
-        ]);
+        $business = $this->currentBusiness();
+        $businessId = $business->id;
 
-        $razorpay = RazorpaySetting::firstOrCreate([], [
+        // The view historically reads $business->brand_name / gst_no (business_settings' field
+        // names). Map them here so the Blade template doesn't need to change.
+        $business->brand_name = $business->name;
+        $business->gst_no = $business->gst_number;
+
+        $razorpay = RazorpaySetting::firstOrCreate(['business_id' => $businessId], [
             'enabled' => false,
             'key_id' => '',
             'key_secret' => '',
         ]);
 
-        $cash = CashSetting::firstOrCreate([], [
+        $cash = CashSetting::firstOrCreate(['business_id' => $businessId], [
             'enabled' => true,
         ]);
 
@@ -67,10 +58,21 @@ class SettingsController extends Controller
             'gst_no' => 'nullable|string|max:50',
         ]);
 
-        $business = BusinessSetting::firstOrCreate([]);
-        
-        $updateData = $validated;
-        unset($updateData['logo']); // Remove the logo file instance from mass-assignment data
+        $business = $this->currentBusiness();
+
+        $updateData = [
+            'name' => $validated['brand_name'],
+            'business_email' => $validated['business_email'],
+            'shop_no' => $validated['shop_no'],
+            'address' => $validated['address'],
+            'country' => $validated['country'],
+            'state' => $validated['state'],
+            'district' => $validated['district'],
+            'pincode' => $validated['pincode'],
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
+            'gst_number' => $validated['gst_no'] ?? null,
+        ];
 
         if ($request->hasFile('logo')) {
             // Delete old logo if it exists
@@ -100,7 +102,7 @@ class SettingsController extends Controller
             'key_secret' => 'nullable|string|max:255',
         ]);
 
-        $razorpay = RazorpaySetting::firstOrCreate([]);
+        $razorpay = RazorpaySetting::firstOrCreate(['business_id' => $this->currentBusiness()->id]);
 
         if ($request->has('enabled') && ! $request->filled('key_secret') && ! $razorpay->key_secret) {
             return redirect()->back()
@@ -125,7 +127,7 @@ class SettingsController extends Controller
      */
     public function updateCash(Request $request)
     {
-        $cash = CashSetting::firstOrCreate([]);
+        $cash = CashSetting::firstOrCreate(['business_id' => $this->currentBusiness()->id]);
         $cash->update([
             'enabled' => $request->has('enabled'),
         ]);
@@ -186,9 +188,9 @@ class SettingsController extends Controller
             'sgst' => 'required|numeric|min:0|max:100',
         ]);
 
-        $business = BusinessSetting::firstOrCreate([]);
+        $business = $this->currentBusiness();
         $business->update([
-            'gst_no' => $request->input('gst_no'),
+            'gst_number' => $request->input('gst_no'),
             'gst_enabled' => $request->boolean('gst_enabled') && $request->filled('gst_no'),
             'cgst' => floatval($request->input('cgst')),
             'sgst' => floatval($request->input('sgst')),
@@ -197,5 +199,28 @@ class SettingsController extends Controller
         return redirect()->back()
             ->with('success', 'GST settings updated successfully!')
             ->with('active_tab', 'gst');
+    }
+
+    private function currentBusiness(): Business
+    {
+        $user = auth()->user();
+
+        if ($user->business) {
+            return $user->business;
+        }
+
+        $business = Business::create([
+            'owner_user_id' => $user->id,
+            'name' => 'EverythingEasy',
+            'type' => 'restaurant',
+            'email' => $user->email,
+            'country' => 'India',
+            'timezone' => 'Asia/Kolkata',
+            'status' => 'active',
+        ]);
+
+        $user->update(['business_id' => $business->id]);
+
+        return $business;
     }
 }

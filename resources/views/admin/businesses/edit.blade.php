@@ -96,51 +96,51 @@
                     <div class="mt-3 grid gap-3 md:grid-cols-3">
                         <label class="block md:col-span-2">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Brand Name</span>
-                            <input value="{{ $business->businessSetting?->brand_name ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->name ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">GST Enabled</span>
-                            <input value="{{ $business->businessSetting?->gst_enabled ? 'Yes' : 'No' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->gst_enabled ? 'Yes' : 'No' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Settings Email</span>
-                            <input value="{{ $business->businessSetting?->business_email ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->business_email ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Shop No</span>
-                            <input value="{{ $business->businessSetting?->shop_no ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->shop_no ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Pincode</span>
-                            <input value="{{ $business->businessSetting?->pincode ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->pincode ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block md:col-span-3">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Address</span>
-                            <input value="{{ $business->businessSetting?->address ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->address ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">District</span>
-                            <input value="{{ $business->businessSetting?->district ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->district ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">State</span>
-                            <input value="{{ $business->businessSetting?->state ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->state ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">Country</span>
-                            <input value="{{ $business->businessSetting?->country ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->country ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">GST No</span>
-                            <input value="{{ $business->businessSetting?->gst_no ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->gst_number ?: 'Not set' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">CGST</span>
-                            <input value="{{ $business->businessSetting?->cgst ?? '0' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->cgst ?? '0' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                         <label class="block">
                             <span class="text-[10px] font-black uppercase tracking-wider text-muted">SGST</span>
-                            <input value="{{ $business->businessSetting?->sgst ?? '0' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
+                            <input value="{{ $business->sgst ?? '0' }}" disabled class="mt-1 h-10 w-full rounded-lg border border-border bg-card-tint px-3 text-sm font-bold text-muted">
                         </label>
                     </div>
                 </div>
@@ -172,8 +172,8 @@
             </div>
             <div class="rounded-lg border border-border bg-card p-4 shadow-sm">
                 <span class="text-[10px] font-black uppercase tracking-wider text-muted">Settings</span>
-                <strong class="mt-1 block truncate text-sm font-black text-ink">{{ $business->businessSetting?->brand_name ?? 'No settings' }}</strong>
-                <span class="mt-1 block truncate text-xs font-semibold text-muted">{{ $business->businessSetting?->business_email ?? 'Settings email missing' }}</span>
+                <strong class="mt-1 block truncate text-sm font-black text-ink">{{ $business->name ?? 'No settings' }}</strong>
+                <span class="mt-1 block truncate text-xs font-semibold text-muted">{{ $business->business_email ?? 'Settings email missing' }}</span>
             </div>
         </aside>
     </section>

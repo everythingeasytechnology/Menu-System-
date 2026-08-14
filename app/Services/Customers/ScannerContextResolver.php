@@ -12,7 +12,7 @@ class ScannerContextResolver
 {
     public function resolve(string $qr): array
     {
-        $table = RestaurantTable::with('business.businessSetting')
+        $table = RestaurantTable::with('business')
             ->where('qr_identifier', $qr)
             ->where('is_active', true)
             ->first();
@@ -26,7 +26,7 @@ class ScannerContextResolver
             ]];
         }
 
-        $room = Room::with('business.businessSetting')
+        $room = Room::with('business')
             ->where('qr_identifier', $qr)
             ->where('is_active', true)
             ->first();
@@ -40,7 +40,7 @@ class ScannerContextResolver
             ]];
         }
 
-        $servicePoint = ServicePoint::with('business.businessSetting')
+        $servicePoint = ServicePoint::with('business')
             ->where(function ($query) use ($qr) {
                 $query->where('qr_identifier', $qr)
                     ->orWhere('code', $qr);

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -33,15 +32,12 @@ class OwnerDashboardService
             return $ownedBusiness;
         }
 
-        $settings = BusinessSetting::first();
         $business = Business::create([
             'owner_user_id' => $user->id,
-            'name' => $settings?->brand_name ?: 'EverythingEasy',
+            'name' => 'EverythingEasy',
             'type' => 'restaurant',
-            'email' => $settings?->business_email ?: $user->email,
-            'address' => $settings?->address,
-            'state' => $settings?->state,
-            'country' => $settings?->country ?: 'India',
+            'email' => $user->email,
+            'country' => 'India',
             'timezone' => 'Asia/Kolkata',
             'status' => 'active',
         ]);
@@ -49,18 +45,6 @@ class OwnerDashboardService
         $user->update(['business_id' => $business->id]);
 
         return $business;
-    }
-
-    public function settingsFor(Business $business): BusinessSetting
-    {
-        return BusinessSetting::where('business_id', $business->id)->first()
-            ?? BusinessSetting::first()
-            ?? new BusinessSetting([
-                'brand_name' => $business->name,
-                'gst_enabled' => false,
-                'cgst' => 2.5,
-                'sgst' => 2.5,
-            ]);
     }
 
     public function dashboardData(User $user): array
@@ -93,7 +77,7 @@ class OwnerDashboardService
 
         return [
             'business' => $business,
-            'settings' => $this->settingsFor($business),
+            'settings' => $business,
             'ordersPayload' => $orders,
             'selectedOrderId' => $orders->first()['id'] ?? null,
             'statuses' => self::STATUS_LABELS,

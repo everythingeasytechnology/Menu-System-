@@ -42,7 +42,7 @@ class CustomerOrderPortalController extends Controller
     private function orderByNumber(string $orderNumber): Order
     {
         return Order::with([
-            'business.businessSetting',
+            'business',
             'items',
             'payments',
             'restaurantTable',

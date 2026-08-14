@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Mail\CustomerOrderReceiptMail;
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\Coupon;
 use App\Models\MailSetting;
 use App\Models\MenuCategory;
@@ -182,12 +181,11 @@ class CustomerScannerApiTest extends TestCase
     {
         Mail::fake();
 
-        BusinessSetting::create([
-            'business_id' => $this->business->id,
-            'brand_name' => 'Customer QR Cafe',
+        $this->business->update([
+            'name' => 'Customer QR Cafe',
             'address' => 'MG Road',
             'pincode' => '560001',
-            'gst_no' => 'GST1234567',
+            'gst_number' => 'GST1234567',
             'gst_enabled' => true,
             'cgst' => 2.5,
             'sgst' => 2.5,
@@ -270,12 +268,11 @@ class CustomerScannerApiTest extends TestCase
 
     public function test_customer_can_open_signed_tracking_and_bill_pages_for_scanner_order(): void
     {
-        BusinessSetting::create([
-            'business_id' => $this->business->id,
-            'brand_name' => 'Customer QR Cafe',
+        $this->business->update([
+            'name' => 'Customer QR Cafe',
             'address' => 'MG Road',
             'pincode' => '560001',
-            'gst_no' => 'GST1234567',
+            'gst_number' => 'GST1234567',
             'gst_enabled' => true,
             'cgst' => 2.5,
             'sgst' => 2.5,
@@ -320,9 +317,8 @@ class CustomerScannerApiTest extends TestCase
 
     public function test_customer_bill_page_hides_gst_summary_when_gst_is_disabled(): void
     {
-        BusinessSetting::create([
-            'business_id' => $this->business->id,
-            'brand_name' => 'Customer QR Cafe',
+        $this->business->update([
+            'name' => 'Customer QR Cafe',
             'gst_enabled' => false,
             'cgst' => 0,
             'sgst' => 0,

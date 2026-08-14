@@ -7,7 +7,6 @@ use App\Http\Requests\Api\V1\Business\UpdateBusinessRequest;
 use App\Http\Requests\Api\V1\Business\UpdateBusinessSettingsRequest;
 use App\Http\Resources\Api\V1\BusinessResource;
 use App\Http\Resources\Api\V1\UserResource;
-use App\Models\BusinessSetting;
 use App\Models\CashSetting;
 use App\Models\RazorpaySetting;
 use App\Services\AuditLogService;
@@ -89,18 +88,12 @@ class BusinessController extends ApiController
             }
         }
 
-        $businessSetting = BusinessSetting::firstOrCreate(['business_id' => $business->id]);
-
         if ($request->hasFile('logo')) {
-            if ($businessSetting->logo_path) {
-                Storage::disk('public')->delete($businessSetting->logo_path);
+            if ($business->logo_path) {
+                Storage::disk('public')->delete($business->logo_path);
             }
 
             $settingsData['logo_path'] = $request->file('logo')->store('logos', 'public');
-        }
-
-        if ($settingsData !== []) {
-            $businessSetting->update(Arr::only($settingsData, array_merge($this->settingsFields(), ['logo_path'])));
         }
 
         $cashSetting = CashSetting::firstOrCreate(['business_id' => $business->id], ['enabled' => true]);
@@ -129,7 +122,11 @@ class BusinessController extends ApiController
             $businessUpdate['name'] = $settingsData['brand_name'];
         }
         if (array_key_exists('business_email', $settingsData)) {
+            $businessUpdate['business_email'] = $settingsData['business_email'];
             $businessUpdate['email'] = $settingsData['business_email'];
+        }
+        if (array_key_exists('shop_no', $settingsData)) {
+            $businessUpdate['shop_no'] = $settingsData['shop_no'];
         }
         if (array_key_exists('address', $settingsData)) {
             $businessUpdate['address'] = $settingsData['address'];
@@ -140,8 +137,29 @@ class BusinessController extends ApiController
         if (array_key_exists('country', $settingsData)) {
             $businessUpdate['country'] = $settingsData['country'];
         }
+        if (array_key_exists('district', $settingsData)) {
+            $businessUpdate['district'] = $settingsData['district'];
+        }
+        if (array_key_exists('pincode', $settingsData)) {
+            $businessUpdate['pincode'] = $settingsData['pincode'];
+        }
+        if (array_key_exists('latitude', $settingsData)) {
+            $businessUpdate['latitude'] = $settingsData['latitude'];
+        }
+        if (array_key_exists('longitude', $settingsData)) {
+            $businessUpdate['longitude'] = $settingsData['longitude'];
+        }
         if (array_key_exists('gst_no', $settingsData)) {
             $businessUpdate['gst_number'] = $settingsData['gst_no'];
+        }
+        if (array_key_exists('gst_enabled', $settingsData)) {
+            $businessUpdate['gst_enabled'] = (bool) $settingsData['gst_enabled'];
+        }
+        if (array_key_exists('cgst', $settingsData)) {
+            $businessUpdate['cgst'] = $settingsData['cgst'];
+        }
+        if (array_key_exists('sgst', $settingsData)) {
+            $businessUpdate['sgst'] = $settingsData['sgst'];
         }
         if (array_key_exists('logo_path', $settingsData)) {
             $businessUpdate['logo_path'] = $settingsData['logo_path'];
@@ -151,39 +169,35 @@ class BusinessController extends ApiController
             $business->update($businessUpdate);
         }
 
-        $this->auditLogService->record($request->user(), $business->id, 'business.settings.updated', $businessSetting->fresh());
+        $this->auditLogService->record($request->user(), $business->id, 'business.settings.updated', $business->fresh());
 
         return $this->success($this->settingsPayload($business->fresh()), 'Business settings updated');
     }
 
     private function settingsPayload($business): array
     {
-        $businessSetting = BusinessSetting::where('business_id', $business->id)->first()
-            ?? BusinessSetting::whereNull('business_id')->first();
-        $cashSetting = CashSetting::where('business_id', $business->id)->first()
-            ?? CashSetting::whereNull('business_id')->first();
-        $razorpaySetting = RazorpaySetting::where('business_id', $business->id)->first()
-            ?? RazorpaySetting::whereNull('business_id')->first();
+        $cashSetting = CashSetting::where('business_id', $business->id)->first();
+        $razorpaySetting = RazorpaySetting::where('business_id', $business->id)->first();
 
         return [
             'business' => new BusinessResource($business),
             'settings' => [
-                'brand_name' => $businessSetting?->brand_name,
-                'logo_path' => $businessSetting?->logo_path,
-                'logo_url' => $businessSetting?->logo_path ? asset('storage/'.$businessSetting->logo_path) : null,
-                'business_email' => $businessSetting?->business_email,
-                'shop_no' => $businessSetting?->shop_no,
-                'address' => $businessSetting?->address,
-                'country' => $businessSetting?->country,
-                'state' => $businessSetting?->state,
-                'district' => $businessSetting?->district,
-                'pincode' => $businessSetting?->pincode,
-                'latitude' => $businessSetting?->latitude,
-                'longitude' => $businessSetting?->longitude,
-                'gst_no' => $businessSetting?->gst_no,
-                'gst_enabled' => (bool) $businessSetting?->gst_enabled,
-                'cgst' => $businessSetting?->cgst,
-                'sgst' => $businessSetting?->sgst,
+                'brand_name' => $business->name,
+                'logo_path' => $business->logo_path,
+                'logo_url' => $business->logo_path ? asset('storage/'.$business->logo_path) : null,
+                'business_email' => $business->business_email,
+                'shop_no' => $business->shop_no,
+                'address' => $business->address,
+                'country' => $business->country,
+                'state' => $business->state,
+                'district' => $business->district,
+                'pincode' => $business->pincode,
+                'latitude' => $business->latitude,
+                'longitude' => $business->longitude,
+                'gst_no' => $business->gst_number,
+                'gst_enabled' => (bool) $business->gst_enabled,
+                'cgst' => $business->cgst,
+                'sgst' => $business->sgst,
             ],
             'payments' => [
                 'cash_enabled' => (bool) $cashSetting?->enabled,
@@ -289,6 +303,7 @@ class BusinessController extends ApiController
         }
         if (array_key_exists('business_email', $data)) {
             $businessData['email'] = $data['business_email'];
+            $businessData['business_email'] = $data['business_email'];
         }
         if (array_key_exists('business_phone', $data)) {
             $businessData['phone'] = $data['business_phone'];
@@ -303,35 +318,18 @@ class BusinessController extends ApiController
             }
         }
 
-        $businessSetting = BusinessSetting::firstOrCreate(['business_id' => $business->id]);
-
         if ($request->hasFile('logo')) {
             $this->deletePublicFile($business->logo_path);
-            if ($businessSetting->logo_path !== $business->logo_path) {
-                $this->deletePublicFile($businessSetting->logo_path);
-            }
-
             $businessData['logo_path'] = $request->file('logo')->store('logos', 'public');
         } elseif ($request->boolean('remove_logo')) {
             $this->deletePublicFile($business->logo_path);
-            if ($businessSetting->logo_path !== $business->logo_path) {
-                $this->deletePublicFile($businessSetting->logo_path);
-            }
-
             $businessData['logo_path'] = null;
         }
 
+        $businessData = array_merge($businessData, $this->businessSettingsDataFromProfile($data));
+
         if ($businessData !== []) {
             $business->update($businessData);
-        }
-
-        $settingsData = $this->businessSettingsDataFromProfile($data, $business->fresh());
-        if (array_key_exists('logo_path', $businessData)) {
-            $settingsData['logo_path'] = $businessData['logo_path'];
-        }
-
-        if ($settingsData !== []) {
-            $businessSetting->update($settingsData);
         }
 
         $this->auditLogService->record($user->fresh(), $business->id, 'business.owner_profile.updated', $business->fresh());
@@ -352,21 +350,12 @@ class BusinessController extends ApiController
         ];
     }
 
-    private function businessSettingsDataFromProfile(array $data, $business): array
+    private function businessSettingsDataFromProfile(array $data): array
     {
         $settingsData = [];
 
-        if (array_key_exists('business_name', $data) || array_key_exists('brand_name', $data)) {
-            $settingsData['brand_name'] = $data['business_name'] ?? $data['brand_name'];
-        }
-        if (array_key_exists('business_email', $data)) {
-            $settingsData['business_email'] = $data['business_email'];
-        }
         if (array_key_exists('shop_no', $data)) {
             $settingsData['shop_no'] = $data['shop_no'];
-        }
-        if (array_key_exists('gst_number', $data) || array_key_exists('gst_no', $data)) {
-            $settingsData['gst_no'] = $data['gst_number'] ?? $data['gst_no'];
         }
 
         foreach (['address', 'country', 'state', 'district', 'pincode', 'latitude', 'longitude'] as $field) {

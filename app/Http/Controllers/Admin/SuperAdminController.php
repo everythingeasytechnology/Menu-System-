@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\BusinessRegistrationSuccessMail;
 use App\Models\AppVersion;
 use App\Models\Business;
-use App\Models\BusinessSetting;
 use App\Models\MailSetting;
 use App\Models\Order;
 use App\Models\PresetFoodImage;
@@ -56,7 +55,7 @@ class SuperAdminController extends Controller
     {
         $businessQuery = Business::query()
             ->whereHas('owner', fn ($owner) => $owner->where('role', 'owner'))
-            ->with(['owner', 'businessSetting'])
+            ->with(['owner'])
             ->withCount(['orders'])
             ->latest();
 
@@ -98,7 +97,7 @@ class SuperAdminController extends Controller
 
         return view('admin.businesses.edit', [
             'business' => $business
-                ->load(['owner', 'businessSetting'])
+                ->load(['owner'])
                 ->loadCount(['orders', 'menuItems', 'categories', 'restaurantTables', 'rooms', 'servicePoints']),
             'businessStatuses' => self::BUSINESS_STATUSES,
             'ownerStatuses' => self::OWNER_STATUSES,
@@ -137,28 +136,19 @@ class SuperAdminController extends Controller
                 'name' => $data['business_name'],
                 'type' => $data['business_type'],
                 'email' => $data['business_email'] ?? null,
+                'business_email' => $data['business_email'] ?? null,
                 'phone' => $data['business_phone'] ?? null,
                 'city' => $data['city'] ?? null,
                 'state' => $data['state'] ?? null,
                 'country' => $data['country'] ?? 'India',
                 'timezone' => 'Asia/Kolkata',
                 'status' => $data['business_status'],
+                'gst_enabled' => false,
+                'cgst' => 2.5,
+                'sgst' => 2.5,
             ]);
 
             $owner->update(['business_id' => $business->id]);
-
-            BusinessSetting::updateOrCreate(
-                ['business_id' => $business->id],
-                [
-                    'brand_name' => $business->name,
-                    'business_email' => $business->email,
-                    'country' => $business->country,
-                    'state' => $business->state,
-                    'gst_enabled' => false,
-                    'cgst' => 2.5,
-                    'sgst' => 2.5,
-                ],
-            );
 
             return [$owner->fresh(), $business->fresh()];
         });
@@ -209,13 +199,6 @@ class SuperAdminController extends Controller
             }
         }
 
-        BusinessSetting::where('business_id', $business->id)->update([
-            'brand_name' => $business->name,
-            'business_email' => $business->email,
-            'country' => $business->country,
-            'state' => $business->state,
-        ]);
-
         return redirect()
             ->route('admin.businesses.edit', $business)
             ->with('success', 'Business updated.');
@@ -225,7 +208,7 @@ class SuperAdminController extends Controller
     {
         $this->abortUnlessOwnerBusiness($business);
 
-        $business->load(['owner', 'businessSetting']);
+        $business->load(['owner']);
         $pdf = $this->businessOwnerPdfService->make($business);
         $filename = Str::slug($business->name ?: 'business-owner').'-details.pdf';
 

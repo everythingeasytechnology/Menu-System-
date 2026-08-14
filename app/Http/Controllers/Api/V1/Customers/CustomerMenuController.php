@@ -244,26 +244,22 @@ class CustomerMenuController extends ApiController
      */
     private function businessPayload(Business $business): array
     {
-        $settings = $business->businessSetting;
-
-        $logoPath = $settings?->logo_path ?: $business->logo_path;
-
         return [
             'id' => $business->id,
-            'name' => $settings?->brand_name ?: $business->name,
+            'name' => $business->name,
             'business_name' => $business->name,
             'type' => $business->type,
             'phone' => $business->phone,
             'email' => $business->email,
-            'address' => $settings?->address ?: $business->address,
+            'address' => $business->address,
             'city' => $business->city,
-            'state' => $settings?->state ?: $business->state,
-            'country' => $settings?->country ?: $business->country,
-            'logo_url' => $this->assetUrl($logoPath),
+            'state' => $business->state,
+            'country' => $business->country,
+            'logo_url' => $this->assetUrl($business->logo_path),
             'timezone' => $business->timezone,
-            'gst_enabled' => (bool) ($settings?->gst_enabled ?? false),
-            'cgst' => (float) ($settings?->cgst ?? 0),
-            'sgst' => (float) ($settings?->sgst ?? 0),
+            'gst_enabled' => (bool) $business->gst_enabled,
+            'cgst' => (float) ($business->cgst ?? 0),
+            'sgst' => (float) ($business->sgst ?? 0),
         ];
     }
 

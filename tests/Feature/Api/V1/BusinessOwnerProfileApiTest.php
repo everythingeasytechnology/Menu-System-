@@ -64,12 +64,12 @@ class BusinessOwnerProfileApiTest extends ApiTestCase
         Storage::disk('public')->assertExists($owner->profile_image_path);
         Storage::disk('public')->assertExists($business->logo_path);
 
-        $this->assertDatabaseHas('business_settings', [
-            'business_id' => $business->id,
-            'brand_name' => 'Updated Cafe',
+        $this->assertDatabaseHas('businesses', [
+            'id' => $business->id,
+            'name' => 'Updated Cafe',
             'business_email' => 'business-updated@example.com',
             'shop_no' => 'A-12',
-            'gst_no' => '07ABCDE1234F1Z5',
+            'gst_number' => '07ABCDE1234F1Z5',
         ]);
     }
 

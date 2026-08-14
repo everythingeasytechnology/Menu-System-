@@ -47,15 +47,6 @@ class BusinessSettingsApiTest extends ApiTestCase
             ->assertJsonPath('data.payments.razorpay_key_id', 'rzp_test_mobile')
             ->assertJsonMissing(['razorpay_key_secret' => 'secret_mobile']);
 
-        $this->assertDatabaseHas('business_settings', [
-            'business_id' => $business->id,
-            'brand_name' => 'Mobile Cafe',
-            'business_email' => 'mobile@example.com',
-            'gst_no' => '07ABCDE1234F1Z5',
-            'gst_enabled' => true,
-            'cgst' => 2.5,
-            'sgst' => 2.5,
-        ]);
         $this->assertDatabaseHas('cash_settings', [
             'business_id' => $business->id,
             'enabled' => false,
@@ -92,9 +83,9 @@ class BusinessSettingsApiTest extends ApiTestCase
             ->assertJsonPath('data.payments.cash_enabled', true)
             ->assertJsonPath('data.payments.razorpay_enabled', false);
 
-        $this->assertDatabaseHas('business_settings', [
-            'business_id' => $business->id,
-            'brand_name' => 'Flat Payload Cafe',
+        $this->assertDatabaseHas('businesses', [
+            'id' => $business->id,
+            'name' => 'Flat Payload Cafe',
             'business_email' => 'flat@example.com',
         ]);
     }

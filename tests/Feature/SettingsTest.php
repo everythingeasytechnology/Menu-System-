@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\BusinessSetting;
+use App\Models\Business;
 use App\Models\RazorpaySetting;
 use App\Models\CashSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,14 +65,14 @@ class SettingsTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Business details updated successfully!');
 
-        $this->assertDatabaseHas('business_settings', [
-            'brand_name' => 'New Brand Name',
+        $this->assertDatabaseHas('businesses', [
+            'name' => 'New Brand Name',
             'business_email' => 'newbrand@example.com',
             'latitude' => '28.6304',
             'longitude' => '77.2177',
         ]);
 
-        $business = BusinessSetting::first();
+        $business = Business::first();
         $this->assertNotNull($business->logo_path);
         Storage::disk('public')->assertExists($business->logo_path);
     }
@@ -164,8 +164,8 @@ class SettingsTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success', 'GST settings updated successfully!');
 
-        $this->assertDatabaseHas('business_settings', [
-            'gst_no' => '07BBBBB2222B2Z2',
+        $this->assertDatabaseHas('businesses', [
+            'gst_number' => '07BBBBB2222B2Z2',
             'gst_enabled' => true,
             'cgst' => 1.50,
             'sgst' => 3.50,
@@ -174,11 +174,11 @@ class SettingsTest extends TestCase
 
     public function test_can_disable_gst_settings_when_gstin_is_present(): void
     {
-        BusinessSetting::create([
+        $this->post('/settings/gst', [
             'gst_no' => '07BBBBB2222B2Z2',
-            'gst_enabled' => true,
-            'cgst' => 2.50,
-            'sgst' => 2.50,
+            'gst_enabled' => '1',
+            'cgst' => '2.50',
+            'sgst' => '2.50',
         ]);
 
         $response = $this->post('/settings/gst', [
@@ -191,8 +191,8 @@ class SettingsTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success', 'GST settings updated successfully!');
 
-        $this->assertDatabaseHas('business_settings', [
-            'gst_no' => '07BBBBB2222B2Z2',
+        $this->assertDatabaseHas('businesses', [
+            'gst_number' => '07BBBBB2222B2Z2',
             'gst_enabled' => false,
             'cgst' => 2.50,
             'sgst' => 2.50,
