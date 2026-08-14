@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\BusinessOwnerLoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\CustomerOrderPortalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationController;
@@ -119,4 +120,10 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
 // Standalone Public KFC-style Order Status Board
 Route::get('/order-status', function () {
     return view('public-kds');
+});
+
+Route::middleware('signed')->group(function () {
+    Route::get('/orders/track/{orderNumber}', [CustomerOrderPortalController::class, 'show'])->name('customer.orders.track');
+    Route::get('/orders/track/{orderNumber}/data', [CustomerOrderPortalController::class, 'data'])->name('customer.orders.track.data');
+    Route::get('/orders/track/{orderNumber}/bill', [CustomerOrderPortalController::class, 'bill'])->name('customer.orders.bill');
 });

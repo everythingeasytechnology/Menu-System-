@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\Api\V1\MenuCategoryResource;
 use App\Http\Resources\Api\V1\MenuItemResource;
 use App\Http\Resources\Api\V1\OrderResource;
+use App\Services\CustomerOrderExperienceService;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Services\Customers\ScannerContextResolver;
@@ -17,6 +18,7 @@ class PublicMenuController extends ApiController
     public function __construct(
         private readonly OrderService $orderService,
         private readonly ScannerContextResolver $scannerContextResolver,
+        private readonly CustomerOrderExperienceService $customerOrderExperienceService,
     ) {}
 
     public function menu(string $qr): JsonResponse
@@ -85,6 +87,7 @@ class PublicMenuController extends ApiController
         $validated['service_point_id'] = $context['type'] === 'service_point' ? $context['id'] : null;
 
         $order = $this->orderService->create($business, $validated);
+        $this->customerOrderExperienceService->sendConfirmationIfPossible($order);
 
         return $this->success(new OrderResource($order), 'Order created successfully', 201);
     }

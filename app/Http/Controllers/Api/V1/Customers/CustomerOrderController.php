@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ApiController;
 use App\Http\Requests\Api\V1\Customers\StoreCustomerOrderRequest;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Models\Order;
+use App\Services\CustomerOrderExperienceService;
 use App\Services\Customers\ScannerContextResolver;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,7 @@ class CustomerOrderController extends ApiController
     public function __construct(
         private readonly ScannerContextResolver $scannerContextResolver,
         private readonly OrderService $orderService,
+        private readonly CustomerOrderExperienceService $customerOrderExperienceService,
     ) {
     }
 
@@ -29,10 +31,12 @@ class CustomerOrderController extends ApiController
 
         $order = $this->orderService->create($business, $data);
         $order->load(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint']);
+        $this->customerOrderExperienceService->sendConfirmationIfPossible($order);
 
         return $this->success([
             'context' => $context,
             'order' => new OrderResource($order),
+            'links' => $this->customerOrderExperienceService->links($order),
         ], 'Order created successfully', 201);
     }
 

@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Mail\CustomerOrderReceiptMail;
 use App\Models\Business;
+use App\Models\BusinessSetting;
 use App\Models\Coupon;
+use App\Models\MailSetting;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\ServicePoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class CustomerScannerApiTest extends TestCase
@@ -172,5 +176,184 @@ class CustomerScannerApiTest extends TestCase
             'quantity' => 2,
             'special_instructions' => 'Less spicy',
         ]);
+    }
+
+    public function test_customer_order_email_is_sent_with_track_and_bill_links_when_email_is_present(): void
+    {
+        Mail::fake();
+
+        BusinessSetting::create([
+            'business_id' => $this->business->id,
+            'brand_name' => 'Customer QR Cafe',
+            'address' => 'MG Road',
+            'pincode' => '560001',
+            'gst_no' => 'GST1234567',
+            'gst_enabled' => true,
+            'cgst' => 2.5,
+            'sgst' => 2.5,
+        ]);
+
+        MailSetting::create([
+            'enabled' => true,
+            'mailer' => 'smtp',
+            'host' => 'smtp.example.test',
+            'port' => 587,
+            'from_address' => 'orders@example.test',
+            'from_name' => 'Customer QR Cafe',
+            'timeout' => 30,
+        ]);
+
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Guest With Mail',
+            'customer_phone' => '9999999999',
+            'customer_email' => 'guest@example.com',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 2,
+                    'special_instructions' => 'Less spicy',
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.order.customer_email', 'guest@example.com');
+
+        $links = $response->json('data.links');
+
+        $this->assertIsArray($links);
+        $this->assertStringContainsString('/orders/track/', $links['track_url'] ?? '');
+        $this->assertStringContainsString('/orders/track/', $links['status_url'] ?? '');
+        $this->assertStringContainsString('/orders/track/', $links['bill_url'] ?? '');
+
+        Mail::assertSent(CustomerOrderReceiptMail::class, function (CustomerOrderReceiptMail $mail) {
+            return $mail->hasTo('guest@example.com')
+                && ($mail->payload['receipt']['email'] ?? null) === 'guest@example.com'
+                && filled($mail->payload['links']['track_url'] ?? null)
+                && filled($mail->payload['links']['bill_print_url'] ?? null)
+                && ($mail->payload['receipt']['has_gst'] ?? false) === true;
+        });
+    }
+
+    public function test_customer_order_email_flow_is_skipped_when_email_is_missing(): void
+    {
+        Mail::fake();
+
+        MailSetting::create([
+            'enabled' => true,
+            'mailer' => 'smtp',
+            'host' => 'smtp.example.test',
+            'port' => 587,
+            'from_address' => 'orders@example.test',
+            'from_name' => 'Customer QR Cafe',
+            'timeout' => 30,
+        ]);
+
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Guest Without Mail',
+            'customer_phone' => '9999999999',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.order.customer_email', null);
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_customer_can_open_signed_tracking_and_bill_pages_for_scanner_order(): void
+    {
+        BusinessSetting::create([
+            'business_id' => $this->business->id,
+            'brand_name' => 'Customer QR Cafe',
+            'address' => 'MG Road',
+            'pincode' => '560001',
+            'gst_no' => 'GST1234567',
+            'gst_enabled' => true,
+            'cgst' => 2.5,
+            'sgst' => 2.5,
+        ]);
+
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Tracking Guest',
+            'customer_phone' => '9999999999',
+            'customer_email' => 'tracking@example.com',
+            'notes' => 'No onions',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 2,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated();
+
+        $links = $response->json('data.links');
+
+        $this->get($this->relativePathFromUrl($links['track_url']))
+            ->assertOk()
+            ->assertSee('Track Order')
+            ->assertSee('Customer QR Cafe')
+            ->assertSee('Tracking Guest');
+
+        $this->getJson($this->relativePathFromUrl($links['status_url']))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.receipt.email', 'tracking@example.com')
+            ->assertJsonPath('data.receipt.note', 'No onions')
+            ->assertJsonPath('data.business.gst_enabled', true);
+
+        $this->get($this->relativePathFromUrl($links['bill_url']))
+            ->assertOk()
+            ->assertSee('GST Bill Summary')
+            ->assertSee('GSTIN: GST1234567')
+            ->assertSee('Tracking Guest');
+    }
+
+    public function test_customer_bill_page_hides_gst_summary_when_gst_is_disabled(): void
+    {
+        BusinessSetting::create([
+            'business_id' => $this->business->id,
+            'brand_name' => 'Customer QR Cafe',
+            'gst_enabled' => false,
+            'cgst' => 0,
+            'sgst' => 0,
+        ]);
+
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'No GST Guest',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated();
+
+        $links = $response->json('data.links');
+
+        $this->get($this->relativePathFromUrl($links['bill_url']))
+            ->assertOk()
+            ->assertSee('Bill Summary')
+            ->assertDontSee('GST Bill Summary')
+            ->assertDontSee('Total after GST');
+    }
+
+    private function relativePathFromUrl(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?: '/';
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        return $query ? $path.'?'.$query : $path;
     }
 }
