@@ -41,7 +41,10 @@ class ScannerContextResolver
         }
 
         $servicePoint = ServicePoint::with('business.businessSetting')
-            ->where('qr_identifier', $qr)
+            ->where(function ($query) use ($qr) {
+                $query->where('qr_identifier', $qr)
+                    ->orWhere('code', $qr);
+            })
             ->where('is_active', true)
             ->first();
 

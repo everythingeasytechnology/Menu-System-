@@ -96,6 +96,17 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonMissing(['name' => 'Other Business Burger']);
     }
 
+    public function test_customer_can_open_scanner_menu_with_service_point_code_without_token(): void
+    {
+        $response = $this->getJson('/api/v1/customer/scanner/QR-001/menu');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.context.id', $this->servicePoint->id)
+            ->assertJsonPath('data.context.qr_identifier', 'customer-qr-001')
+            ->assertJsonFragment(['name' => 'Customer Paneer Tikka']);
+    }
+
     public function test_customer_can_get_current_coupons_without_token(): void
     {
         Coupon::create([
