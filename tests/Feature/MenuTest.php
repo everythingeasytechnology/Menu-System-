@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\PresetFoodImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -137,6 +138,14 @@ class MenuTest extends TestCase
             'image_path' => 'images/defaults/steak.jpg',
         ]);
 
+        $category = MenuCategory::create([
+            'business_id' => $this->business->id,
+            'name' => 'Starters',
+            'code' => 'STA',
+            'active' => true,
+            'status' => 'active',
+        ]);
+
         $data = [
             'name' => 'Chicken Tikka',
             'category' => 'Starters',
@@ -152,8 +161,10 @@ class MenuTest extends TestCase
         $response = $this->post('/menu', $data);
 
         $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors();
         $this->assertDatabaseHas('menu_items', [
             'business_id' => $this->business->id,
+            'menu_category_id' => $category->id,
             'name' => 'Chicken Tikka',
             'type' => 'non-veg',
             'preset_food_image_id' => $preset->id,
@@ -165,6 +176,31 @@ class MenuTest extends TestCase
             'menu_item_id' => $item->id,
             'label' => 'Half Portion',
             'price' => 200.00,
+        ]);
+    }
+
+    /**
+     * Test that submitting a category name with no matching MenuCategory
+     * is rejected rather than silently saved without a category link.
+     */
+    public function test_cannot_add_menu_item_with_unmatched_category(): void
+    {
+        $data = [
+            'name' => 'Mystery Dish',
+            'category' => 'Nonexistent Category',
+            'type' => 'veg',
+            'variants' => [
+                ['label' => 'Regular', 'price' => '100.00'],
+            ],
+        ];
+
+        $response = $this->post('/menu', $data);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('category');
+        $this->assertDatabaseMissing('menu_items', [
+            'business_id' => $this->business->id,
+            'name' => 'Mystery Dish',
         ]);
     }
 
@@ -202,8 +238,17 @@ class MenuTest extends TestCase
             'image_path' => 'images/defaults/pizza.jpg',
         ]);
 
+        $category = MenuCategory::create([
+            'business_id' => $this->business->id,
+            'name' => 'Non-Veg Main Course',
+            'code' => 'NVM',
+            'active' => true,
+            'status' => 'active',
+        ]);
+
         $item = MenuItem::create([
             'business_id' => $this->business->id,
+            'menu_category_id' => $category->id,
             'name' => 'Old Butter Chicken',
             'category' => 'Non-Veg Main Course',
             'type' => 'non-veg',

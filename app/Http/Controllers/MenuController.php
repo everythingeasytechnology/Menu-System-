@@ -75,6 +75,14 @@ class MenuController extends Controller
             'variants.*.price' => 'required|numeric|min:0',
         ]);
 
+        $categoryId = $this->resolveCategoryId($business->id, $validated['category']);
+
+        if (! $categoryId) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['category' => 'Select a valid, active category before saving this item.']);
+        }
+
         $presetImageId = $this->menuImageService->resolvePresetImageId(
             $request,
             $validated['name'],
@@ -83,7 +91,7 @@ class MenuController extends Controller
 
         $menuItem = MenuItem::create([
             'business_id' => $business->id,
-            'menu_category_id' => $this->resolveCategoryId($business->id, $validated['category']),
+            'menu_category_id' => $categoryId,
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
@@ -123,6 +131,14 @@ class MenuController extends Controller
 
         $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
 
+        $categoryId = $this->resolveCategoryId($business->id, $validated['category']);
+
+        if (! $categoryId) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['category' => 'Select a valid, active category before saving this item.']);
+        }
+
         $presetImageId = $this->menuImageService->resolvePresetImageId(
             $request,
             $validated['name'],
@@ -131,7 +147,7 @@ class MenuController extends Controller
         );
 
         $menuItem->update([
-            'menu_category_id' => $this->resolveCategoryId($business->id, $validated['category']),
+            'menu_category_id' => $categoryId,
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
