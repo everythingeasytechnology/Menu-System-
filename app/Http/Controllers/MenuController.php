@@ -83,6 +83,7 @@ class MenuController extends Controller
 
         $menuItem = MenuItem::create([
             'business_id' => $business->id,
+            'menu_category_id' => $this->resolveCategoryId($business->id, $validated['category']),
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
@@ -130,6 +131,7 @@ class MenuController extends Controller
         );
 
         $menuItem->update([
+            'menu_category_id' => $this->resolveCategoryId($business->id, $validated['category']),
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
@@ -213,5 +215,17 @@ class MenuController extends Controller
                 $query->where('category', $request->input('category'));
             })
             ->orderBy('name');
+    }
+
+    /**
+     * Look up the MenuCategory matching the legacy category name so items
+     * created/edited from this form stay linked to it — the customer-facing
+     * QR menu reads menu_category_id, not the legacy category string.
+     */
+    private function resolveCategoryId(int $businessId, string $categoryName): ?int
+    {
+        return MenuCategory::where('business_id', $businessId)
+            ->where('name', $categoryName)
+            ->value('id');
     }
 }
