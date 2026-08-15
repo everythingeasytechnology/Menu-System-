@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderOperationsController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServicePointController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
@@ -104,9 +105,7 @@ Route::middleware(['auth', 'business.owner'])->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
-    Route::get('/reports', function () {
-        return view('reports');
-    });
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
     // Settings Management
     Route::get('/settings', [SettingsController::class, 'index']);
