@@ -10,7 +10,12 @@
     <!-- Meta Tags for SEO and PWA -->
     <meta name="description" content="EverythingEasy ServiceOS - Premium Enterprise SaaS platform for Restaurants, Cafes, and Hotels. Manage operations, table systems, KDS, payments, and staff seamlessly.">
     <meta name="theme-color" content="#141C27">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    @php $brandLogoUrl = app(\App\Services\MailBrandingService::class)->logoUrl(); @endphp
+    @if($brandLogoUrl)
+        <link rel="icon" type="image/png" href="{{ $brandLogoUrl }}">
+    @else
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    @endif
 
     <!-- Styles and Scripts via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
