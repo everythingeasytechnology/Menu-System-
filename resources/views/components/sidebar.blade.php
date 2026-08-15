@@ -133,6 +133,7 @@
 
                 <a
                     href="{{ $linkHref }}"
+                    @if($item['route'] === 'kitchen-display') target="_blank" rel="noopener" @endif
                     class="group flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold transition {{ $isActive ? 'bg-orange text-white shadow-lg shadow-orange/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"
                     :class="sidebarCompact ? 'lg:px-2.5' : ''"
                     title="{{ $item['label'] }}"

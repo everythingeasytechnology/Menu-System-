@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Dashboard') - EverythingEasy ServiceOS</title>
+    <title>@yield('title', 'Dashboard') - EverythingEasy Service</title>
 
     <!-- Meta Tags for SEO and PWA -->
     <meta name="description" content="EverythingEasy ServiceOS - Premium Enterprise SaaS platform for Restaurants, Cafes, and Hotels. Manage operations, table systems, KDS, payments, and staff seamlessly.">
