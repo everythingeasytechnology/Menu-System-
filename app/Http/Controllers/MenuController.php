@@ -70,10 +70,20 @@ class MenuController extends Controller
             'cooking_time' => 'nullable|string|max:100',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'preset_image_id' => 'nullable|integer|exists:preset_food_images,id',
-            'variants' => 'required|array|min:1',
+            'price' => 'nullable|numeric|min:0',
+            'sort_order' => 'nullable|integer|min:0',
+            'variants' => 'nullable|array',
             'variants.*.label' => 'required|string|max:255',
             'variants.*.price' => 'required|numeric|min:0',
         ]);
+
+        $variants = $validated['variants'] ?? [];
+
+        if (empty($variants) && ! $request->filled('price')) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['price' => 'Enter a base price or add at least one portion.']);
+        }
 
         $categoryId = $this->resolveCategoryId($business->id, $validated['category']);
 
@@ -95,12 +105,14 @@ class MenuController extends Controller
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
-            'cooking_time' => $validated['cooking_time'],
+            'price' => $validated['price'] ?? 0,
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'cooking_time' => $validated['cooking_time'] ?? null,
             'preset_food_image_id' => $presetImageId,
             'stock' => true,
         ]);
 
-        foreach ($validated['variants'] as $variant) {
+        foreach ($variants as $variant) {
             $menuItem->variants()->create([
                 'label' => $variant['label'],
                 'price' => $variant['price'],
@@ -124,10 +136,20 @@ class MenuController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'preset_image_id' => 'nullable|integer|exists:preset_food_images,id',
             'remove_image' => 'nullable|string',
-            'variants' => 'required|array|min:1',
+            'price' => 'nullable|numeric|min:0',
+            'sort_order' => 'nullable|integer|min:0',
+            'variants' => 'nullable|array',
             'variants.*.label' => 'required|string|max:255',
             'variants.*.price' => 'required|numeric|min:0',
         ]);
+
+        $variants = $validated['variants'] ?? [];
+
+        if (empty($variants) && ! $request->filled('price')) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['price' => 'Enter a base price or add at least one portion.']);
+        }
 
         $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
 
@@ -151,14 +173,16 @@ class MenuController extends Controller
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
-            'cooking_time' => $validated['cooking_time'],
+            'price' => $validated['price'] ?? 0,
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'cooking_time' => $validated['cooking_time'] ?? null,
             'preset_food_image_id' => $presetImageId,
         ]);
 
         // Delete existing variants and re-create them
         $menuItem->variants()->delete();
 
-        foreach ($validated['variants'] as $variant) {
+        foreach ($variants as $variant) {
             $menuItem->variants()->create([
                 'label' => $variant['label'],
                 'price' => $variant['price'],

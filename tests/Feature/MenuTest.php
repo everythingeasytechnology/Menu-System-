@@ -180,6 +180,71 @@ class MenuTest extends TestCase
     }
 
     /**
+     * Test adding a menu item using only a base price, no variants.
+     */
+    public function test_can_add_menu_item_with_base_price_and_no_variants(): void
+    {
+        MenuCategory::create([
+            'business_id' => $this->business->id,
+            'name' => 'Beverages',
+            'code' => 'BEV',
+            'active' => true,
+            'status' => 'active',
+        ]);
+
+        $data = [
+            'name' => 'Lassi',
+            'category' => 'Beverages',
+            'type' => 'veg',
+            'price' => '60.00',
+            'sort_order' => '5',
+        ];
+
+        $response = $this->post('/menu', $data);
+
+        $response->assertRedirect();
+        $response->assertSessionDoesntHaveErrors();
+        $this->assertDatabaseHas('menu_items', [
+            'business_id' => $this->business->id,
+            'name' => 'Lassi',
+            'price' => 60.00,
+            'sort_order' => 5,
+        ]);
+
+        $item = MenuItem::where('name', 'Lassi')->first();
+        $this->assertCount(0, $item->variants);
+    }
+
+    /**
+     * Test that submitting neither a base price nor any variant is rejected.
+     */
+    public function test_cannot_add_menu_item_without_price_or_variants(): void
+    {
+        MenuCategory::create([
+            'business_id' => $this->business->id,
+            'name' => 'Beverages',
+            'code' => 'BEV',
+            'active' => true,
+            'status' => 'active',
+        ]);
+
+        $data = [
+            'name' => 'Priceless Item',
+            'category' => 'Beverages',
+            'type' => 'veg',
+        ];
+
+        $response = $this->post('/menu', $data);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('price');
+        $this->assertDatabaseMissing('menu_items', [
+            'business_id' => $this->business->id,
+            'name' => 'Priceless Item',
+        ]);
+    }
+
+    /**
      * Test that submitting a category name with no matching MenuCategory
      * is rejected rather than silently saved without a category link.
      */

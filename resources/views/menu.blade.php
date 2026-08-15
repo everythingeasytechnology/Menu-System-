@@ -210,8 +210,9 @@
     </div>
 
     <!-- Add Menu Item Modal (React Native Parity) -->
-    <div 
-        x-show="modalOpen" 
+    <div
+        x-show="modalOpen"
+        x-init="@if($errors->any()) modalOpen = true @endif"
         class="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/60 backdrop-blur-xs p-4"
         style="display: none;"
         x-transition:enter="transition ease-out duration-300"
@@ -221,7 +222,7 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
     >
-        <div 
+        <div
             @click.outside="modalOpen = false"
             class="bg-card w-full max-w-lg rounded-card shadow-2xl border border-border p-6 flex flex-col max-h-[85vh]"
         >
@@ -229,8 +230,8 @@
                 <h3 class="text-base font-black text-ink flex items-center gap-2">
                     <span>🍽️</span> <span x-text="isEditing ? 'Edit Menu Item' : 'Add Menu Item'"></span>
                 </h3>
-                <button 
-                    @click="modalOpen = false" 
+                <button
+                    @click="modalOpen = false"
                     class="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-card-tint text-muted hover:text-ink cursor-pointer"
                 >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -239,13 +240,19 @@
                 </button>
             </div>
 
+            @if($errors->any())
+                <div class="mb-4 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-xs font-semibold text-danger shrink-0">
+                    {{ $errors->first() }}
+                </div>
+            @endif
+
             <!-- Form Content (Scrollable) -->
             <form :action="isEditing ? '/menu/' + editingId : '/menu'" method="POST" enctype="multipart/form-data" class="flex-1 overflow-y-auto pr-1 space-y-6 pb-2">
                 @csrf
                 <template x-if="isEditing">
                     <input type="hidden" name="_method" value="PUT">
                 </template>
-                
+
                 <!-- 1. Core Item Details -->
                 <div class="space-y-4">
                     <!-- Item Name -->
@@ -442,18 +449,52 @@
                     </div>
                 </div>
 
-                <!-- 3. Dynamic Sizes & Pricing -->
+                <!-- 3. Base Price & Sort Order -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-ink uppercase tracking-wider">Base Price (₹)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            name="price"
+                            x-model="newPrice"
+                            placeholder="e.g. 150.00"
+                            class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-3.5 text-xs text-ink focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                        >
+                        <p class="text-[9px] text-slate-400">Used when no portion/size is added below.</p>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-ink uppercase tracking-wider">Sort Order</label>
+                        <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            name="sort_order"
+                            x-model="newSortOrder"
+                            placeholder="0"
+                            class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-3.5 text-xs text-ink focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
+                        >
+                        <p class="text-[9px] text-slate-400">Lower numbers appear first in the menu.</p>
+                    </div>
+                </div>
+
+                <!-- 4. Dynamic Sizes & Pricing -->
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-ink uppercase tracking-wider">Sizes & Pricing</h4>
-                        <button 
-                            type="button" 
+                        <h4 class="text-xs font-bold text-ink uppercase tracking-wider">Sizes & Pricing <span class="text-slate-400 normal-case font-semibold">(optional if Base Price is set)</span></h4>
+                        <button
+                            type="button"
                             @click="addVariant"
                             class="bg-orange/10 text-orange border border-orange/20 px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-orange/15 transition-all cursor-pointer flex items-center gap-1"
                         >
                             <span>+</span> Add Portion
                         </button>
                     </div>
+
+                    <template x-if="newVariants.length === 0">
+                        <p class="text-xs text-slate-400 italic">No portions added — the base price above will be used.</p>
+                    </template>
 
                     <div class="space-y-3">
                         <template x-for="(v, index) in newVariants" :key="index">
@@ -486,9 +527,8 @@
                                 </div>
 
                                 <!-- Delete Row Button -->
-                                <button 
-                                    type="button" 
-                                    x-show="newVariants.length > 1"
+                                <button
+                                    type="button"
                                     @click="removeVariant(index)"
                                     class="h-9 w-9 rounded-xl flex items-center justify-center text-danger hover:bg-danger/5 transition-all cursor-pointer border border-transparent hover:border-danger/10"
                                 >
@@ -541,6 +581,8 @@ function menuManager(config) {
         newCategory: '',
         newType: 'veg',
         newCookingTime: '',
+        newPrice: '',
+        newSortOrder: '',
         newVariants: [{ label: 'Regular', price: '' }],
         commonCategories: config.categories,
 
@@ -633,8 +675,10 @@ function menuManager(config) {
             this.newCategory = this.commonCategories.length > 0 ? this.commonCategories[0] : '';
             this.newType = 'veg';
             this.newCookingTime = '';
+            this.newPrice = '';
+            this.newSortOrder = '';
             this.newVariants = [{ label: 'Regular', price: '' }];
-            
+
             this.imageSource = 'preset';
             this.presetSearchQuery = '';
             this.presetImageSelectedId = '';
@@ -652,8 +696,10 @@ function menuManager(config) {
             this.newCategory = item.category;
             this.newType = item.type;
             this.newCookingTime = item.cooking_time || '';
+            this.newPrice = item.price > 0 ? item.price : '';
+            this.newSortOrder = item.sort_order ?? '';
             this.newVariants = item.variants.map(v => ({ label: v.label, price: v.price }));
-            
+
             this.currentImagePath = item.preset_image ? item.preset_image.image_path : '';
             this.removeImageFlag = '0';
             this.presetImageSelectedId = item.preset_food_image_id || '';
