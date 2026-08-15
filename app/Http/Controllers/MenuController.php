@@ -70,7 +70,7 @@ class MenuController extends Controller
             'cooking_time' => 'nullable|string|max:100',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'preset_image_id' => 'nullable|integer|exists:preset_food_images,id',
-            'price' => 'nullable|numeric|min:0',
+            'price' => 'required|numeric|min:0',
             'sort_order' => 'nullable|integer|min:0',
             'variants' => 'nullable|array',
             'variants.*.label' => 'required|string|max:255',
@@ -78,12 +78,6 @@ class MenuController extends Controller
         ]);
 
         $variants = $validated['variants'] ?? [];
-
-        if (empty($variants) && ! $request->filled('price')) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['price' => 'Enter a base price or add at least one portion.']);
-        }
 
         $categoryId = $this->resolveCategoryId($business->id, $validated['category']);
 
@@ -105,7 +99,7 @@ class MenuController extends Controller
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
-            'price' => $validated['price'] ?? 0,
+            'price' => $validated['price'],
             'sort_order' => $validated['sort_order'] ?? 0,
             'cooking_time' => $validated['cooking_time'] ?? null,
             'preset_food_image_id' => $presetImageId,
@@ -136,7 +130,7 @@ class MenuController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'preset_image_id' => 'nullable|integer|exists:preset_food_images,id',
             'remove_image' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
+            'price' => 'required|numeric|min:0',
             'sort_order' => 'nullable|integer|min:0',
             'variants' => 'nullable|array',
             'variants.*.label' => 'required|string|max:255',
@@ -144,12 +138,6 @@ class MenuController extends Controller
         ]);
 
         $variants = $validated['variants'] ?? [];
-
-        if (empty($variants) && ! $request->filled('price')) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['price' => 'Enter a base price or add at least one portion.']);
-        }
 
         $menuItem = MenuItem::where('business_id', $business->id)->findOrFail($id);
 
@@ -173,7 +161,7 @@ class MenuController extends Controller
             'name' => $validated['name'],
             'category' => $validated['category'],
             'type' => $validated['type'],
-            'price' => $validated['price'] ?? 0,
+            'price' => $validated['price'],
             'sort_order' => $validated['sort_order'] ?? 0,
             'cooking_time' => $validated['cooking_time'] ?? null,
             'preset_food_image_id' => $presetImageId,

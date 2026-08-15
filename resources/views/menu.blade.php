@@ -452,17 +452,18 @@
                 <!-- 3. Base Price & Sort Order -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
-                        <label class="text-xs font-bold text-ink uppercase tracking-wider">Base Price (₹)</label>
+                        <label class="text-xs font-bold text-ink uppercase tracking-wider">Base Price (₹) <span class="text-danger">*</span></label>
                         <input
                             type="number"
                             step="0.01"
                             min="0"
                             name="price"
                             x-model="newPrice"
+                            required
                             placeholder="e.g. 150.00"
                             class="w-full rounded-xl border border-border bg-card-tint py-2.5 px-3.5 text-xs text-ink focus:bg-card focus:border-orange focus:ring-2 focus:ring-orange/15 transition-all outline-none"
                         >
-                        <p class="text-[9px] text-slate-400">Used when no portion/size is added below.</p>
+                        <p class="text-[9px] text-slate-400">Used when no portion/size is selected on the menu.</p>
                     </div>
                     <div class="space-y-1">
                         <label class="text-xs font-bold text-ink uppercase tracking-wider">Sort Order</label>
@@ -482,7 +483,7 @@
                 <!-- 4. Dynamic Sizes & Pricing -->
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-ink uppercase tracking-wider">Sizes & Pricing <span class="text-slate-400 normal-case font-semibold">(optional if Base Price is set)</span></h4>
+                        <h4 class="text-xs font-bold text-ink uppercase tracking-wider">Sizes & Pricing <span class="text-slate-400 normal-case font-semibold">(optional)</span></h4>
                         <button
                             type="button"
                             @click="addVariant"

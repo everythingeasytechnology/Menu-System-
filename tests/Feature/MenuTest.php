@@ -152,6 +152,7 @@ class MenuTest extends TestCase
             'type' => 'non-veg',
             'cooking_time' => '15 mins',
             'preset_image_id' => $preset->id,
+            'price' => '200.00',
             'variants' => [
                 ['label' => 'Half Portion', 'price' => '200.00'],
                 ['label' => 'Full Portion', 'price' => '380.00'],
@@ -216,9 +217,9 @@ class MenuTest extends TestCase
     }
 
     /**
-     * Test that submitting neither a base price nor any variant is rejected.
+     * Test that submitting no base price is rejected, even with variants.
      */
-    public function test_cannot_add_menu_item_without_price_or_variants(): void
+    public function test_cannot_add_menu_item_without_base_price(): void
     {
         MenuCategory::create([
             'business_id' => $this->business->id,
@@ -232,6 +233,9 @@ class MenuTest extends TestCase
             'name' => 'Priceless Item',
             'category' => 'Beverages',
             'type' => 'veg',
+            'variants' => [
+                ['label' => 'Regular', 'price' => '100.00'],
+            ],
         ];
 
         $response = $this->post('/menu', $data);
@@ -254,6 +258,7 @@ class MenuTest extends TestCase
             'name' => 'Mystery Dish',
             'category' => 'Nonexistent Category',
             'type' => 'veg',
+            'price' => '100.00',
             'variants' => [
                 ['label' => 'Regular', 'price' => '100.00'],
             ],
@@ -332,6 +337,7 @@ class MenuTest extends TestCase
             'type' => 'non-veg',
             'cooking_time' => '20 mins',
             'preset_image_id' => $preset->id,
+            'price' => '220.00',
             'variants' => [
                 ['label' => 'Half Portion', 'price' => '220.00'],
                 ['label' => 'Full Portion', 'price' => '420.00'],
