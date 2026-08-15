@@ -40,67 +40,93 @@
                     <p class="mt-5 max-w-lg text-sm leading-6 text-slate-300">Smart menu management, QR ordering, order tracking, billing, payments, staff access and detailed reports — all from one powerful dashboard.</p>
                 </div>
 
-                <div class="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl shadow-black/25 backdrop-blur">
-                    <div class="rounded-2xl bg-white p-4 text-ink">
-                        <div class="flex items-center justify-between border-b border-border pb-3">
-                            <p class="text-sm font-black">Dashboard Overview</p>
-                            <span class="rounded-full bg-card-tint px-2.5 py-1 text-[10px] font-black text-muted">Today</span>
-                        </div>
+                <div class="relative">
+                    <div class="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl shadow-black/25 backdrop-blur">
+                        <div class="rounded-2xl bg-white p-4 text-ink">
+                            <div class="flex items-center justify-between border-b border-border pb-3">
+                                <p class="text-sm font-black">Dashboard Overview</p>
+                                <span class="rounded-full bg-card-tint px-2.5 py-1 text-[10px] font-black text-muted">Today</span>
+                            </div>
 
-                        <div class="mt-4 grid grid-cols-4 gap-2">
-                            <div class="rounded-xl border border-border p-3">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5v9.5H4.75v-9.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 19.25h7.5" /></svg>
-                                </span>
-                                <p class="mt-2 text-[9px] font-bold text-muted">Total Orders</p>
-                                <p class="text-base font-black">242</p>
-                                <p class="text-[9px] font-bold text-success">+18.2%</p>
+                            <div class="mt-4 grid grid-cols-4 gap-2">
+                                <div class="rounded-xl border border-border p-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5v9.5H4.75v-9.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 19.25h7.5" /></svg>
+                                    </span>
+                                    <p class="mt-2 text-[9px] font-bold text-muted">Total Orders</p>
+                                    <p class="text-base font-black">242</p>
+                                    <p class="text-[9px] font-bold text-success">+18.2%</p>
+                                </div>
+                                <div class="rounded-xl border border-border p-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M17 7.5c0-1.66-2.24-3-5-3s-5 1.34-5 3 2.24 3 5 3 5 1.34 5 3-2.24 3-5 3-5-1.34-5-3" /></svg>
+                                    </span>
+                                    <p class="mt-2 text-[9px] font-bold text-muted">Revenue</p>
+                                    <p class="text-base font-black">&#8377;45,320</p>
+                                    <p class="text-[9px] font-bold text-success">+22.4%</p>
+                                </div>
+                                <div class="rounded-xl border border-border p-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-navy/10 text-navy">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V9a1 1 0 011-1h14a1 1 0 011 1v12M4 21h16M4 21v-6a1 1 0 011-1h3M20 21v-6a1 1 0 00-1-1h-3" /></svg>
+                                    </span>
+                                    <p class="mt-2 text-[9px] font-bold text-muted">Active Tables</p>
+                                    <p class="text-base font-black">18</p>
+                                    <p class="text-[9px] font-bold text-success">+3</p>
+                                </div>
+                                <div class="rounded-xl border border-border p-3">
+                                    <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    </span>
+                                    <p class="mt-2 text-[9px] font-bold text-muted">Pending</p>
+                                    <p class="text-base font-black">32</p>
+                                    <p class="text-[9px] font-bold text-danger">-6</p>
+                                </div>
                             </div>
-                            <div class="rounded-xl border border-border p-3">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-teal/10 text-teal">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M17 7.5c0-1.66-2.24-3-5-3s-5 1.34-5 3 2.24 3 5 3 5 1.34 5 3-2.24 3-5 3-5-1.34-5-3" /></svg>
-                                </span>
-                                <p class="mt-2 text-[9px] font-bold text-muted">Revenue</p>
-                                <p class="text-base font-black">&#8377;45,320</p>
-                                <p class="text-[9px] font-bold text-success">+22.4%</p>
-                            </div>
-                            <div class="rounded-xl border border-border p-3">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-navy/10 text-navy">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V9a1 1 0 011-1h14a1 1 0 011 1v12M4 21h16M4 21v-6a1 1 0 011-1h3M20 21v-6a1 1 0 00-1-1h-3" /></svg>
-                                </span>
-                                <p class="mt-2 text-[9px] font-bold text-muted">Active Tables</p>
-                                <p class="text-base font-black">18</p>
-                                <p class="text-[9px] font-bold text-success">+3</p>
-                            </div>
-                            <div class="rounded-xl border border-border p-3">
-                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
-                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </span>
-                                <p class="mt-2 text-[9px] font-bold text-muted">Pending</p>
-                                <p class="text-base font-black">32</p>
-                                <p class="text-[9px] font-bold text-danger">-6</p>
-                            </div>
-                        </div>
 
-                        <div class="mt-4 flex items-center justify-between">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-muted">Live Orders</p>
-                            <span class="text-[10px] font-bold text-orange">View all</span>
+                            <div class="mt-4 flex items-center justify-between">
+                                <p class="text-[10px] font-black uppercase tracking-wider text-muted">Live Orders</p>
+                                <span class="text-[10px] font-bold text-orange">View all</span>
+                            </div>
+                            <div class="mt-2 space-y-1.5">
+                                <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="h-2 w-2 rounded-full bg-orange"></span>
+                                        <span class="text-xs font-bold">#1256 &middot; Table 5</span>
+                                    </div>
+                                    <span class="rounded-full bg-orange/10 px-2 py-0.5 text-[9px] font-black text-orange">Preparing</span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="h-2 w-2 rounded-full bg-teal"></span>
+                                        <span class="text-xs font-bold">#1255 &middot; Table 2</span>
+                                    </div>
+                                    <span class="rounded-full bg-teal/10 px-2 py-0.5 text-[9px] font-black text-teal">New</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-2 space-y-1.5">
-                            <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="h-2 w-2 rounded-full bg-orange"></span>
-                                    <span class="text-xs font-bold">#1256 &middot; Table 5</span>
-                                </div>
-                                <span class="rounded-full bg-orange/10 px-2 py-0.5 text-[9px] font-black text-orange">Preparing</span>
+                    </div>
+
+                    <!-- Phone mockup overlay -->
+                    <div class="absolute bottom-2 right-2 hidden h-40 w-24 overflow-hidden rounded-2xl border-4 border-navy-deep bg-navy-deep shadow-2xl shadow-black/40 xl:block">
+                        <div class="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white text-ink" style="font-size: 7px; line-height: 1.3;">
+                            <div class="shrink-0 bg-navy-deep px-2 py-1.5 text-white">
+                                <p class="font-bold" style="font-size: 7px;">Order #1256</p>
+                                <span class="mt-1 inline-block rounded-full bg-orange/25 px-1.5 py-0.5 font-black text-orange" style="font-size: 6px;">Preparing</span>
                             </div>
-                            <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="h-2 w-2 rounded-full bg-teal"></span>
-                                    <span class="text-xs font-bold">#1255 &middot; Table 2</span>
+                            <div class="flex-1 space-y-1.5 overflow-hidden p-2">
+                                <p class="border-b border-border pb-1 font-bold text-muted" style="font-size: 6px;">Items (4)</p>
+                                <div class="flex items-center justify-between font-semibold">
+                                    <span class="truncate">Margherita</span><span class="shrink-0 text-muted">x2</span>
                                 </div>
-                                <span class="rounded-full bg-teal/10 px-2 py-0.5 text-[9px] font-black text-teal">New</span>
+                                <div class="flex items-center justify-between font-semibold">
+                                    <span class="truncate">Veg Burger</span><span class="shrink-0 text-muted">x1</span>
+                                </div>
+                                <div class="flex items-center justify-between border-t border-border pt-1 font-black" style="font-size: 8px;">
+                                    <span>Total</span>
+                                    <span>&#8377;946</span>
+                                </div>
                             </div>
+                            <div class="shrink-0 bg-orange py-1.5 text-center font-black text-white" style="font-size: 6px;">View Details</div>
                         </div>
                     </div>
                 </div>
@@ -141,9 +167,11 @@
             </div>
         </section>
 
-        <section class="flex items-center justify-center px-5 py-8 sm:px-8">
-            <div class="w-full max-w-md">
-                <div class="mb-8 flex items-center justify-between lg:hidden">
+        <section class="relative flex items-center justify-center overflow-hidden bg-bg px-5 py-8 sm:px-8">
+            <div class="pointer-events-none absolute inset-0 opacity-[0.35]" style="background-image: radial-gradient(circle at 1px 1px, #cbd5e1 1px, transparent 0); background-size: 22px 22px;"></div>
+
+            <div class="relative w-full max-w-md">
+                <div class="mb-6 flex items-center justify-between lg:hidden">
                     <div class="flex items-center gap-3">
                         <x-super-admin-logo
                             image-box-class="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-1 shadow-md shadow-orange/20"
@@ -158,11 +186,17 @@
                     <span class="rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-black text-muted">Owner</span>
                 </div>
 
-                <div class="rounded-3xl border border-border bg-card p-5 shadow-xl shadow-slate-200/70 sm:p-7">
-                    <div class="mb-7">
+                <div class="rounded-3xl border border-border bg-card p-5 shadow-xl shadow-slate-200/70 sm:p-8">
+                    <div class="mb-7 flex flex-col items-center text-center">
+                        <span class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange text-white shadow-lg shadow-orange/30">
+                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12.5C4 9 7 6.5 12 6.5s8 2.5 8 6M4 12.5h16M4 12.5c0 1 .5 1.5 1.5 1.5h13c1 0 1.5-.5 1.5-1.5M12 6.5V4" />
+                                <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none" />
+                            </svg>
+                        </span>
                         <p class="text-xs font-black uppercase tracking-wider text-orange">Business Owner Login</p>
-                        <h2 class="mt-2 text-2xl font-black tracking-tight text-ink">Sign in to your dashboard</h2>
-                        <p class="mt-2 text-sm leading-6 text-muted">Use your active owner or admin account to continue.</p>
+                        <h2 class="mt-2 text-2xl font-black tracking-tight text-ink">Welcome back!</h2>
+                        <p class="mt-2 max-w-xs text-sm leading-6 text-muted">Sign in to your dashboard and manage your restaurant easily.</p>
                     </div>
 
                     @if(session('status'))
@@ -258,6 +292,13 @@
                             </svg>
                         </button>
                     </form>
+
+                    <p class="mt-6 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Secure login &middot; Your data is protected
+                    </p>
                 </div>
             </div>
         </section>
