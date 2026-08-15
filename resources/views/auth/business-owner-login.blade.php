@@ -14,7 +14,7 @@
         <section class="relative hidden overflow-hidden bg-navy-deep text-white lg:flex">
             <div class="absolute inset-0 opacity-[0.08]" style="background-image: linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px); background-size: 38px 38px;"></div>
 
-            <div class="relative z-10 flex min-h-screen w-full flex-col justify-between p-10 xl:p-14">
+            <div class="relative z-10 flex min-h-screen w-full flex-col p-10 xl:p-14">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <x-super-admin-logo
@@ -33,70 +33,109 @@
                     </div>
                 </div>
 
-                <div class="grid gap-10 xl:grid-cols-[0.82fr_1fr] xl:items-center">
-                    <div>
-                        <p class="mb-4 text-xs font-black uppercase tracking-[0.22em] text-orange">Business Owner Login</p>
-                        <h1 class="text-4xl font-black leading-tight tracking-tight xl:text-5xl">Control every service point from one desk.</h1>
-                        <p class="mt-5 max-w-lg text-sm leading-6 text-slate-300">Manage menus, staff access, QR ordering, payments, and reports with a secure owner account.</p>
-                    </div>
+                <div class="flex flex-1 flex-col justify-center gap-8 py-10">
+                <div>
+                    <p class="mb-4 text-xs font-black uppercase tracking-[0.22em] text-orange">Smart Menu &middot; Order &middot; Billing</p>
+                    <h1 class="text-4xl font-black leading-tight tracking-tight xl:text-5xl">Manage your restaurant <span class="text-orange">smarter, faster.</span></h1>
+                    <p class="mt-5 max-w-lg text-sm leading-6 text-slate-300">Smart menu management, QR ordering, order tracking, billing, payments, staff access and detailed reports — all from one powerful dashboard.</p>
+                </div>
 
-                    <div class="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl shadow-black/25 backdrop-blur">
-                        <div class="rounded-2xl bg-white p-4 text-ink">
-                            <div class="flex items-center justify-between border-b border-border pb-3">
-                                <div>
-                                    <p class="text-[10px] font-black uppercase tracking-wider text-muted">Live Summary</p>
-                                    <p class="mt-1 text-sm font-black">Connaught Place</p>
-                                </div>
-                                <span class="rounded-full bg-success/10 px-2.5 py-1 text-[10px] font-black text-success">Online</span>
+                <div class="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl shadow-black/25 backdrop-blur">
+                    <div class="rounded-2xl bg-white p-4 text-ink">
+                        <div class="flex items-center justify-between border-b border-border pb-3">
+                            <p class="text-sm font-black">Dashboard Overview</p>
+                            <span class="rounded-full bg-card-tint px-2.5 py-1 text-[10px] font-black text-muted">Today</span>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-4 gap-2">
+                            <div class="rounded-xl border border-border p-3">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5v9.5H4.75v-9.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 19.25h7.5" /></svg>
+                                </span>
+                                <p class="mt-2 text-[9px] font-bold text-muted">Total Orders</p>
+                                <p class="text-base font-black">242</p>
+                                <p class="text-[9px] font-bold text-success">+18.2%</p>
                             </div>
-
-                            <div class="mt-4 grid grid-cols-3 gap-2">
-                                <div class="rounded-xl bg-card-tint p-3">
-                                    <p class="text-[10px] font-bold text-muted">Orders</p>
-                                    <p class="mt-1 text-xl font-black">124</p>
-                                </div>
-                                <div class="rounded-xl bg-card-tint p-3">
-                                    <p class="text-[10px] font-bold text-muted">Sales</p>
-                                    <p class="mt-1 text-xl font-black">45k</p>
-                                </div>
-                                <div class="rounded-xl bg-card-tint p-3">
-                                    <p class="text-[10px] font-bold text-muted">Tables</p>
-                                    <p class="mt-1 text-xl font-black">18</p>
-                                </div>
+                            <div class="rounded-xl border border-border p-3">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M17 7.5c0-1.66-2.24-3-5-3s-5 1.34-5 3 2.24 3 5 3 5 1.34 5 3-2.24 3-5 3-5-1.34-5-3" /></svg>
+                                </span>
+                                <p class="mt-2 text-[9px] font-bold text-muted">Revenue</p>
+                                <p class="text-base font-black">&#8377;45,320</p>
+                                <p class="text-[9px] font-bold text-success">+22.4%</p>
                             </div>
+                            <div class="rounded-xl border border-border p-3">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-navy/10 text-navy">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 21V9a1 1 0 011-1h14a1 1 0 011 1v12M4 21h16M4 21v-6a1 1 0 011-1h3M20 21v-6a1 1 0 00-1-1h-3" /></svg>
+                                </span>
+                                <p class="mt-2 text-[9px] font-bold text-muted">Active Tables</p>
+                                <p class="text-base font-black">18</p>
+                                <p class="text-[9px] font-bold text-success">+3</p>
+                            </div>
+                            <div class="rounded-xl border border-border p-3">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-orange/10 text-orange">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </span>
+                                <p class="mt-2 text-[9px] font-bold text-muted">Pending</p>
+                                <p class="text-base font-black">32</p>
+                                <p class="text-[9px] font-bold text-danger">-6</p>
+                            </div>
+                        </div>
 
-                            <div class="mt-4 space-y-2">
-                                <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="h-2.5 w-2.5 rounded-full bg-orange"></span>
-                                        <span class="text-xs font-bold">Order #1256 preparing</span>
-                                    </div>
-                                    <span class="text-[10px] font-bold text-muted">2 min</span>
+                        <div class="mt-4 flex items-center justify-between">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-muted">Live Orders</p>
+                            <span class="text-[10px] font-bold text-orange">View all</span>
+                        </div>
+                        <div class="mt-2 space-y-1.5">
+                            <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="h-2 w-2 rounded-full bg-orange"></span>
+                                    <span class="text-xs font-bold">#1256 &middot; Table 5</span>
                                 </div>
-                                <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <span class="h-2.5 w-2.5 rounded-full bg-teal"></span>
-                                        <span class="text-xs font-bold">QR table scan received</span>
-                                    </div>
-                                    <span class="text-[10px] font-bold text-muted">Now</span>
+                                <span class="rounded-full bg-orange/10 px-2 py-0.5 text-[9px] font-black text-orange">Preparing</span>
+                            </div>
+                            <div class="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="h-2 w-2 rounded-full bg-teal"></span>
+                                    <span class="text-xs font-bold">#1255 &middot; Table 2</span>
                                 </div>
+                                <span class="rounded-full bg-teal/10 px-2 py-0.5 text-[9px] font-black text-teal">New</span>
                             </div>
                         </div>
                     </div>
                 </div>
+                </div>
 
-                <div class="grid grid-cols-3 gap-3 text-xs">
-                    <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <p class="font-black text-white">Menu Control</p>
-                        <p class="mt-1 text-slate-400">Items and categories</p>
+                <div class="grid grid-cols-5 gap-2 text-center text-[10px]">
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange">
+                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 3h6M17 14v6" /></svg>
+                        </span>
+                        <p class="font-bold text-slate-300">QR Ordering</p>
                     </div>
-                    <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <p class="font-black text-white">QR Service</p>
-                        <p class="mt-1 text-slate-400">Tables and rooms</p>
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange">
+                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        </span>
+                        <p class="font-bold text-slate-300">Live Orders</p>
                     </div>
-                    <div class="rounded-xl border border-white/10 bg-white/5 p-4">
-                        <p class="font-black text-white">Staff Access</p>
-                        <p class="mt-1 text-slate-400">Roles and security</p>
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange">
+                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6M9 11h6M9 15h4M5 3h14a1 1 0 011 1v16l-4-2-3 2-3-2-3 2-3-2V4a1 1 0 011-1z" /></svg>
+                        </span>
+                        <p class="font-bold text-slate-300">Smart Billing</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange">
+                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M6 15h3M3 6h18a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V7a1 1 0 011-1z" /></svg>
+                        </span>
+                        <p class="font-bold text-slate-300">Payments</p>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-orange">
+                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 21V9M12 21V3M19 21v-7" /></svg>
+                        </span>
+                        <p class="font-bold text-slate-300">Reports</p>
                     </div>
                 </div>
             </div>
