@@ -3,8 +3,22 @@
 @section('title', 'Settings Management')
 
 @section('content')
+@php
+    $resolvedActiveTab = session('active_tab');
+
+    if (! $resolvedActiveTab && $errors->any()) {
+        $resolvedActiveTab = match (true) {
+            $errors->hasAny(['current_password', 'new_password']) => 'security',
+            $errors->hasAny(['gst_no', 'gst_enabled', 'cgst', 'sgst']) => 'gst',
+            $errors->hasAny(['enabled', 'key_id', 'key_secret']) => 'payments',
+            default => 'business',
+        };
+    }
+
+    $resolvedActiveTab = $resolvedActiveTab ?? 'business';
+@endphp
 <div class="space-y-8" x-data="{
-    activeTab: '{{ session('active_tab', 'business') }}',
+    activeTab: '{{ $resolvedActiveTab }}',
     toastOpen: {{ session('success') ? 'true' : 'false' }},
     init() {
         if (this.toastOpen) {
@@ -97,7 +111,7 @@
                     <p class="text-xs text-muted mt-1">Details configured here will reflect on customer receipts, invoices, and your public brand page.</p>
                 </div>
 
-                @if ($errors->any() && session('active_tab') === 'business')
+                @if ($errors->any() && (session('active_tab') === 'business' || $errors->hasAny(['brand_name', 'business_email', 'shop_no', 'address', 'country', 'state', 'district', 'pincode', 'logo'])))
                     <div class="mb-6 p-4 bg-danger/10 border border-danger/25 rounded-xl text-danger text-xs font-semibold space-y-1">
                         <p class="font-bold">Please correct the following errors:</p>
                         <ul class="list-disc pl-5 space-y-0.5">
@@ -435,7 +449,7 @@
                     <p class="text-xs text-muted mt-1">Setup your online payment gateway credentials to receive credit/debit cards, UPI, and net banking payments instantly.</p>
                 </div>
 
-                @if ($errors->any() && session('active_tab') === 'payments')
+                @if ($errors->any() && (session('active_tab') === 'payments' || $errors->hasAny(['enabled', 'key_id', 'key_secret'])))
                     <div class="mb-6 p-4 bg-danger/10 border border-danger/25 rounded-xl text-danger text-xs font-semibold space-y-1">
                         <p class="font-bold">Please correct the following errors:</p>
                         <ul class="list-disc pl-5 space-y-0.5">
@@ -531,7 +545,7 @@
                     <p class="text-xs text-muted mt-1">Ensure your executive panel remains secure. Change the system password regularly.</p>
                 </div>
 
-                @if ($errors->any() && session('active_tab') === 'security')
+                @if ($errors->any() && (session('active_tab') === 'security' || $errors->hasAny(['current_password', 'new_password'])))
                     <div class="mb-6 p-4 bg-danger/10 border border-danger/25 rounded-xl text-danger text-xs font-semibold space-y-1">
                         <p class="font-bold">Please correct the following errors:</p>
                         <ul class="list-disc pl-5 space-y-0.5">
@@ -603,7 +617,7 @@
                     <p class="text-xs text-muted mt-1">Configure your GST identification number and enable tax breakdowns for customer billing.</p>
                 </div>
 
-                @if ($errors->any() && session('active_tab') === 'gst')
+                @if ($errors->any() && (session('active_tab') === 'gst' || $errors->hasAny(['gst_no', 'gst_enabled', 'cgst', 'sgst'])))
                     <div class="mb-6 p-4 bg-danger/10 border border-danger/25 rounded-xl text-danger text-xs font-semibold space-y-1">
                         <p class="font-bold">Please correct the following errors:</p>
                         <ul class="list-disc pl-5 space-y-0.5">

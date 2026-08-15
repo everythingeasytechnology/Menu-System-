@@ -47,7 +47,7 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'brand_name' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'business_email' => 'required|email|max:255',
+            'business_email' => 'nullable|email|max:255',
             'shop_no' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'country' => 'nullable|string|max:255',
@@ -63,10 +63,13 @@ class SettingsController extends Controller
 
         $updateData = [
             'name' => $validated['brand_name'],
-            'business_email' => $validated['business_email'],
+            'business_email' => $validated['business_email'] ?? null,
             'shop_no' => $validated['shop_no'] ?? null,
             'address' => $validated['address'] ?? null,
-            'country' => $validated['country'] ?? null,
+            // The businesses.country column is NOT NULL with a DB-level default of
+            // "India" — an explicit NULL bypasses that default and violates the
+            // constraint, so fall back to the current value (or "India") in code.
+            'country' => $validated['country'] ?? ($business->country ?: 'India'),
             'state' => $validated['state'] ?? null,
             'district' => $validated['district'] ?? null,
             'pincode' => $validated['pincode'] ?? null,
