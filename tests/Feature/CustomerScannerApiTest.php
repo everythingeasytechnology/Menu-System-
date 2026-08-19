@@ -201,6 +201,31 @@ class CustomerScannerApiTest extends TestCase
         ]);
     }
 
+    public function test_customer_scanner_order_accepts_camel_case_item_payload(): void
+    {
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Camel Guest',
+            'items' => [
+                [
+                    'menuItemId' => $this->menuItem->id,
+                    'qty' => 2,
+                    'specialInstructions' => 'No chilli',
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.order.service_point_id', $this->servicePoint->id);
+
+        $this->assertDatabaseHas('order_items', [
+            'menu_item_id' => $this->menuItem->id,
+            'item_name' => 'Customer Paneer Tikka',
+            'quantity' => 2,
+            'special_instructions' => 'No chilli',
+        ]);
+    }
+
     public function test_customer_scanner_order_returns_first_validation_message_when_payload_is_invalid(): void
     {
         $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [

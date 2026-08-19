@@ -16,13 +16,27 @@ class StoreCustomerOrderRequest extends ApiFormRequest
                     return $item;
                 }
 
-                if (! array_key_exists('menu_item_id', $item)) {
-                    $item['menu_item_id'] = $item['menu_item_id']
-                        ?? $item['id']
-                        ?? $item['item_id']
-                        ?? $item['menu_id']
-                        ?? null;
-                }
+                $item['menu_item_id'] = $item['menu_item_id']
+                    ?? $item['menuItemId']
+                    ?? $item['id']
+                    ?? $item['item_id']
+                    ?? $item['menu_id']
+                    ?? data_get($item, 'menu_item.id')
+                    ?? data_get($item, 'menuItem.id')
+                    ?? null;
+
+                $item['variant_id'] = $item['variant_id']
+                    ?? $item['variantId']
+                    ?? data_get($item, 'variant.id')
+                    ?? null;
+
+                $item['quantity'] = $item['quantity']
+                    ?? $item['qty']
+                    ?? null;
+
+                $item['special_instructions'] = $item['special_instructions']
+                    ?? $item['specialInstructions']
+                    ?? null;
 
                 return $item;
             })
