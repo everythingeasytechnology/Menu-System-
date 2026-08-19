@@ -171,6 +171,66 @@ class OrderApiTest extends ApiTestCase
             ->assertJsonMissing(['order_number' => 'ORD-OTHER-SP']);
     }
 
+    public function test_order_status_update_does_not_override_cancelled_items_in_api(): void
+    {
+        [$business, $user] = $this->createBusinessUser('api-cancelled-item-owner@example.com');
+        $order = $this->createOrder($business, [
+            'order_number' => 'ORD-API-CANCELLED-ITEM',
+            'order_status' => 'preparing',
+        ]);
+
+        $activeItem = OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => 'Veg Burger',
+            'price' => 120,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 120,
+        ]);
+
+        $cancelledItem = OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => 'French Fries',
+            'price' => 80,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 80,
+        ]);
+
+        $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/v1/orders/{$order->id}/items/{$cancelledItem->id}/status", [
+                'status' => 'cancelled',
+            ])
+            ->assertOk();
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/v1/orders/{$order->id}/status", [
+                'status' => 'ready',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Order status updated')
+            ->assertJsonPath('data.order_status', 'ready');
+
+        $responseItems = collect($response->json('data.items'))->keyBy('id');
+        $this->assertSame('ready', $responseItems[$activeItem->id]['status']);
+        $this->assertSame('cancelled', $responseItems[$cancelledItem->id]['status']);
+
+        $this->assertDatabaseHas('order_items', [
+            'id' => $activeItem->id,
+            'status' => 'ready',
+        ]);
+        $this->assertDatabaseHas('order_items', [
+            'id' => $cancelledItem->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
     public function test_service_point_orders_endpoint_is_business_scoped(): void
     {
         [, $user] = $this->createBusinessUser('service-point-isolation-owner@example.com');
