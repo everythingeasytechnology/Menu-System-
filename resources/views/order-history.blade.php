@@ -86,62 +86,62 @@
             'pincode' => $business->pincode ?? '',
         ]),
     })"
-    @keydown.escape.window="closeDetail()"
-    class="space-y-5"
+    x-on:keydown.escape.window="closeDetail()"
+    class="space-y-4"
 >
     <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div>
-            <h1 class="text-3xl font-black tracking-tight text-ink">Order History</h1>
-            <p class="mt-1 text-sm font-semibold text-muted">Search older bills, open a receipt-style preview, and print or download it in one place.</p>
+            <h1 class="text-[30px] font-black tracking-tight text-ink">Order History</h1>
+            <p class="mt-1 text-[13px] font-semibold text-muted">Search old bills, open a clean receipt preview, and print or download it quickly.</p>
         </div>
-        <a href="{{ route('dashboard.orders.index') }}" class="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-black text-ink transition hover:bg-card-tint">
+        <a href="{{ route('dashboard.orders.index') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-[13px] font-black text-ink transition hover:bg-card-tint">
             Live Orders
         </a>
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <x-card class="rounded-[22px] p-4">
+        <x-card class="rounded-[20px] p-3.5">
             <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Filtered Orders</span>
-            <strong class="mt-3 block text-3xl font-black text-ink">{{ number_format($summary['orders']) }}</strong>
+            <strong class="mt-2.5 block text-[28px] font-black text-ink">{{ number_format($summary['orders']) }}</strong>
         </x-card>
-        <x-card class="rounded-[22px] p-4">
+        <x-card class="rounded-[20px] p-3.5">
             <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Gross Sales</span>
-            <strong class="mt-3 block text-3xl font-black text-ink">Rs. {{ number_format($summary['gross_sales'], 2) }}</strong>
+            <strong class="mt-2.5 block text-[28px] font-black text-ink">Rs. {{ number_format($summary['gross_sales'], 2) }}</strong>
         </x-card>
-        <x-card class="rounded-[22px] p-4">
+        <x-card class="rounded-[20px] p-3.5">
             <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Paid Collection</span>
-            <strong class="mt-3 block text-3xl font-black text-success">Rs. {{ number_format($summary['paid_sales'], 2) }}</strong>
+            <strong class="mt-2.5 block text-[28px] font-black text-success">Rs. {{ number_format($summary['paid_sales'], 2) }}</strong>
         </x-card>
-        <x-card class="rounded-[22px] p-4">
+        <x-card class="rounded-[20px] p-3.5">
             <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Pending Collection</span>
-            <strong class="mt-3 block text-3xl font-black text-orange">Rs. {{ number_format($summary['pending_collection'], 2) }}</strong>
+            <strong class="mt-2.5 block text-[28px] font-black text-orange">Rs. {{ number_format($summary['pending_collection'], 2) }}</strong>
         </x-card>
     </div>
 
-    <x-card class="rounded-[26px] p-4">
+    <x-card class="rounded-[24px] p-3.5">
         <form
             method="GET"
             action="{{ route('dashboard.orders.history') }}"
-            class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.9fr)_minmax(145px,1fr)_minmax(145px,1fr)_minmax(160px,1fr)_minmax(200px,1.2fr)_minmax(150px,1fr)_minmax(150px,1fr)_96px_auto_auto]"
+            class="grid gap-2.5 md:grid-cols-2 xl:grid-cols-12"
         >
-            <label class="block">
+            <label class="block xl:col-span-4">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Search</span>
-                <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
+                <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">From</span>
-                <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">To</span>
-                <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
-                <select name="status" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <select name="status" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Statuses</option>
                     @foreach($statuses as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
@@ -149,9 +149,9 @@
                 </select>
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Service Point</span>
-                <select name="service_point_id" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <select name="service_point_id" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Locations</option>
                     @foreach($servicePoints as $point)
                         <option value="{{ $point->id }}" @selected((string) ($filters['service_point_id'] ?? '') === (string) $point->id)>{{ $point->name }} ({{ $point->code }})</option>
@@ -159,9 +159,9 @@
                 </select>
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-3">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Payment</span>
-                <select name="payment_status" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <select name="payment_status" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Payments</option>
                     @foreach($paymentStatuses as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['payment_status'] ?? '') === $value)>{{ $label }}</option>
@@ -169,9 +169,9 @@
                 </select>
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-3">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Order Type</span>
-                <select name="order_type" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <select name="order_type" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Types</option>
                     @foreach($typeOptions as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['order_type'] ?? '') === $value)>{{ $label }}</option>
@@ -179,21 +179,23 @@
                 </select>
             </label>
 
-            <label class="block">
+            <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Per Page</span>
-                <select name="per_page" class="h-11 w-full rounded-xl border border-border bg-card-tint px-4 text-sm font-semibold text-ink outline-none focus:border-orange">
+                <select name="per_page" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
                     @foreach([10, 25, 50, 100] as $size)
                         <option value="{{ $size }}" @selected((int) ($filters['per_page'] ?? 25) === $size)>{{ $size }}</option>
                     @endforeach
                 </select>
             </label>
 
-            <button type="submit" class="h-11 self-end rounded-xl bg-orange px-5 text-sm font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
-                Apply
-            </button>
-            <a href="{{ route('dashboard.orders.history') }}" class="inline-flex h-11 items-center justify-center self-end rounded-xl border border-border bg-card px-5 text-sm font-black text-ink transition hover:bg-card-tint">
-                Reset
-            </a>
+            <div class="flex items-end gap-2 xl:col-span-4">
+                <button type="submit" class="h-10 rounded-xl bg-orange px-4 text-[13px] font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
+                    Apply
+                </button>
+                <a href="{{ route('dashboard.orders.history') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-[13px] font-black text-ink transition hover:bg-card-tint">
+                    Reset
+                </a>
+            </div>
         </form>
     </x-card>
 
@@ -224,40 +226,40 @@
                             $paymentLabel = ucfirst($order->payment_status).($latestPayment?->payment_method ? ' via '.ucfirst($latestPayment->payment_method) : '');
                         @endphp
                         <tr class="transition hover:bg-card-tint/30">
-                            <td class="px-5 py-4 align-middle">
+                            <td class="px-4 py-3.5 align-middle">
                                 <span class="block text-lg font-black text-orange">{{ $order->compactNumber() }}</span>
                                 <span class="mt-1 block text-xs font-semibold text-muted">{{ $order->order_number }}</span>
                             </td>
-                            <td class="whitespace-nowrap px-5 py-4 align-middle">
+                            <td class="whitespace-nowrap px-4 py-3.5 align-middle">
                                 <span class="block text-sm font-black text-ink">{{ $order->created_at?->format('d M Y') }}</span>
                                 <span class="mt-1 block text-xs font-semibold text-muted">{{ $order->created_at?->format('h:i A') }}</span>
                             </td>
-                            <td class="px-5 py-4 align-middle">
+                            <td class="px-4 py-3.5 align-middle">
                                 <span class="block max-w-[180px] truncate text-sm font-black text-ink">{{ $order->customer_name ?: 'Walk-in Customer' }}</span>
                                 <span class="mt-1 block text-xs font-semibold text-muted">{{ $order->customer_phone ?: 'N/A' }}</span>
                             </td>
-                            <td class="px-5 py-4 align-middle">
+                            <td class="px-4 py-3.5 align-middle">
                                 <span class="block max-w-[180px] truncate text-sm font-black text-ink">{{ $location }}</span>
                                 <span class="mt-1 block text-xs font-semibold text-muted">{{ $typeLabel }}</span>
                             </td>
-                            <td class="px-5 py-4 align-middle">
+                            <td class="px-4 py-3.5 align-middle">
                                 <span class="inline-flex rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] {{ $statusClasses[$order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">
                                     {{ $statuses[$order->order_status] ?? ucfirst($order->order_status) }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 align-middle">
+                            <td class="px-4 py-3.5 align-middle">
                                 <span class="inline-flex rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] {{ $paymentClasses[$order->payment_status] ?? 'bg-card-tint text-muted border border-border' }}">
                                     {{ $paymentLabel }}
                                 </span>
                             </td>
-                            <td class="whitespace-nowrap px-5 py-4 text-right align-middle text-lg font-black text-ink">
+                            <td class="whitespace-nowrap px-4 py-3.5 text-right align-middle text-lg font-black text-ink">
                                 Rs. {{ number_format((float) $order->total, 2) }}
                             </td>
-                            <td class="px-5 py-4 text-right align-middle">
+                            <td class="px-4 py-3.5 text-right align-middle">
                                 <button
                                     type="button"
-                                    @click="openDetail({{ $order->id }})"
-                                    class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-black uppercase tracking-[0.18em] text-ink transition hover:border-orange/30 hover:bg-card-tint"
+                                    x-on:click="openDetail({{ $order->id }})"
+                                    class="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3.5 text-[11px] font-black uppercase tracking-[0.18em] text-ink transition hover:border-orange/30 hover:bg-card-tint"
                                 >
                                     <svg class="h-4 w-4 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 4.75h7.5l3 3v11.5h-10.5ZM14.25 4.75v3.5h3.5M8.75 11h6.5M8.75 14.25h6.5M8.75 17.5h4.5" />
@@ -290,7 +292,7 @@
         x-transition.opacity
         style="display: none;"
         class="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/60 p-4 backdrop-blur-sm"
-        @click.self="closeDetail()"
+        x-on:click.self="closeDetail()"
     >
         <div class="w-full max-w-[1180px] overflow-hidden rounded-[28px] border border-border bg-card shadow-2xl shadow-navy/20">
             <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
@@ -309,7 +311,7 @@
                 <div class="flex items-center gap-2">
                     <button
                         type="button"
-                        @click="downloadReceipt()"
+                        x-on:click="downloadReceipt()"
                         class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-black uppercase tracking-[0.18em] text-ink transition hover:bg-card-tint"
                     >
                         <svg class="h-4 w-4 text-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
@@ -319,7 +321,7 @@
                     </button>
                     <button
                         type="button"
-                        @click="printReceipt()"
+                        x-on:click="printReceipt()"
                         class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-orange px-4 text-xs font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
@@ -329,7 +331,7 @@
                     </button>
                     <button
                         type="button"
-                        @click="closeDetail()"
+                        x-on:click="closeDetail()"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card-tint text-lg font-black text-muted transition hover:text-ink"
                         aria-label="Close detail modal"
                     >
