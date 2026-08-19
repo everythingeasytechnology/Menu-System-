@@ -122,26 +122,26 @@
         <form
             method="GET"
             action="{{ route('dashboard.orders.history') }}"
-            class="grid gap-2.5 md:grid-cols-2 xl:grid-cols-12 xl:items-end"
+            class="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(180px,1.55fr)_minmax(120px,0.95fr)_minmax(120px,0.95fr)_minmax(145px,1fr)_minmax(145px,1fr)_88px_auto_auto] xl:items-end"
         >
-            <label class="block xl:col-span-3">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Search</span>
-                <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Search</span>
+                <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
             </label>
 
-            <label class="block xl:col-span-2">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">From</span>
-                <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">From</span>
+                <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block xl:col-span-2">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">To</span>
-                <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">To</span>
+                <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block xl:col-span-2">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
-                <select name="status" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
+                <select name="status" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Statuses</option>
                     @foreach($statuses as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
@@ -161,9 +161,9 @@
             </label>
             --}}
 
-            <label class="block xl:col-span-3">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Payment</span>
-                <select name="payment_status" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Payment</span>
+                <select name="payment_status" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Payments</option>
                     @foreach($paymentStatuses as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['payment_status'] ?? '') === $value)>{{ $label }}</option>
@@ -183,20 +183,20 @@
             </label>
             --}}
 
-            <label class="block xl:col-span-2">
-                <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Per Page</span>
-                <select name="per_page" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
+            <label class="block">
+                <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Per Page</span>
+                <select name="per_page" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     @foreach([10, 25, 50, 100] as $size)
                         <option value="{{ $size }}" @selected((int) ($filters['per_page'] ?? 25) === $size)>{{ $size }}</option>
                     @endforeach
                 </select>
             </label>
 
-            <div class="flex items-end gap-2 xl:col-span-2">
-                <button type="submit" class="h-10 rounded-xl bg-orange px-4 text-[13px] font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
+            <div class="flex items-end gap-2">
+                <button type="submit" class="h-9 rounded-xl bg-orange px-3.5 text-[12px] font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
                     Apply
                 </button>
-                <a href="{{ route('dashboard.orders.history') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-card px-4 text-[13px] font-black text-ink transition hover:bg-card-tint">
+                <a href="{{ route('dashboard.orders.history') }}" class="inline-flex h-9 items-center justify-center rounded-xl border border-border bg-card px-3.5 text-[12px] font-black text-ink transition hover:bg-card-tint">
                     Reset
                 </a>
             </div>
