@@ -169,6 +169,46 @@ class CustomerScannerApiTest extends TestCase
             'payment_status' => 'unpaid',
             'order_status' => 'preparing',
         ]);
+        $order->items()->create([
+            'menu_item_id' => $this->menuItem->id,
+            'item_name' => 'Customer Paneer Tikka',
+            'variant_label' => null,
+            'price' => 180,
+            'quantity' => 2,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 360,
+            'special_instructions' => 'Less spicy',
+        ]);
+
+        $completedOrder = Order::create([
+            'business_id' => $this->business->id,
+            'service_point_id' => $this->servicePoint->id,
+            'order_number' => 'ORD-CUSTOMER-HISTORY',
+            'order_type' => 'dine_in',
+            'customer_name' => 'Previous Guest',
+            'customer_phone' => '9999999999',
+            'customer_email' => 'previous@example.com',
+            'subtotal' => 180,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 180,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+        ]);
+        $completedOrder->items()->create([
+            'menu_item_id' => $this->menuItem->id,
+            'item_name' => 'Customer Paneer Tikka',
+            'variant_label' => null,
+            'price' => 180,
+            'quantity' => 1,
+            'status' => 'served',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 180,
+            'special_instructions' => 'With mint chutney',
+        ]);
 
         $response = $this->getJson('/api/v1/customer/scanner/customer-qr-001/occupancy');
 
@@ -183,7 +223,18 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonPath('data.order.customer_email', 'occupied@example.com')
             ->assertJsonPath('data.order.customer_phone', '9876543210')
             ->assertJsonPath('data.order.order_status', 'preparing')
-            ->assertJsonPath('data.order.payment_status', 'unpaid');
+            ->assertJsonPath('data.order.payment_status', 'unpaid')
+            ->assertJsonPath('data.order.items.0.item_name', 'Customer Paneer Tikka')
+            ->assertJsonPath('data.order.items.0.quantity', 2)
+            ->assertJsonPath('data.order.items.0.special_instructions', 'Less spicy')
+            ->assertJsonCount(2, 'data.order_history')
+            ->assertJsonPath('data.order_history.0.order_number', 'ORD-CUSTOMER-OCCUPIED')
+            ->assertJsonPath('data.order_history.1.order_number', 'ORD-CUSTOMER-HISTORY')
+            ->assertJsonCount(2, 'data.item_history')
+            ->assertJsonPath('data.item_history.0.order_number', 'ORD-CUSTOMER-OCCUPIED')
+            ->assertJsonPath('data.item_history.0.item_name', 'Customer Paneer Tikka')
+            ->assertJsonPath('data.item_history.1.order_number', 'ORD-CUSTOMER-HISTORY')
+            ->assertJsonPath('data.item_history.1.special_instructions', 'With mint chutney');
     }
 
     public function test_customer_can_create_order_from_scanner_without_token(): void
