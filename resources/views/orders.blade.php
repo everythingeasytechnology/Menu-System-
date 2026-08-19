@@ -204,7 +204,7 @@
                     <div class="space-y-1.5">
                         <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Items</span>
                         <div class="max-h-48 divide-y divide-border/70 overflow-auto">
-                            <template x-for="item in selectedOrder.items" :key="item.id">
+                            <template x-for="item in selectedOrder.items" :key="`${item.id}-${item.status}`">
                                 <div class="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-2 py-1.5">
                                     <div class="min-w-0">
                                         <span class="block truncate text-sm font-black text-ink" x-text="item.displayName || item.name"></span>
@@ -213,7 +213,7 @@
                                     <label class="block">
                                         <span class="sr-only">Item Status</span>
                                         <select
-                                            :value="item.status"
+                                            x-model="item.status"
                                             @click.stop
                                             @change="updateOrderItemStatus(selectedOrder.id, item.id, $event.target.value)"
                                             :disabled="isUpdatingItemStatus || selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'"

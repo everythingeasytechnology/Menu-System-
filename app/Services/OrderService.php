@@ -117,6 +117,8 @@ class OrderService
                     ->update(['status' => $itemStatus]);
             }
 
+            $this->recalculateOrderAmounts($order);
+
             if ($status === 'completed') {
                 $this->markOrderAsPaid($order);
             }
@@ -243,6 +245,7 @@ class OrderService
 
             $oldStatus = $item->status ?: $order->order_status;
             $item->update(['status' => $status]);
+            $this->recalculateOrderAmounts($order);
             $this->syncOrderStatusFromItems($order);
 
             $this->notificationService->notifyBusiness(
@@ -262,6 +265,43 @@ class OrderService
 
             return $order->fresh(['items.menuItem.presetImage', 'payments', 'restaurantTable', 'room', 'servicePoint', 'user']);
         });
+    }
+
+    private function recalculateOrderAmounts(Order $order): void
+    {
+        $order->loadMissing('coupon');
+        $allItemCount = $order->items()->count();
+
+        if ($allItemCount === 0) {
+            return;
+        }
+
+        $activeItems = $order->items()
+            ->where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', '!=', 'cancelled');
+            })
+            ->get(['price', 'quantity', 'tax']);
+
+        $subtotal = round((float) $activeItems->sum(fn (OrderItem $item) => (float) $item->price * (int) $item->quantity), 2);
+        $tax = round((float) $activeItems->sum(fn (OrderItem $item) => (float) $item->tax), 2);
+        $discount = $order->coupon
+            ? $this->couponService->discountFor($order->coupon, $subtotal)
+            : min((float) $order->discount, $subtotal);
+        $total = round(max(0, $subtotal + $tax - $discount), 2);
+
+        $order->update([
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'discount' => $discount,
+            'total' => $total,
+        ]);
+
+        if ($order->payment_status !== 'paid') {
+            $order->payments()
+                ->whereIn('status', ['pending', 'failed'])
+                ->update(['amount' => $total]);
+        }
     }
 
     public function updatePayment(Order $order, array $data, ?User $user = null): Order

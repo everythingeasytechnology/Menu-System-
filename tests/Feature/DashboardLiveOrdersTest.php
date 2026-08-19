@@ -381,6 +381,46 @@ class DashboardLiveOrdersTest extends TestCase
         ]);
     }
 
+    public function test_cancelled_item_is_excluded_from_order_total_on_live_orders(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => 'ORD-WEB-CANCEL-TOTAL',
+            'subtotal' => 330,
+            'tax' => 12,
+            'discount' => 0,
+            'total' => 342,
+            'order_status' => 'preparing',
+        ]);
+        $cancelledItem = $order->items()->create([
+            'item_name' => 'Extra Fries',
+            'variant_label' => null,
+            'price' => 90,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 90,
+        ]);
+
+        $response = $this->postJson("/orders/{$order->id}/items/{$cancelledItem->id}/status", [
+            'status' => 'cancelled',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('order.rawSubtotal', 240)
+            ->assertJsonPath('order.rawTax', 12)
+            ->assertJsonPath('order.rawTotal', 252);
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'subtotal' => 240,
+            'tax' => 12,
+            'discount' => 0,
+            'total' => 252,
+        ]);
+    }
+
     public function test_owner_can_add_menu_item_to_live_order_from_dashboard(): void
     {
         $order = $this->createOrder([

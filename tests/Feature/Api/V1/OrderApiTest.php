@@ -240,6 +240,16 @@ class OrderApiTest extends ApiTestCase
             'payment_status' => 'unpaid',
             'total' => 325,
         ]);
+        OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => 'Paneer Wrap',
+            'price' => 325,
+            'quantity' => 1,
+            'status' => 'served',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 325,
+        ]);
 
         $response = $this->withHeaders($this->authHeaders($user))
             ->postJson("/api/v1/orders/{$order->id}/status", [
@@ -263,6 +273,65 @@ class OrderApiTest extends ApiTestCase
             'payment_method' => 'cash',
             'amount' => 325,
             'status' => 'paid',
+        ]);
+    }
+
+    public function test_cancelled_item_is_excluded_from_order_total_in_api(): void
+    {
+        [$business, $user] = $this->createBusinessUser('api-cancel-total-owner@example.com');
+        $order = $this->createOrder($business, [
+            'order_number' => 'ORD-API-CANCEL-TOTAL',
+            'subtotal' => 200,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 200,
+            'order_status' => 'preparing',
+        ]);
+
+        $activeItem = OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => 'Veg Burger',
+            'price' => 120,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 120,
+        ]);
+
+        $cancelledItem = OrderItem::create([
+            'order_id' => $order->id,
+            'item_name' => 'French Fries',
+            'price' => 80,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 80,
+        ]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/v1/orders/{$order->id}/items/{$cancelledItem->id}/status", [
+                'status' => 'cancelled',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.id', $order->id)
+            ->assertJsonPath('data.subtotal', 120)
+            ->assertJsonPath('data.tax', 0)
+            ->assertJsonPath('data.total', 120);
+
+        $responseItems = collect($response->json('data.items'))->keyBy('id');
+        $this->assertSame('preparing', $responseItems[$activeItem->id]['status']);
+        $this->assertSame('cancelled', $responseItems[$cancelledItem->id]['status']);
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'subtotal' => 120,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 120,
         ]);
     }
 
