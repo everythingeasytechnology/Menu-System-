@@ -49,5 +49,6 @@
         <!-- Quick Actions Modal Overlay Component -->
         <x-quick-actions />
     </div>
+    @stack('scripts')
 </body>
 </html>

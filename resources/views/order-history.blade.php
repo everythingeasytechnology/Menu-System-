@@ -510,6 +510,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
     function orderHistoryPage(config) {
         return {
@@ -607,101 +608,114 @@
                 const items = this.receiptItems(order);
                 const money = (value) => 'Rs. ' + Number(value || 0).toFixed(2);
                 const escape = (value) => this.escapeHtml(value);
-                const lines = [
-                    gst.address || '',
-                    gst.pincode ? `PIN: ${gst.pincode}` : '',
-                    totals.hasGst && gst.gstNo ? `GSTIN: ${gst.gstNo}` : '',
-                ].filter(Boolean);
+                const lines = [];
+
+                if (gst.address) {
+                    lines.push(gst.address);
+                }
+
+                if (gst.pincode) {
+                    lines.push('PIN: ' + gst.pincode);
+                }
+
+                if (totals.hasGst && gst.gstNo) {
+                    lines.push('GSTIN: ' + gst.gstNo);
+                }
 
                 const itemRows = items.map((item) => {
-                    const note = item.specialInstructions
-                        ? `<div class="muted">Note: ${escape(item.specialInstructions)}</div>`
-                        : '';
-                    const gstRow = totals.hasGst && Number(item.tax || 0) > 0
-                        ? `<div class="row"><span>GST</span><span>${money(item.tax)}</span></div>`
-                        : '';
+                    const itemHtml = [];
 
-                    return `
-                        <div class="item">
-                            <div class="item-name">${escape(`${item.qty}x ${item.displayName}`)}</div>
-                            <div class="row"><span>${money(item.unitPrice)} x ${item.qty}</span><span>${money(item.lineSubtotal)}</span></div>
-                            ${gstRow}
-                            ${note}
-                        </div>
-                    `;
+                    itemHtml.push('<div class="item">');
+                    itemHtml.push('<div class="item-name">' + escape(item.qty + 'x ' + item.displayName) + '</div>');
+                    itemHtml.push('<div class="row"><span>' + money(item.unitPrice) + ' x ' + item.qty + '</span><span>' + money(item.lineSubtotal) + '</span></div>');
+
+                    if (totals.hasGst && Number(item.tax || 0) > 0) {
+                        itemHtml.push('<div class="row"><span>GST</span><span>' + money(item.tax) + '</span></div>');
+                    }
+
+                    if (item.specialInstructions) {
+                        itemHtml.push('<div class="muted">Note: ' + escape(item.specialInstructions) + '</div>');
+                    }
+
+                    itemHtml.push('</div>');
+
+                    return itemHtml.join('');
                 }).join('');
 
-                const gstSummary = totals.hasGst
-                    ? `
-                        <div class="section">GST BILL SUMMARY</div>
-                        <div class="row"><span>Subtotal:</span><span>${money(totals.subtotal)}</span></div>
-                        ${totals.discount > 0 ? `<div class="row"><span>Discount:</span><span>- ${money(totals.discount)}</span></div>` : ''}
-                        <div class="row"><span>CGST (${Number(totals.cgstRate).toFixed(2)}%):</span><span>${money(totals.cgstAmount)}</span></div>
-                        <div class="row"><span>SGST (${Number(totals.sgstRate).toFixed(2)}%):</span><span>${money(totals.sgstAmount)}</span></div>
-                        <div class="row"><span>Total GST:</span><span>${money(totals.tax)}</span></div>
-                        <div class="row total"><span>Total:</span><span>${money(totals.total)}</span></div>
-                    `
-                    : `
-                        <div class="section">BILL SUMMARY</div>
-                        <div class="row"><span>Subtotal:</span><span>${money(totals.subtotal)}</span></div>
-                        ${totals.discount > 0 ? `<div class="row"><span>Discount:</span><span>- ${money(totals.discount)}</span></div>` : ''}
-                        <div class="row total"><span>Total:</span><span>${money(totals.total)}</span></div>
-                    `;
+                const summaryRows = [];
+                summaryRows.push('<div class="section">' + (totals.hasGst ? 'GST BILL SUMMARY' : 'BILL SUMMARY') + '</div>');
+                summaryRows.push('<div class="row"><span>Subtotal:</span><span>' + money(totals.subtotal) + '</span></div>');
 
-                const noteBlock = order.note
-                    ? `
-                        <div class="divider"></div>
-                        <div class="muted">Instructions: ${escape(order.note)}</div>
-                    `
-                    : '';
+                if (totals.discount > 0) {
+                    summaryRows.push('<div class="row"><span>Discount:</span><span>- ' + money(totals.discount) + '</span></div>');
+                }
 
-                return `
-<!doctype html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>${escape(order.orderNumber)} Bill</title>
-    <style>
-        body{font-family:Courier,monospace;width:76mm;margin:0 auto;padding:10px 5px;font-size:10.5px;line-height:1.35;color:#000}
-        .center{text-align:center}
-        .divider{border-top:1px dashed #000;margin:7px 0}
-        .bold{font-weight:bold}
-        .muted{font-size:9.5px}
-        .section{margin:7px 0 4px;font-weight:bold;text-align:center}
-        .row{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
-        .row span:first-child{max-width:48mm}
-        .row span:last-child{text-align:right;white-space:nowrap}
-        .item{margin:6px 0}
-        .item-name{font-weight:bold;white-space:pre-wrap}
-        .total{font-size:13px;border-top:1px solid #000;padding-top:5px;margin-top:5px}
-    </style>
-</head>
-<body>
-    <div class="center">
-        <div class="bold">${escape(gst.brandName || 'Business')}</div>
-        ${lines.map((line) => `<div>${escape(line)}</div>`).join('')}
-    </div>
-    <div class="divider"></div>
-    <div class="row"><span>Bill No:</span><span>${escape(order.displayId)}</span></div>
-    <div class="row"><span>Order No:</span><span>${escape(order.orderNumber)}</span></div>
-    <div class="row"><span>Date:</span><span>${escape(`${order.date} ${order.time}`)}</span></div>
-    <div class="row"><span>Location:</span><span>${escape(order.location)}</span></div>
-    <div class="row"><span>Customer:</span><span>${escape(order.customerName)}</span></div>
-    ${order.customerPhone && order.customerPhone !== 'N/A' ? `<div class="row"><span>Phone:</span><span>${escape(order.customerPhone)}</span></div>` : ''}
-    <div class="divider"></div>
-    <div class="section">ITEM DETAILS</div>
-    ${itemRows}
-    <div class="divider"></div>
-    ${gstSummary}
-    <div class="divider"></div>
-    <div class="row"><span>Payment:</span><span>${escape(order.paymentLabel)}</span></div>
-    <div class="row"><span>Status:</span><span>${escape(order.statusLabel)}</span></div>
-    ${noteBlock}
-    <div class="divider"></div>
-    <div class="center bold">Thank you</div>
-</body>
-</html>
-                `;
+                if (totals.hasGst) {
+                    summaryRows.push('<div class="row"><span>CGST (' + Number(totals.cgstRate).toFixed(2) + '%):</span><span>' + money(totals.cgstAmount) + '</span></div>');
+                    summaryRows.push('<div class="row"><span>SGST (' + Number(totals.sgstRate).toFixed(2) + '%):</span><span>' + money(totals.sgstAmount) + '</span></div>');
+                    summaryRows.push('<div class="row"><span>Total GST:</span><span>' + money(totals.tax) + '</span></div>');
+                }
+
+                summaryRows.push('<div class="row total"><span>Total:</span><span>' + money(totals.total) + '</span></div>');
+
+                const html = [
+                    '<!doctype html>',
+                    '<html>',
+                    '<head>',
+                    '<meta charset="utf-8">',
+                    '<title>' + escape(order.orderNumber) + ' Bill</title>',
+                    '<style>',
+                    'body{font-family:Courier,monospace;width:76mm;margin:0 auto;padding:10px 5px;font-size:10.5px;line-height:1.35;color:#000}',
+                    '.center{text-align:center}',
+                    '.divider{border-top:1px dashed #000;margin:7px 0}',
+                    '.bold{font-weight:bold}',
+                    '.muted{font-size:9.5px}',
+                    '.section{margin:7px 0 4px;font-weight:bold;text-align:center}',
+                    '.row{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}',
+                    '.row span:first-child{max-width:48mm}',
+                    '.row span:last-child{text-align:right;white-space:nowrap}',
+                    '.item{margin:6px 0}',
+                    '.item-name{font-weight:bold;white-space:pre-wrap}',
+                    '.total{font-size:13px;border-top:1px solid #000;padding-top:5px;margin-top:5px}',
+                    '</style>',
+                    '</head>',
+                    '<body>',
+                    '<div class="center">',
+                    '<div class="bold">' + escape(gst.brandName || 'Business') + '</div>',
+                    lines.map((line) => '<div>' + escape(line) + '</div>').join(''),
+                    '</div>',
+                    '<div class="divider"></div>',
+                    '<div class="row"><span>Bill No:</span><span>' + escape(order.displayId) + '</span></div>',
+                    '<div class="row"><span>Order No:</span><span>' + escape(order.orderNumber) + '</span></div>',
+                    '<div class="row"><span>Date:</span><span>' + escape(order.date + ' ' + order.time) + '</span></div>',
+                    '<div class="row"><span>Location:</span><span>' + escape(order.location) + '</span></div>',
+                    '<div class="row"><span>Customer:</span><span>' + escape(order.customerName) + '</span></div>',
+                ];
+
+                if (order.customerPhone && order.customerPhone !== 'N/A') {
+                    html.push('<div class="row"><span>Phone:</span><span>' + escape(order.customerPhone) + '</span></div>');
+                }
+
+                html.push('<div class="divider"></div>');
+                html.push('<div class="section">ITEM DETAILS</div>');
+                html.push(itemRows);
+                html.push('<div class="divider"></div>');
+                html.push(summaryRows.join(''));
+                html.push('<div class="divider"></div>');
+                html.push('<div class="row"><span>Payment:</span><span>' + escape(order.paymentLabel) + '</span></div>');
+                html.push('<div class="row"><span>Status:</span><span>' + escape(order.statusLabel) + '</span></div>');
+
+                if (order.note) {
+                    html.push('<div class="divider"></div>');
+                    html.push('<div class="muted">Instructions: ' + escape(order.note) + '</div>');
+                }
+
+                html.push('<div class="divider"></div>');
+                html.push('<div class="center bold">Thank you</div>');
+                html.push('</body>');
+                html.push('</html>');
+
+                return html.join('');
             },
 
             printReceipt() {
@@ -734,7 +748,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `${this.selectedOrder.orderNumber || this.selectedOrder.displayId}-bill.html`;
+                link.download = (this.selectedOrder.orderNumber || this.selectedOrder.displayId) + '-bill.html';
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
@@ -744,4 +758,5 @@
         };
     }
 </script>
+@endpush
 @endsection
