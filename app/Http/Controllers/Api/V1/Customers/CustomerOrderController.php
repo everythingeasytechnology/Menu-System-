@@ -66,6 +66,28 @@ class CustomerOrderController extends ApiController
         return $this->success(new OrderResource($order), 'Order details');
     }
 
+    public function occupancy(string $qr): JsonResponse
+    {
+        [$business, $context] = $this->scannerContextResolver->resolve($qr);
+        $order = $this->activeOrderForContext($business, $context);
+
+        return $this->success([
+            'context' => $context,
+            'occupied' => $order !== null,
+            'status' => $order ? 'occupied' : 'available',
+            'order' => $order ? [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'display_order_id' => $order->compactNumber(),
+                'customer_name' => $order->customer_name,
+                'customer_email' => $order->customer_email,
+                'customer_phone' => $order->customer_phone,
+                'order_status' => $order->order_status,
+                'payment_status' => $order->payment_status,
+            ] : null,
+        ], 'Scanner occupancy status');
+    }
+
     private function activeOrderForContext(Business $business, array $context): ?Order
     {
         return Order::query()

@@ -139,6 +139,53 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonMissing(['code' => 'EXPIRED']);
     }
 
+    public function test_customer_can_check_scanner_occupancy_when_service_point_is_available(): void
+    {
+        $response = $this->getJson('/api/v1/customer/scanner/customer-qr-001/occupancy');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Scanner occupancy status')
+            ->assertJsonPath('data.context.id', $this->servicePoint->id)
+            ->assertJsonPath('data.occupied', false)
+            ->assertJsonPath('data.status', 'available')
+            ->assertJsonPath('data.order', null);
+    }
+
+    public function test_customer_can_check_scanner_occupancy_when_service_point_is_occupied(): void
+    {
+        $order = Order::create([
+            'business_id' => $this->business->id,
+            'service_point_id' => $this->servicePoint->id,
+            'order_number' => 'ORD-CUSTOMER-OCCUPIED',
+            'order_type' => 'dine_in',
+            'customer_name' => 'Occupied Guest',
+            'customer_phone' => '9876543210',
+            'customer_email' => 'occupied@example.com',
+            'subtotal' => 360,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 360,
+            'payment_status' => 'unpaid',
+            'order_status' => 'preparing',
+        ]);
+
+        $response = $this->getJson('/api/v1/customer/scanner/customer-qr-001/occupancy');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.context.id', $this->servicePoint->id)
+            ->assertJsonPath('data.occupied', true)
+            ->assertJsonPath('data.status', 'occupied')
+            ->assertJsonPath('data.order.id', $order->id)
+            ->assertJsonPath('data.order.order_number', 'ORD-CUSTOMER-OCCUPIED')
+            ->assertJsonPath('data.order.customer_name', 'Occupied Guest')
+            ->assertJsonPath('data.order.customer_email', 'occupied@example.com')
+            ->assertJsonPath('data.order.customer_phone', '9876543210')
+            ->assertJsonPath('data.order.order_status', 'preparing')
+            ->assertJsonPath('data.order.payment_status', 'unpaid');
+    }
+
     public function test_customer_can_create_order_from_scanner_without_token(): void
     {
         $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
