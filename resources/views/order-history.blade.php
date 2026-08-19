@@ -122,24 +122,24 @@
         <form
             method="GET"
             action="{{ route('dashboard.orders.history') }}"
-            class="grid gap-2 md:grid-cols-2 xl:grid-cols-[minmax(180px,1.55fr)_minmax(120px,0.95fr)_minmax(120px,0.95fr)_minmax(145px,1fr)_minmax(145px,1fr)_88px_auto_auto] xl:items-end"
+            class="grid gap-2 md:grid-cols-2 xl:flex xl:flex-nowrap xl:items-end xl:gap-2"
         >
-            <label class="block">
+            <label class="block xl:w-[220px] xl:min-w-[220px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Search</span>
                 <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:w-[145px] xl:min-w-[145px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">From</span>
                 <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:w-[145px] xl:min-w-[145px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">To</span>
                 <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
             </label>
 
-            <label class="block">
+            <label class="block xl:w-[150px] xl:min-w-[150px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Status</span>
                 <select name="status" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Statuses</option>
@@ -161,7 +161,7 @@
             </label>
             --}}
 
-            <label class="block">
+            <label class="block xl:w-[165px] xl:min-w-[165px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Payment</span>
                 <select name="payment_status" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     <option value="">All Payments</option>
@@ -183,7 +183,7 @@
             </label>
             --}}
 
-            <label class="block">
+            <label class="block xl:w-[92px] xl:min-w-[92px]">
                 <span class="mb-1 block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Per Page</span>
                 <select name="per_page" class="h-9 w-full rounded-xl border border-border bg-card-tint px-3 text-[12px] font-semibold text-ink outline-none focus:border-orange">
                     @foreach([10, 25, 50, 100] as $size)
@@ -192,7 +192,7 @@
                 </select>
             </label>
 
-            <div class="flex items-end gap-2">
+            <div class="flex items-end gap-2 xl:ml-auto xl:flex-none">
                 <button type="submit" class="h-9 rounded-xl bg-orange px-3.5 text-[12px] font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
                     Apply
                 </button>
