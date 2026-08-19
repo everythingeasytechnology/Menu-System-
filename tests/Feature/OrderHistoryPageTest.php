@@ -124,7 +124,7 @@ class OrderHistoryPageTest extends TestCase
         $response->assertDontSee('ORD-HIST-EXCLUDED');
     }
 
-    public function test_order_history_page_shows_full_detail_section_for_large_orders(): void
+    public function test_order_history_page_shows_bill_modal_content_for_large_orders(): void
     {
         $order = $this->createOrder([
             'order_number' => 'ORD-HIST-DETAIL',
@@ -168,12 +168,19 @@ class OrderHistoryPageTest extends TestCase
         $response = $this->get('/orders/history');
 
         $response->assertOk();
+        $response->assertSee('View Bill');
+        $response->assertSee('Bill Preview');
+        $response->assertSee('Receipt Preview');
+        $response->assertSee('Small Printer Format');
+        $response->assertSee('Download Bill');
+        $response->assertSee('Print Bill');
         $response->assertSee('Full Detail');
         $response->assertSee('All Items');
-        $response->assertSee('Paneer Roll (Large)');
+        $response->assertSee('Large Paneer Roll');
         $response->assertSee('Cold Coffee');
         $response->assertSee('Cheese Garlic Bread');
-        $response->assertSee('Bill Summary');
+        $response->assertSee('ITEM DETAILS');
+        $response->assertSee('BILL SUMMARY');
         $response->assertSee('detail@example.com');
         $response->assertSee('Extra plates please');
         $response->assertSee('No onion');
