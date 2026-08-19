@@ -178,6 +178,50 @@ class CustomerScannerApiTest extends TestCase
         ]);
     }
 
+    public function test_customer_scanner_order_accepts_item_id_alias_for_menu_item_id(): void
+    {
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Alias Guest',
+            'items' => [
+                [
+                    'id' => $this->menuItem->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.order.service_point_id', $this->servicePoint->id);
+
+        $this->assertDatabaseHas('order_items', [
+            'menu_item_id' => $this->menuItem->id,
+            'item_name' => 'Customer Paneer Tikka',
+            'quantity' => 1,
+        ]);
+    }
+
+    public function test_customer_scanner_order_returns_first_validation_message_when_payload_is_invalid(): void
+    {
+        $response = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'items' => [
+                [
+                    'quantity' => 0,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'The items.0.menu_item_id field is required.')
+            ->assertJsonStructure([
+                'errors' => [
+                    'items.0.menu_item_id',
+                    'items.0.quantity',
+                ],
+            ]);
+    }
+
     public function test_customer_order_email_is_sent_with_track_and_bill_links_when_email_is_present(): void
     {
         Mail::fake();
