@@ -122,9 +122,9 @@
         <form
             method="GET"
             action="{{ route('dashboard.orders.history') }}"
-            class="grid gap-2.5 md:grid-cols-2 xl:grid-cols-12"
+            class="grid gap-2.5 md:grid-cols-2 xl:grid-cols-12 xl:items-end"
         >
-            <label class="block xl:col-span-4">
+            <label class="block xl:col-span-3">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Search</span>
                 <input name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Order, customer, phone" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none placeholder:text-muted focus:border-orange">
             </label>
@@ -149,6 +149,7 @@
                 </select>
             </label>
 
+            {{--
             <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Service Point</span>
                 <select name="service_point_id" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
@@ -158,6 +159,7 @@
                     @endforeach
                 </select>
             </label>
+            --}}
 
             <label class="block xl:col-span-3">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Payment</span>
@@ -169,6 +171,7 @@
                 </select>
             </label>
 
+            {{--
             <label class="block xl:col-span-3">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Order Type</span>
                 <select name="order_type" class="h-10 w-full rounded-xl border border-border bg-card-tint px-3.5 text-[13px] font-semibold text-ink outline-none focus:border-orange">
@@ -178,6 +181,7 @@
                     @endforeach
                 </select>
             </label>
+            --}}
 
             <label class="block xl:col-span-2">
                 <span class="mb-1 block text-[10px] font-black uppercase tracking-[0.18em] text-muted">Per Page</span>
@@ -188,7 +192,7 @@
                 </select>
             </label>
 
-            <div class="flex items-end gap-2 xl:col-span-4">
+            <div class="flex items-end gap-2 xl:col-span-2">
                 <button type="submit" class="h-10 rounded-xl bg-orange px-4 text-[13px] font-black text-white shadow-lg shadow-orange/20 transition hover:bg-orange/95">
                     Apply
                 </button>
