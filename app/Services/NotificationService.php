@@ -6,6 +6,7 @@ use App\Jobs\SendExpoPushNotification;
 use App\Models\AppNotification;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
 
 class NotificationService
 {
@@ -20,7 +21,7 @@ class NotificationService
             'data' => $data,
         ]);
 
-        SendExpoPushNotification::dispatch($notification->id);
+        $this->dispatchPushNotification($notification->id);
 
         return $notification;
     }
@@ -31,5 +32,16 @@ class NotificationService
             ->where('status', 'active')
             ->get()
             ->map(fn (User $user) => $this->notifyUser($user, $type, $title, $message, $data));
+    }
+
+    private function dispatchPushNotification(int $notificationId): void
+    {
+        $job = new SendExpoPushNotification($notificationId);
+
+        match (config('services.expo.dispatch_mode', 'after_response')) {
+            'sync' => Bus::dispatchSync($job),
+            'queued' => Bus::dispatch($job),
+            default => Bus::dispatchAfterResponse($job),
+        };
     }
 }
