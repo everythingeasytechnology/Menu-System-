@@ -391,7 +391,13 @@ class OrderService
                 ->find($itemData['menu_item_id']);
 
             if (! $menuItem) {
-                throw ValidationException::withMessages(['items' => ['One or more menu items are unavailable.']]);
+                throw ValidationException::withMessages([
+                    'items' => [$this->unavailableMenuItemMessage(
+                        (int) ($itemData['menu_item_id'] ?? 0),
+                        $businessId,
+                        $includeGlobalMenuItems,
+                    )],
+                ]);
             }
 
             $variant = null;
@@ -492,5 +498,35 @@ class OrderService
         } while (Order::where('order_number', $number)->exists());
 
         return $number;
+    }
+
+    private function unavailableMenuItemMessage(int $menuItemId, int $businessId, bool $includeGlobalMenuItems): string
+    {
+        $menuItem = MenuItem::find($menuItemId);
+
+        if (! $menuItem) {
+            return 'Selected menu item was not found.';
+        }
+
+        $belongsToBusiness = (int) $menuItem->business_id === $businessId
+            || ($includeGlobalMenuItems && $menuItem->business_id === null);
+
+        if (! $belongsToBusiness) {
+            return 'Selected menu item '.$menuItem->name.' does not belong to this business.';
+        }
+
+        if ($menuItem->status !== 'active') {
+            return 'Selected menu item '.$menuItem->name.' is inactive.';
+        }
+
+        if (! $menuItem->stock) {
+            return 'Selected menu item '.$menuItem->name.' is out of stock.';
+        }
+
+        if (! $menuItem->availability) {
+            return 'Selected menu item '.$menuItem->name.' is currently unavailable.';
+        }
+
+        return 'One or more menu items are unavailable.';
     }
 }

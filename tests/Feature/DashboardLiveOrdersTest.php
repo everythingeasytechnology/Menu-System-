@@ -411,7 +411,7 @@ class DashboardLiveOrdersTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonPath('errors.items.0', 'One or more menu items are unavailable.');
+            ->assertJsonPath('errors.items.0', 'Selected menu item Other Fries does not belong to this business.');
 
         $this->assertDatabaseMissing('order_items', [
             'order_id' => $order->id,

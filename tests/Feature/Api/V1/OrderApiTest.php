@@ -354,7 +354,7 @@ class OrderApiTest extends ApiTestCase
         $response->assertUnprocessable()
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Validation failed')
-            ->assertJsonPath('errors.items.0', 'One or more menu items are unavailable.');
+            ->assertJsonPath('errors.items.0', 'Selected menu item Other Pasta does not belong to this business.');
     }
 
     private function createOrder(Business $business, array $overrides = []): Order
