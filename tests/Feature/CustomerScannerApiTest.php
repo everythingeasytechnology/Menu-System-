@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\MailSetting;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
+use App\Models\Order;
 use App\Models\ServicePoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -264,6 +265,78 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonPath('data.order.customer_email', null);
 
         Mail::assertNothingSent();
+    }
+
+    public function test_customer_repeat_scanner_order_adds_items_to_existing_live_order_instead_of_creating_new_order(): void
+    {
+        Mail::fake();
+
+        MailSetting::create([
+            'enabled' => true,
+            'mailer' => 'smtp',
+            'host' => 'smtp.example.test',
+            'port' => 587,
+            'from_address' => 'orders@example.test',
+            'from_name' => 'Customer QR Cafe',
+            'timeout' => 30,
+        ]);
+
+        $firstResponse = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'customer_name' => 'Repeat Guest',
+            'customer_phone' => '9999999999',
+            'customer_email' => 'repeat@example.com',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $firstResponse->assertCreated()
+            ->assertJsonPath('data.mode', 'created')
+            ->assertJsonPath('data.merged_into_existing_order', false);
+
+        $firstOrderNumber = $firstResponse->json('data.order.order_number');
+
+        $secondResponse = $this->postJson('/api/v1/customer/scanner/customer-qr-001/orders', [
+            'notes' => 'Add one more plate',
+            'items' => [
+                [
+                    'menu_item_id' => $this->menuItem->id,
+                    'quantity' => 2,
+                    'special_instructions' => 'Extra onion',
+                ],
+            ],
+        ]);
+
+        $secondResponse->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.mode', 'updated')
+            ->assertJsonPath('data.merged_into_existing_order', true)
+            ->assertJsonPath('data.order.order_number', $firstOrderNumber)
+            ->assertJsonPath('data.order.customer_email', 'repeat@example.com');
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('order_items', 2);
+
+        $order = Order::where('order_number', $firstOrderNumber)->firstOrFail();
+
+        $this->assertSame('repeat@example.com', $order->customer_email);
+        $this->assertStringContainsString('Add one more plate', (string) $order->notes);
+        $this->assertSame(3, (int) $order->items()->sum('quantity'));
+
+        Mail::assertSent(CustomerOrderReceiptMail::class, 2);
+        Mail::assertSent(CustomerOrderReceiptMail::class, function (CustomerOrderReceiptMail $mail) {
+            return ! $mail->isUpdate
+                && $mail->hasTo('repeat@example.com')
+                && str_contains($mail->envelope()->subject, 'details and bill');
+        });
+        Mail::assertSent(CustomerOrderReceiptMail::class, function (CustomerOrderReceiptMail $mail) {
+            return $mail->isUpdate
+                && $mail->hasTo('repeat@example.com')
+                && str_contains($mail->envelope()->subject, 'bill is updated');
+        });
     }
 
     public function test_customer_can_open_signed_tracking_and_bill_pages_for_scanner_order(): void

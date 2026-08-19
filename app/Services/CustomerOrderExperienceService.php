@@ -60,7 +60,7 @@ class CustomerOrderExperienceService
         ];
     }
 
-    public function sendConfirmationIfPossible(Order $order): bool
+    public function sendConfirmationIfPossible(Order $order, bool $isUpdate = false): bool
     {
         if (! filled($order->customer_email)) {
             return false;
@@ -71,7 +71,7 @@ class CustomerOrderExperienceService
         }
 
         try {
-            Mail::to($order->customer_email)->send(new CustomerOrderReceiptMail($order, $this->payload($order)));
+            Mail::to($order->customer_email)->send(new CustomerOrderReceiptMail($order, $this->payload($order), $isUpdate));
 
             return true;
         } catch (Throwable $exception) {

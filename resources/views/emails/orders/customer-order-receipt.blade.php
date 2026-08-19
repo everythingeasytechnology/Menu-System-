@@ -3,10 +3,14 @@
 <body style="margin:0;background:#fff8ee;color:#171717;font-family:Arial,sans-serif;line-height:1.55;">
     <div style="max-width:680px;margin:0 auto;padding:28px 18px;">
         <div style="background:#ffffff;border:1px solid #f0dcc2;border-radius:20px;padding:24px;box-shadow:0 16px 40px rgba(45,31,5,0.08);">
-            <p style="margin:0 0 8px;color:#ff7a00;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;">Order Confirmation</p>
+            <p style="margin:0 0 8px;color:#ff7a00;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;">{{ $isUpdate ? 'Bill Updated' : 'Order Confirmation' }}</p>
             <h1 style="margin:0 0 10px;font-size:24px;line-height:1.2;">{{ $payload['business']['name'] }}</h1>
             <p style="margin:0 0 20px;font-size:14px;color:#5f574e;">
-                Your order <strong>{{ $payload['order']['displayId'] }}</strong> has been received. You can track status live and download the bill anytime.
+                @if($isUpdate)
+                    New items were added to your order <strong>{{ $payload['order']['displayId'] }}</strong>. Your bill is updated and you can download the latest receipt anytime.
+                @else
+                    Your order <strong>{{ $payload['order']['displayId'] }}</strong> has been received. You can track status live and download the bill anytime.
+                @endif
             </p>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">

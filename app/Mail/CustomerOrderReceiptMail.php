@@ -16,13 +16,16 @@ class CustomerOrderReceiptMail extends Mailable
     public function __construct(
         public readonly Order $order,
         public readonly array $payload,
+        public readonly bool $isUpdate = false,
     ) {
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your order '.$this->order->compactNumber().' details and bill',
+            subject: $this->isUpdate
+                ? 'Your bill is updated for '.$this->order->compactNumber()
+                : 'Your order '.$this->order->compactNumber().' details and bill',
         );
     }
 
