@@ -170,6 +170,80 @@
                                 @if($order->notes)
                                     <p class="mt-2 line-clamp-1 text-[10px] font-semibold italic text-muted">{{ $order->notes }}</p>
                                 @endif
+                                <details class="group mt-3 rounded-xl border border-border bg-card-tint/60 p-0">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-wider text-ink marker:hidden">
+                                        <span>Full Detail</span>
+                                        <span class="rounded-md bg-card px-2 py-1 text-[9px] font-black text-orange transition group-open:rotate-180">+</span>
+                                    </summary>
+                                    <div class="space-y-3 border-t border-border px-3 py-3">
+                                        <div class="space-y-2">
+                                            <span class="block text-[9px] font-black uppercase tracking-wider text-muted">All Items</span>
+                                            @foreach($order->items as $item)
+                                                <div class="rounded-lg border border-border bg-card px-3 py-2">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <div class="min-w-0">
+                                                            <p class="text-xs font-black text-ink">
+                                                                {{ $item->quantity }}x {{ $item->item_name }}{{ $item->variant_label ? ' ('.$item->variant_label.')' : '' }}
+                                                            </p>
+                                                            <p class="mt-0.5 text-[10px] font-semibold text-muted">
+                                                                Rs. {{ number_format((float) $item->price, 2) }} each
+                                                                <span class="mx-1">&middot;</span>
+                                                                Line total Rs. {{ number_format((float) $item->total, 2) }}
+                                                            </p>
+                                                        </div>
+                                                        <span class="shrink-0 inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider {{ $statusClasses[$item->status ?: $order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">
+                                                            {{ $statuses[$item->status ?: $order->order_status] ?? ucfirst($item->status ?: $order->order_status) }}
+                                                        </span>
+                                                    </div>
+                                                    @if($item->special_instructions)
+                                                        <p class="mt-1 text-[10px] font-semibold italic text-muted">
+                                                            Note: {{ $item->special_instructions }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                            <div class="rounded-lg border border-border bg-card px-3 py-2">
+                                                <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Customer</span>
+                                                <p class="mt-1 text-xs font-black text-ink">{{ $order->customer_name ?: 'Walk-in Customer' }}</p>
+                                                <p class="mt-0.5 text-[10px] font-semibold text-muted">{{ $order->customer_phone ?: 'N/A' }}</p>
+                                                @if($order->customer_email)
+                                                    <p class="mt-0.5 break-all text-[10px] font-semibold text-muted">{{ $order->customer_email }}</p>
+                                                @endif
+                                            </div>
+                                            <div class="rounded-lg border border-border bg-card px-3 py-2">
+                                                <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Bill Summary</span>
+                                                <div class="mt-1 space-y-1 text-[10px] font-semibold text-muted">
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span>Subtotal</span>
+                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->subtotal, 2) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span>Tax</span>
+                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->tax, 2) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <span>Discount</span>
+                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->discount, 2) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-2 border-t border-border pt-1 text-xs">
+                                                        <span class="font-black text-muted">Total</span>
+                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->total, 2) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if($order->notes)
+                                            <div class="rounded-lg border border-orange/10 bg-orange/5 px-3 py-2">
+                                                <span class="block text-[9px] font-black uppercase tracking-wider text-orange">Order Note</span>
+                                                <p class="mt-1 text-[10px] font-semibold italic text-slate-700">{{ $order->notes }}</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </details>
                             </td>
                             <td class="px-5 py-4 align-top">
                                 <span class="inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider {{ $statusClasses[$order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">

@@ -124,6 +124,61 @@ class OrderHistoryPageTest extends TestCase
         $response->assertDontSee('ORD-HIST-EXCLUDED');
     }
 
+    public function test_order_history_page_shows_full_detail_section_for_large_orders(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => 'ORD-HIST-DETAIL',
+            'customer_name' => 'Detail Guest',
+            'customer_email' => 'detail@example.com',
+            'notes' => 'Extra plates please',
+        ]);
+
+        $order->items()->create([
+            'item_name' => 'Paneer Roll',
+            'variant_label' => 'Large',
+            'price' => 150,
+            'quantity' => 1,
+            'status' => 'ready',
+            'tax' => 7.5,
+            'discount' => 0,
+            'total' => 157.5,
+            'special_instructions' => 'No onion',
+        ]);
+        $order->items()->create([
+            'item_name' => 'Cold Coffee',
+            'variant_label' => null,
+            'price' => 110,
+            'quantity' => 2,
+            'status' => 'served',
+            'tax' => 11,
+            'discount' => 0,
+            'total' => 231,
+        ]);
+        $order->items()->create([
+            'item_name' => 'Cheese Garlic Bread',
+            'variant_label' => null,
+            'price' => 180,
+            'quantity' => 1,
+            'status' => 'cancelled',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 180,
+        ]);
+
+        $response = $this->get('/orders/history');
+
+        $response->assertOk();
+        $response->assertSee('Full Detail');
+        $response->assertSee('All Items');
+        $response->assertSee('Paneer Roll (Large)');
+        $response->assertSee('Cold Coffee');
+        $response->assertSee('Cheese Garlic Bread');
+        $response->assertSee('Bill Summary');
+        $response->assertSee('detail@example.com');
+        $response->assertSee('Extra plates please');
+        $response->assertSee('No onion');
+    }
+
     private function createOrder(array $overrides = []): Order
     {
         $order = Order::create(array_merge([
