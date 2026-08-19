@@ -109,7 +109,12 @@ class OrderService
             $order->update(['order_status' => $status]);
             $itemStatus = $this->itemStatusForOrderStatus($status);
             if ($itemStatus) {
-                $order->items()->update(['status' => $itemStatus]);
+                $order->items()
+                    ->where(function ($query) {
+                        $query->whereNull('status')
+                            ->orWhere('status', '!=', 'cancelled');
+                    })
+                    ->update(['status' => $itemStatus]);
             }
 
             if ($status === 'completed') {

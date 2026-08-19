@@ -340,6 +340,50 @@ class DashboardLiveOrdersTest extends TestCase
         ]);
     }
 
+    public function test_order_status_update_does_not_override_cancelled_items(): void
+    {
+        $order = $this->createOrder([
+            'order_number' => 'ORD-WEB-CANCELLED-ITEM',
+            'order_status' => 'preparing',
+        ]);
+        $activeItem = $order->items()->firstOrFail();
+        $cancelledItem = $order->items()->create([
+            'item_name' => 'Cancelled Fries',
+            'variant_label' => null,
+            'price' => 90,
+            'quantity' => 1,
+            'status' => 'preparing',
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 90,
+        ]);
+
+        $this->postJson("/orders/{$order->id}/items/{$cancelledItem->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $response = $this->postJson("/orders/{$order->id}/status", [
+            'status' => 'ready',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('order.status', 'ready');
+
+        $responseItems = collect($response->json('order.items'))->keyBy('id');
+        $this->assertSame('ready', $responseItems[$activeItem->id]['status']);
+        $this->assertSame('cancelled', $responseItems[$cancelledItem->id]['status']);
+
+        $this->assertDatabaseHas('order_items', [
+            'id' => $activeItem->id,
+            'status' => 'ready',
+        ]);
+        $this->assertDatabaseHas('order_items', [
+            'id' => $cancelledItem->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
     public function test_owner_can_add_menu_item_to_live_order_from_dashboard(): void
     {
         $order = $this->createOrder([
