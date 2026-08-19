@@ -182,34 +182,6 @@ class CustomerScannerApiTest extends TestCase
             'special_instructions' => 'Less spicy',
         ]);
 
-        $completedOrder = Order::create([
-            'business_id' => $this->business->id,
-            'service_point_id' => $this->servicePoint->id,
-            'order_number' => 'ORD-CUSTOMER-HISTORY',
-            'order_type' => 'dine_in',
-            'customer_name' => 'Previous Guest',
-            'customer_phone' => '9999999999',
-            'customer_email' => 'previous@example.com',
-            'subtotal' => 180,
-            'tax' => 0,
-            'discount' => 0,
-            'total' => 180,
-            'payment_status' => 'paid',
-            'order_status' => 'completed',
-        ]);
-        $completedOrder->items()->create([
-            'menu_item_id' => $this->menuItem->id,
-            'item_name' => 'Customer Paneer Tikka',
-            'variant_label' => null,
-            'price' => 180,
-            'quantity' => 1,
-            'status' => 'served',
-            'tax' => 0,
-            'discount' => 0,
-            'total' => 180,
-            'special_instructions' => 'With mint chutney',
-        ]);
-
         $response = $this->getJson('/api/v1/customer/scanner/customer-qr-001/occupancy');
 
         $response->assertOk()
@@ -227,14 +199,8 @@ class CustomerScannerApiTest extends TestCase
             ->assertJsonPath('data.order.items.0.item_name', 'Customer Paneer Tikka')
             ->assertJsonPath('data.order.items.0.quantity', 2)
             ->assertJsonPath('data.order.items.0.special_instructions', 'Less spicy')
-            ->assertJsonCount(2, 'data.order_history')
-            ->assertJsonPath('data.order_history.0.order_number', 'ORD-CUSTOMER-OCCUPIED')
-            ->assertJsonPath('data.order_history.1.order_number', 'ORD-CUSTOMER-HISTORY')
-            ->assertJsonCount(2, 'data.item_history')
-            ->assertJsonPath('data.item_history.0.order_number', 'ORD-CUSTOMER-OCCUPIED')
-            ->assertJsonPath('data.item_history.0.item_name', 'Customer Paneer Tikka')
-            ->assertJsonPath('data.item_history.1.order_number', 'ORD-CUSTOMER-HISTORY')
-            ->assertJsonPath('data.item_history.1.special_instructions', 'With mint chutney');
+            ->assertJsonMissingPath('data.order_history')
+            ->assertJsonMissingPath('data.item_history');
     }
 
     public function test_customer_can_create_order_from_scanner_without_token(): void

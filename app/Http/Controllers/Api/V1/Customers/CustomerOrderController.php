@@ -72,31 +72,12 @@ class CustomerOrderController extends ApiController
     {
         [$business, $context] = $this->scannerContextResolver->resolve($qr);
         $order = $this->activeOrderForContext($business, $context)?->loadMissing(['items.menuItem.presetImage', 'payments']);
-        $historyOrders = $this->ordersForContext($business, $context)
-            ->with(['items.menuItem.presetImage', 'payments'])
-            ->latest('created_at')
-            ->limit(10)
-            ->get();
-
-        if ($order) {
-            $historyOrders = $historyOrders
-                ->reject(fn (Order $historyOrder) => $historyOrder->is($order))
-                ->prepend($order)
-                ->values();
-        }
 
         return $this->success([
             'context' => $context,
             'occupied' => $order !== null,
             'status' => $order ? 'occupied' : 'available',
             'order' => $order ? $this->occupancyOrderPayload($order) : null,
-            'order_history' => $historyOrders->map(fn (Order $historyOrder) => $this->occupancyOrderPayload($historyOrder))->values()->all(),
-            'item_history' => $historyOrders
-                ->flatMap(fn (Order $historyOrder) => $historyOrder->items->map(
-                    fn (OrderItem $item) => $this->occupancyItemPayload($item, $historyOrder)
-                ))
-                ->values()
-                ->all(),
         ], 'Scanner occupancy status');
     }
 
