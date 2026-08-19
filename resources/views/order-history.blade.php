@@ -19,7 +19,7 @@
     ];
 @endphp
 
-<div class="space-y-5">
+<div x-data="orderHistoryPage()" @keydown.escape.window="closeDetail()" class="space-y-5">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-xl font-black tracking-tight text-ink">Order History</h1>
@@ -138,6 +138,7 @@
                                 ?? $order->room?->name
                                 ?? ($order->order_type === 'takeaway' ? 'Counter / Takeaway' : 'Direct Order');
                             $typeLabel = $typeOptions[$order->order_type] ?? ucwords(str_replace('_', ' ', $order->order_type));
+                            $paymentLabel = ucfirst($order->payment_status).($latestPayment?->payment_method ? ' via '.ucfirst($latestPayment->payment_method) : '');
                         @endphp
                         <tr class="hover:bg-card-tint/40">
                             <td class="px-5 py-4 align-top">
@@ -170,80 +171,14 @@
                                 @if($order->notes)
                                     <p class="mt-2 line-clamp-1 text-[10px] font-semibold italic text-muted">{{ $order->notes }}</p>
                                 @endif
-                                <details class="group mt-3 rounded-xl border border-border bg-card-tint/60 p-0">
-                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-wider text-ink marker:hidden">
-                                        <span>Full Detail</span>
-                                        <span class="rounded-md bg-card px-2 py-1 text-[9px] font-black text-orange transition group-open:rotate-180">+</span>
-                                    </summary>
-                                    <div class="space-y-3 border-t border-border px-3 py-3">
-                                        <div class="space-y-2">
-                                            <span class="block text-[9px] font-black uppercase tracking-wider text-muted">All Items</span>
-                                            @foreach($order->items as $item)
-                                                <div class="rounded-lg border border-border bg-card px-3 py-2">
-                                                    <div class="flex items-start justify-between gap-3">
-                                                        <div class="min-w-0">
-                                                            <p class="text-xs font-black text-ink">
-                                                                {{ $item->quantity }}x {{ $item->item_name }}{{ $item->variant_label ? ' ('.$item->variant_label.')' : '' }}
-                                                            </p>
-                                                            <p class="mt-0.5 text-[10px] font-semibold text-muted">
-                                                                Rs. {{ number_format((float) $item->price, 2) }} each
-                                                                <span class="mx-1">&middot;</span>
-                                                                Line total Rs. {{ number_format((float) $item->total, 2) }}
-                                                            </p>
-                                                        </div>
-                                                        <span class="shrink-0 inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider {{ $statusClasses[$item->status ?: $order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">
-                                                            {{ $statuses[$item->status ?: $order->order_status] ?? ucfirst($item->status ?: $order->order_status) }}
-                                                        </span>
-                                                    </div>
-                                                    @if($item->special_instructions)
-                                                        <p class="mt-1 text-[10px] font-semibold italic text-muted">
-                                                            Note: {{ $item->special_instructions }}
-                                                        </p>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <div class="rounded-lg border border-border bg-card px-3 py-2">
-                                                <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Customer</span>
-                                                <p class="mt-1 text-xs font-black text-ink">{{ $order->customer_name ?: 'Walk-in Customer' }}</p>
-                                                <p class="mt-0.5 text-[10px] font-semibold text-muted">{{ $order->customer_phone ?: 'N/A' }}</p>
-                                                @if($order->customer_email)
-                                                    <p class="mt-0.5 break-all text-[10px] font-semibold text-muted">{{ $order->customer_email }}</p>
-                                                @endif
-                                            </div>
-                                            <div class="rounded-lg border border-border bg-card px-3 py-2">
-                                                <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Bill Summary</span>
-                                                <div class="mt-1 space-y-1 text-[10px] font-semibold text-muted">
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <span>Subtotal</span>
-                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->subtotal, 2) }}</span>
-                                                    </div>
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <span>Tax</span>
-                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->tax, 2) }}</span>
-                                                    </div>
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <span>Discount</span>
-                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->discount, 2) }}</span>
-                                                    </div>
-                                                    <div class="flex items-center justify-between gap-2 border-t border-border pt-1 text-xs">
-                                                        <span class="font-black text-muted">Total</span>
-                                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->total, 2) }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        @if($order->notes)
-                                            <div class="rounded-lg border border-orange/10 bg-orange/5 px-3 py-2">
-                                                <span class="block text-[9px] font-black uppercase tracking-wider text-orange">Order Note</span>
-                                                <p class="mt-1 text-[10px] font-semibold italic text-slate-700">{{ $order->notes }}</p>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </details>
+                                <button
+                                    type="button"
+                                    @click="openDetail({{ $order->id }})"
+                                    class="mt-3 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-[10px] font-black uppercase tracking-wider text-ink transition hover:border-orange/30 hover:bg-card-tint"
+                                >
+                                    <span>Full Detail</span>
+                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-orange/10 text-sm leading-none text-orange">+</span>
+                                </button>
                             </td>
                             <td class="px-5 py-4 align-top">
                                 <span class="inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider {{ $statusClasses[$order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">
@@ -252,7 +187,7 @@
                             </td>
                             <td class="px-5 py-4 align-top">
                                 <span class="inline-flex rounded-md px-2 py-1 text-[9px] font-black uppercase tracking-wider {{ $paymentClasses[$order->payment_status] ?? 'bg-card-tint text-muted border border-border' }}">
-                                    {{ ucfirst($order->payment_status) }}{{ $latestPayment?->payment_method ? ' via '.ucfirst($latestPayment->payment_method) : '' }}
+                                    {{ $paymentLabel }}
                                 </span>
                             </td>
                             <td class="whitespace-nowrap px-5 py-4 text-right align-top text-sm font-black text-ink">
@@ -277,5 +212,177 @@
             {{ $orders->links() }}
         </div>
     @endif
+
+    @foreach($orders as $order)
+        @php
+            $latestPayment = $order->payments->sortByDesc('created_at')->first();
+            $location = $order->servicePoint?->name
+                ?? $order->restaurantTable?->name
+                ?? $order->room?->name
+                ?? ($order->order_type === 'takeaway' ? 'Counter / Takeaway' : 'Direct Order');
+            $typeLabel = $typeOptions[$order->order_type] ?? ucwords(str_replace('_', ' ', $order->order_type));
+            $paymentLabel = ucfirst($order->payment_status).($latestPayment?->payment_method ? ' via '.ucfirst($latestPayment->payment_method) : '');
+        @endphp
+        <div
+            x-show="activeOrderId === {{ $order->id }}"
+            x-transition.opacity
+            style="display: none;"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/60 p-4 backdrop-blur-sm"
+            @click.self="closeDetail()"
+        >
+            <div class="w-full max-w-5xl overflow-hidden rounded-[28px] border border-border bg-card shadow-2xl shadow-navy/20">
+                <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+                    <div class="min-w-0">
+                        <span class="block text-[10px] font-black uppercase tracking-[0.18em] text-orange">Bill Preview</span>
+                        <h2 class="mt-1 text-xl font-black text-ink">{{ $order->compactNumber() }}</h2>
+                        <p class="mt-1 text-sm font-semibold text-muted">
+                            {{ $order->order_number }}
+                            <span class="mx-2 text-border">&middot;</span>
+                            {{ $order->created_at?->format('d M Y') }}
+                            <span class="mx-2 text-border">&middot;</span>
+                            {{ $order->created_at?->format('h:i A') }}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="closeDetail()"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card-tint text-lg font-black text-muted transition hover:text-ink"
+                        aria-label="Close detail modal"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                <div class="max-h-[85vh] overflow-y-auto px-5 py-5">
+                    <div class="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_340px]">
+                        <section class="space-y-4">
+                            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                <div class="rounded-2xl border border-border bg-card-tint/70 px-4 py-3">
+                                    <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Customer</span>
+                                    <p class="mt-1 truncate text-sm font-black text-ink">{{ $order->customer_name ?: 'Walk-in Customer' }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-muted">{{ $order->customer_phone ?: 'N/A' }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-border bg-card-tint/70 px-4 py-3">
+                                    <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Location</span>
+                                    <p class="mt-1 truncate text-sm font-black text-ink">{{ $location }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-muted">{{ $typeLabel }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-border bg-card-tint/70 px-4 py-3">
+                                    <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Status</span>
+                                    <span class="mt-2 inline-flex rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-wider {{ $statusClasses[$order->order_status] ?? 'bg-card-tint text-muted border border-border' }}">
+                                        {{ $statuses[$order->order_status] ?? ucfirst($order->order_status) }}
+                                    </span>
+                                </div>
+                                <div class="rounded-2xl border border-border bg-card-tint/70 px-4 py-3">
+                                    <span class="block text-[9px] font-black uppercase tracking-wider text-muted">Payment</span>
+                                    <span class="mt-2 inline-flex rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-wider {{ $paymentClasses[$order->payment_status] ?? 'bg-card-tint text-muted border border-border' }}">
+                                        {{ $paymentLabel }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="rounded-[26px] border border-border bg-card-tint/40 p-4">
+                                <div class="flex items-center justify-between gap-3 border-b border-border pb-3">
+                                    <div>
+                                        <span class="block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Full Detail</span>
+                                        <h3 class="mt-1 text-lg font-black text-ink">All Items</h3>
+                                    </div>
+                                    <span class="rounded-xl bg-card px-3 py-1 text-[10px] font-black text-orange">
+                                        {{ $order->items->count() }} {{ $order->items->count() === 1 ? 'item' : 'items' }}
+                                    </span>
+                                </div>
+
+                                <div class="mt-4 space-y-3">
+                                    @foreach($order->items as $item)
+                                        @php
+                                            $itemStatus = $item->status ?: $order->order_status;
+                                        @endphp
+                                        <div class="rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-black text-ink">
+                                                        {{ $item->quantity }}x {{ $item->item_name }}{{ $item->variant_label ? ' ('.$item->variant_label.')' : '' }}
+                                                    </p>
+                                                    <p class="mt-1 text-xs font-semibold text-muted">
+                                                        Rs. {{ number_format((float) $item->price, 2) }} each
+                                                        <span class="mx-1">&middot;</span>
+                                                        Line total Rs. {{ number_format((float) $item->total, 2) }}
+                                                    </p>
+                                                </div>
+                                                <span class="shrink-0 inline-flex rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-wider {{ $statusClasses[$itemStatus] ?? 'bg-card-tint text-muted border border-border' }}">
+                                                    {{ $statuses[$itemStatus] ?? ucfirst($itemStatus) }}
+                                                </span>
+                                            </div>
+                                            @if($item->special_instructions)
+                                                <p class="mt-3 text-xs font-semibold italic text-muted">
+                                                    Note: {{ $item->special_instructions }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </section>
+
+                        <aside class="space-y-4">
+                            <div class="rounded-[24px] border border-border bg-card p-4 shadow-sm">
+                                <span class="block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Customer</span>
+                                <p class="mt-3 text-2xl font-black text-ink">{{ $order->customer_name ?: 'Walk-in Customer' }}</p>
+                                <p class="mt-2 text-lg font-semibold text-muted">{{ $order->customer_phone ?: 'N/A' }}</p>
+                                @if($order->customer_email)
+                                    <p class="mt-2 break-all text-sm font-semibold text-muted">{{ $order->customer_email }}</p>
+                                @endif
+                            </div>
+
+                            <div class="rounded-[24px] border border-border bg-card p-4 shadow-sm">
+                                <span class="block text-[9px] font-black uppercase tracking-[0.18em] text-muted">Bill Summary</span>
+                                <div class="mt-4 space-y-2 text-sm font-semibold text-muted">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>Subtotal</span>
+                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->subtotal, 2) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>Tax</span>
+                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->tax, 2) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>Discount</span>
+                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->discount, 2) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 border-t border-border pt-3 text-base">
+                                        <span class="font-black text-muted">Total</span>
+                                        <span class="font-black text-ink">Rs. {{ number_format((float) $order->total, 2) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($order->notes)
+                                <div class="rounded-[24px] border border-orange/15 bg-orange/5 p-4 shadow-sm">
+                                    <span class="block text-[9px] font-black uppercase tracking-[0.18em] text-orange">Order Note</span>
+                                    <p class="mt-3 text-sm font-semibold italic leading-relaxed text-slate-700">{{ $order->notes }}</p>
+                                </div>
+                            @endif
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endforeach
 </div>
+
+<script>
+    function orderHistoryPage() {
+        return {
+            activeOrderId: null,
+
+            openDetail(orderId) {
+                this.activeOrderId = orderId;
+            },
+
+            closeDetail() {
+                this.activeOrderId = null;
+            }
+        };
+    }
+</script>
 @endsection
