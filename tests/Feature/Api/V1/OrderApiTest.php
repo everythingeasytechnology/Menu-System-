@@ -231,6 +231,41 @@ class OrderApiTest extends ApiTestCase
         ]);
     }
 
+    public function test_completed_order_auto_marks_payment_paid_in_api(): void
+    {
+        [$business, $user] = $this->createBusinessUser('api-complete-paid-owner@example.com');
+        $order = $this->createOrder($business, [
+            'order_number' => 'ORD-API-COMPLETE-PAID',
+            'order_status' => 'served',
+            'payment_status' => 'unpaid',
+            'total' => 325,
+        ]);
+
+        $response = $this->withHeaders($this->authHeaders($user))
+            ->postJson("/api/v1/orders/{$order->id}/status", [
+                'status' => 'completed',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Order status updated')
+            ->assertJsonPath('data.order_status', 'completed')
+            ->assertJsonPath('data.payment_status', 'paid');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'order_status' => 'completed',
+            'payment_status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'business_id' => $business->id,
+            'payment_method' => 'cash',
+            'amount' => 325,
+            'status' => 'paid',
+        ]);
+    }
+
     public function test_service_point_orders_endpoint_is_business_scoped(): void
     {
         [, $user] = $this->createBusinessUser('service-point-isolation-owner@example.com');

@@ -118,7 +118,7 @@ class OrderService
             }
 
             if ($status === 'completed') {
-                $order->update(['payment_status' => $order->payment_status === 'unpaid' ? 'pending' : $order->payment_status]);
+                $this->markOrderAsPaid($order);
             }
 
             $this->notificationService->notifyBusiness(
@@ -349,6 +349,31 @@ class OrderService
             if (! $this->hasLiveOrdersForLocation($order, 'room_id', $order->room_id)) {
                 Room::whereKey($order->room_id)->update(['status' => 'available']);
             }
+        }
+    }
+
+    private function markOrderAsPaid(Order $order): void
+    {
+        $payment = $order->payments()->latest()->first()
+            ?? new Payment([
+                'order_id' => $order->id,
+                'business_id' => $order->business_id,
+            ]);
+
+        $method = $payment->payment_method ?: 'cash';
+
+        $payment->fill([
+            'order_id' => $order->id,
+            'business_id' => $order->business_id,
+            'payment_method' => $method,
+            'payment_gateway' => $payment->payment_gateway ?: ($method === 'razorpay' ? 'razorpay' : null),
+            'amount' => (float) $order->total,
+            'status' => 'paid',
+            'paid_at' => $payment->paid_at ?: now(),
+        ])->save();
+
+        if ($order->payment_status !== 'paid') {
+            $order->update(['payment_status' => 'paid']);
         }
     }
 

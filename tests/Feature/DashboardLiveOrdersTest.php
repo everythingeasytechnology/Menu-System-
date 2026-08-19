@@ -232,7 +232,7 @@ class DashboardLiveOrdersTest extends TestCase
         ]);
     }
 
-    public function test_completed_paid_order_releases_service_point_and_leaves_live_orders(): void
+    public function test_completed_order_auto_marks_payment_paid_and_releases_service_point(): void
     {
         $servicePoint = ServicePoint::create([
             'business_id' => $this->business->id,
@@ -262,24 +262,20 @@ class DashboardLiveOrdersTest extends TestCase
         $statusResponse->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('order.status', 'completed')
-            ->assertJsonPath('order.paymentStatus', 'pending');
-
-        // Completed orders leave the live feed immediately, regardless of payment status.
-        $this->getJson('/orders/live-feed?active_only=1')
-            ->assertOk()
-            ->assertJsonMissing(['orderNumber' => 'ORD-WEB-SP-RELEASE']);
-
-        $paymentResponse = $this->postJson("/orders/{$order->id}/payment", [
-            'payment_status' => 'paid',
-            'payment_method' => 'cash',
-            'amount' => 252,
-        ]);
-
-        $paymentResponse->assertOk()
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('order.status', 'completed')
             ->assertJsonPath('order.paymentStatus', 'paid');
 
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'order_status' => 'completed',
+            'payment_status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'business_id' => $this->business->id,
+            'payment_method' => 'cash',
+            'amount' => 252,
+            'status' => 'paid',
+        ]);
         $this->assertDatabaseHas('service_points', [
             'id' => $servicePoint->id,
             'status' => 'available',
@@ -287,6 +283,7 @@ class DashboardLiveOrdersTest extends TestCase
             'amount' => 0,
             'items' => null,
         ]);
+
         $this->getJson('/orders/live-feed?active_only=1')
             ->assertOk()
             ->assertJsonMissing(['orderNumber' => 'ORD-WEB-SP-RELEASE']);
