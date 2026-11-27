@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\SuperAdminController;
 use App\Http\Controllers\Auth\BusinessOwnerLoginController;
+use App\Http\Controllers\Auth\BusinessOwnerRegistrationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
@@ -20,6 +21,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('/login', [BusinessOwnerLoginController::class, 'create'])->name('login');
     Route::post('/login', [BusinessOwnerLoginController::class, 'store'])->name('login.store');
+    Route::get('/register', [BusinessOwnerRegistrationController::class, 'create'])->name('register');
+    Route::post('/register/otp', [BusinessOwnerRegistrationController::class, 'sendOtp'])->middleware('throttle:5,1')->name('register.otp');
+    Route::post('/register', [BusinessOwnerRegistrationController::class, 'store'])->name('register.store');
     Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
