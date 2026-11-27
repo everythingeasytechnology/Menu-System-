@@ -303,7 +303,7 @@
                     <div class="mt-6 border-t border-border pt-5 text-center">
                         <p class="text-sm font-semibold text-muted">
                             New to EverythingEasy?
-                            <a href="{{ route('register') }}" class="ml-1 font-black text-orange transition hover:text-orange/80">Create admin account</a>
+                            <a href="{{ route('register') }}" class="ml-1 font-black text-orange transition hover:text-orange/80">Create  account</a>
                         </p>
                     </div>
 
