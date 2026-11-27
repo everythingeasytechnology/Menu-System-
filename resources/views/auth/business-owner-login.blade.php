@@ -195,12 +195,13 @@
 
                 <div class="rounded-3xl border border-border bg-card p-5 shadow-xl shadow-slate-200/70 sm:p-8">
                     <div class="mb-7 flex flex-col items-center text-center">
-                        <span class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange text-white shadow-lg shadow-orange/30">
-                            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 12.5C4 9 7 6.5 12 6.5s8 2.5 8 6M4 12.5h16M4 12.5c0 1 .5 1.5 1.5 1.5h13c1 0 1.5-.5 1.5-1.5M12 6.5V4" />
-                                <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none" />
-                            </svg>
-                        </span>
+                        <x-super-admin-logo
+                            image-box-class="mb-4 inline-flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-white p-2 shadow-lg shadow-orange/20"
+                            fallback-box-class="mb-4 inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-orange text-white shadow-lg shadow-orange/30"
+                            image-class="h-full w-full object-contain"
+                            icon-class="h-9 w-9"
+                            alt="EverythingEasy logo"
+                        />
                         <p class="text-xs font-black uppercase tracking-wider text-orange">Business Owner Login</p>
                         <h2 class="mt-2 text-2xl font-black tracking-tight text-ink">Welcome back!</h2>
                         <p class="mt-2 max-w-xs text-sm leading-6 text-muted">Sign in to your dashboard and manage your restaurant easily.</p>
@@ -302,7 +303,7 @@
 
                     <div class="mt-6 border-t border-border pt-5 text-center">
                         <p class="text-sm font-semibold text-muted">
-                            New to EverythingEasy?
+                            New to SmartMenu?
                             <a href="{{ route('register') }}" class="ml-1 font-black text-orange transition hover:text-orange/80">Create  account</a>
                         </p>
                     </div>
