@@ -57,7 +57,14 @@
                     <section x-show="step === 3" x-cloak>
                         <p class="text-xs font-black uppercase tracking-wider text-orange">Contact number</p><h2 class="mt-2 text-2xl font-black">Your mobile number</h2><p class="mt-2 text-sm text-muted">Use a 10-digit number for account communication.</p>
                         <label for="phone" class="mt-7 block text-xs font-black uppercase tracking-wider">Mobile number</label>
-                        <div class="mt-2 flex rounded-xl border border-border bg-card-tint focus-within:border-orange focus-within:ring-2 focus-within:ring-orange/15"><span class="border-r border-border px-4 py-3.5 text-sm font-black">+91</span><input id="phone" name="phone" x-model="phone" @input="phone = phone.replace(/\D/g, '').slice(0, 10)" inputmode="numeric" autocomplete="tel" class="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base outline-none" placeholder="9876543210"></div>
+                        <div class="mt-2 flex rounded-xl border border-border bg-card-tint focus-within:border-orange focus-within:ring-2 focus-within:ring-orange/15">
+                            <select name="country_code" x-model="countryCode" aria-label="Country calling code" class="max-w-[48%] rounded-l-xl border-0 border-r border-border bg-transparent px-3 py-3.5 text-sm font-black outline-none sm:max-w-[44%]">
+                                @foreach(config('country_codes') as $code => $country)
+                                    <option value="{{ $code }}">{{ $country }} ({{ $code }})</option>
+                                @endforeach
+                            </select>
+                            <input id="phone" name="phone" x-model="phone" @input="phone = phone.replace(/\D/g, '').slice(0, 15)" inputmode="numeric" autocomplete="tel-national" class="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base outline-none" placeholder="9876543210">
+                        </div>
                     </section>
 
                     <section x-show="step === 4" x-cloak>
@@ -97,10 +104,10 @@
 <script>
 function registrationWizard() {
     return {
-        step: {{ $errors->any() ? 6 : 1 }}, industry: @js(old('business_type', '')), name: @js(old('name', '')), phone: @js(old('phone', '')), email: @js(old('email', '')),
+        step: {{ $errors->any() ? 6 : 1 }}, industry: @js(old('business_type', '')), name: @js(old('name', '')), countryCode: @js(old('country_code', '+91')), phone: @js(old('phone', '')), email: @js(old('email', '')),
         password: '', confirmation: '', otp: '', showPassword: false, sendingOtp: false, submitting: false, timer: 0, message: '', messageType: 'success', timerId: null,
         industries: [{id:'hotels',name:'Hotels',icon:'🏨'},{id:'cafe',name:'Cafe',icon:'☕'},{id:'restaurant',name:'Restaurant',icon:'🍽️'},{id:'bakery',name:'Bakery',icon:'🥐'}],
-        get valid() { if(this.step===1)return !!this.industry; if(this.step===2)return this.name.length>=3; if(this.step===3)return /^\d{10}$/.test(this.phone); if(this.step===4)return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email); if(this.step===5)return this.password.length>=8&&this.password===this.confirmation; return false; },
+        get valid() { if(this.step===1)return !!this.industry; if(this.step===2)return this.name.length>=3; if(this.step===3)return /^\d{6,15}$/.test(this.phone); if(this.step===4)return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email); if(this.step===5)return this.password.length>=8&&this.password===this.confirmation; return false; },
         back(){ this.message=''; if(this.step>1)this.step--; },
         async next(){ this.message=''; if(!this.valid)return; if(this.step===5){ await this.sendOtp(true); } else { this.step++; window.scrollTo({top:0,behavior:'smooth'}); } },
         startTimer(seconds){ this.timer=seconds; clearInterval(this.timerId); this.timerId=setInterval(()=>{ if(this.timer>0)this.timer--; else clearInterval(this.timerId); },1000); },

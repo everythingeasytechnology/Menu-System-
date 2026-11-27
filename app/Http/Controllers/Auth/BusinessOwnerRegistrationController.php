@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
 
@@ -68,11 +69,16 @@ class BusinessOwnerRegistrationController extends Controller
         $data = $request->validate([
             'business_type' => ['required', 'in:hotels,cafe,restaurant,bakery'],
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'phone' => ['required', 'digits:10', 'unique:users,phone'],
+            'country_code' => ['required', Rule::in(array_keys(config('country_codes')))],
+            'phone' => ['required', 'digits_between:6,15'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(8)],
             'otp' => ['required', 'digits:4'],
         ]);
+
+        if (User::where('phone', $this->internationalPhone($data['country_code'], $data['phone']))->exists()) {
+            return back()->withErrors(['phone' => 'This phone number is already registered.'])->withInput($request->except(['password', 'password_confirmation', 'otp']));
+        }
 
         $cacheKey = $this->otpCacheKey($data['email']);
         $cachedOtp = Cache::get($cacheKey);
@@ -85,7 +91,7 @@ class BusinessOwnerRegistrationController extends Controller
             $user = User::create([
                 'name' => $data['name'],
                 'email' => Str::lower($data['email']),
-                'phone' => $data['phone'],
+                'phone' => $this->internationalPhone($data['country_code'], $data['phone']),
                 'password' => $data['password'],
                 'role' => 'owner',
                 'status' => 'active',
@@ -124,5 +130,10 @@ class BusinessOwnerRegistrationController extends Controller
     private function otpCacheKey(string $email): string
     {
         return 'auth:email-otp:'.sha1(Str::lower($email));
+    }
+
+    private function internationalPhone(string $countryCode, string $phone): string
+    {
+        return str_replace('-', '', $countryCode).ltrim($phone, '0');
     }
 }
