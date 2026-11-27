@@ -18,6 +18,8 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
+Route::view('/', 'welcome')->name('home');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [BusinessOwnerLoginController::class, 'create'])->name('login');
     Route::post('/login', [BusinessOwnerLoginController::class, 'store'])->name('login.store');
@@ -59,7 +61,7 @@ Route::prefix('admin')
 
 Route::middleware(['auth', 'business.owner'])->group(function () {
     // Executive Dashboard
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Operations
     Route::get('/orders/history', [OrderOperationsController::class, 'history'])->name('dashboard.orders.history');

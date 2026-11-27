@@ -42,7 +42,7 @@ class BusinessOwnerLoginTest extends TestCase
 
         $this->assertAuthenticated();
 
-        $this->get('/')->assertOk();
+        $this->get('/dashboard')->assertOk();
     }
 
     public function test_non_owner_staff_cannot_login_to_owner_dashboard(): void
@@ -64,9 +64,14 @@ class BusinessOwnerLoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_guest_dashboard_request_redirects_to_login(): void
+    public function test_public_home_page_loads_and_guest_dashboard_redirects_to_login(): void
     {
         $this->get('/')
+            ->assertOk()
+            ->assertSee('Free digital menu')
+            ->assertSee('Create your free digital menu');
+
+        $this->get('/dashboard')
             ->assertRedirect(route('login'));
     }
 
