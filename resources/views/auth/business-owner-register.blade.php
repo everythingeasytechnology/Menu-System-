@@ -6,7 +6,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Create Admin Account - EverythingEasy ServiceOS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] { display: none !important; }
+        .country-code-select { width: 12rem; flex: 0 0 12rem; }
+        @media (max-width: 480px) {
+            .country-code-select { width: 8.5rem; flex-basis: 8.5rem; }
+        }
+    </style>
 </head>
 <body class="min-h-full bg-bg text-ink font-sans antialiased">
 <main class="min-h-screen" x-data="registrationWizard()">
@@ -55,10 +61,10 @@
                     </section>
 
                     <section x-show="step === 3" x-cloak>
-                        <p class="text-xs font-black uppercase tracking-wider text-orange">Contact number</p><h2 class="mt-2 text-2xl font-black">Your mobile number</h2><p class="mt-2 text-sm text-muted">Use a 10-digit number for account communication.</p>
+                        <p class="text-xs font-black uppercase tracking-wider text-orange">Contact number</p><h2 class="mt-2 text-2xl font-black">Your mobile number</h2><p class="mt-2 text-sm text-muted">Select your country code and enter your mobile number.</p>
                         <label for="phone" class="mt-7 block text-xs font-black uppercase tracking-wider">Mobile number</label>
                         <div class="mt-2 flex rounded-xl border border-border bg-card-tint focus-within:border-orange focus-within:ring-2 focus-within:ring-orange/15">
-                            <select name="country_code" x-model="countryCode" aria-label="Country calling code" class="max-w-[48%] rounded-l-xl border-0 border-r border-border bg-transparent px-3 py-3.5 text-sm font-black outline-none sm:max-w-[44%]">
+                            <select name="country_code" x-model="countryCode" aria-label="Country calling code" class="country-code-select min-w-0 rounded-l-xl border-0 border-r border-border bg-transparent px-3 py-3.5 text-sm font-black outline-none">
                                 @foreach(config('country_codes') as $code => $country)
                                     <option value="{{ $code }}">{{ $country }} ({{ $code }})</option>
                                 @endforeach
