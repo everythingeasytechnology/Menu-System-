@@ -52,7 +52,10 @@ class ZeptoMailTransport extends AbstractTransport
         }
 
         if ($email->getReplyTo() !== []) {
-            $payload['reply_to'] = $this->emailAddress($email->getReplyTo()[0]);
+            $payload['reply_to'] = array_map(
+                fn (Address $address): array => $this->emailAddress($address),
+                $email->getReplyTo(),
+            );
         }
 
         $attachments = array_map(
@@ -99,7 +102,7 @@ class ZeptoMailTransport extends AbstractTransport
 
     private function endpoint(): string
     {
-        return 'https://'.rtrim(preg_replace('#^https?://#', '', $this->host), '/').'/api/v2/email';
+        return 'https://'.rtrim(preg_replace('#^https?://#', '', $this->host), '/').'/v1.1/email';
     }
 
     /** @param Address[] $addresses */
