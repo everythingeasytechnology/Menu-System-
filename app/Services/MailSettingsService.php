@@ -19,6 +19,16 @@ class MailSettingsService
 
     public function apply(?MailSetting $setting = null): bool
     {
+        if (filled(config('mail.mailers.zeptomail.api_key'))) {
+            config(['mail.default' => 'zeptomail']);
+
+            if (app()->bound('mail.manager')) {
+                app('mail.manager')->purge('zeptomail');
+            }
+
+            return true;
+        }
+
         $setting ??= $this->current();
 
         if (! $setting || ! $setting->enabled) {
@@ -47,7 +57,8 @@ class MailSettingsService
 
     public function enabled(): bool
     {
-        return (bool) $this->current()?->enabled;
+        return filled(config('mail.mailers.zeptomail.api_key'))
+            || (bool) $this->current()?->enabled;
     }
 
     private function tableExists(): bool

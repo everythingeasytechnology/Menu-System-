@@ -37,6 +37,13 @@ return [
 
     'mailers' => [
 
+        'zeptomail' => [
+            'transport' => 'zeptomail',
+            'host' => env('ZOHOCPAAS_HOST', 'cpaas.zoho.in'),
+            'api_key' => env('ZOHOCPAAS_EMAIL_KEY'),
+            'timeout' => env('ZOHOCPAAS_TIMEOUT', 30),
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
